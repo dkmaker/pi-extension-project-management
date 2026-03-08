@@ -5,7 +5,7 @@ import { CURRENT_VERSION } from "./types.js";
 import { migrate } from "./migrations.js";
 
 export function projectPath(): string {
-  return join(process.cwd(), ".project.json");
+  return join(process.cwd(), "database.json");
 }
 
 export function load(): ProjectFile {
