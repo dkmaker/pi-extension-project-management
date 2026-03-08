@@ -7,11 +7,7 @@
   "pi": {
     "extensions": ["./index.ts"]
   },
-  "peerDependencies": {
-    "@mariozechner/pi-coding-agent": "*",
-    "@mariozechner/pi-tui": "*"
-  },
-  "license": "MIT",
+"license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/dkmaker/pi-extension-project-management.git"
