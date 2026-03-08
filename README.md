@@ -13,7 +13,11 @@ A [pi coding agent](https://github.com/badlogic/pi) extension for lightweight pr
 
 ## Installation
 
-Add to your pi `settings.json` (global or project):
+```bash
+pi install github:dkmaker/pi-extension-project-management
+```
+
+Or manually add to your pi `settings.json` (global or project):
 
 ```json
 {
