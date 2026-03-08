@@ -1,11 +1,11 @@
-import { readFileSync, writeFileSync, existsSync } from "fs";
-import { join } from "path";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { join, dirname } from "path";
 import type { ProjectFile, Epic } from "./types.js";
 import { CURRENT_VERSION } from "./types.js";
 import { migrate } from "./migrations.js";
 
 export function projectPath(): string {
-  return join(process.cwd(), "database.json");
+  return join(process.cwd(), ".pi", "project", "database.json");
 }
 
 export function load(): ProjectFile {
@@ -22,7 +22,9 @@ export function load(): ProjectFile {
 
 export function save(r: ProjectFile): void {
   renumber(r);
-  writeFileSync(projectPath(), JSON.stringify(r, null, 2) + "\n", "utf-8");
+  const p = projectPath();
+  mkdirSync(dirname(p), { recursive: true });
+  writeFileSync(p, JSON.stringify(r, null, 2) + "\n", "utf-8");
 }
 
 export function now(): string {

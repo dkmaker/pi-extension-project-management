@@ -1,6 +1,6 @@
 {
   "name": "@dkmaker/pi-extension-project-management",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Project management extension for pi — epics, issues, assets, and prioritized work tracking",
   "type": "module",
   "keywords": ["pi-package"],
