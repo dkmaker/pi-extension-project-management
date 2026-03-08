@@ -43,6 +43,10 @@ Then restart pi or run `/reload`.
 |---------|-------------|
 | `/project` | Open the project dashboard |
 
+## Dependencies
+
+None. The extension imports `@mariozechner/pi-coding-agent` and `@mariozechner/pi-tui` which are provided by the pi runtime.
+
 ## Data Storage
 
 All data is stored in `.pi/project/` relative to your workspace root. Each workspace has its own isolated project data.
