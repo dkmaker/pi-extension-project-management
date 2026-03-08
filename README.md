@@ -15,12 +15,12 @@ A [pi coding agent](https://github.com/badlogic/pi) extension for lightweight pr
 
 Global install:
 ```bash
-pi install git:dkmaker/pi-extension-project-management
+pi install git:github.com/dkmaker/pi-extension-project-management
 ```
 
 Project-local install:
 ```bash
-pi install -l git:dkmaker/pi-extension-project-management
+pi install -l git:github.com/dkmaker/pi-extension-project-management
 ```
 
 Then restart pi or run `/reload`.
