@@ -1,0 +1,19 @@
+{
+  "name": "@dkmaker/pi-extension-project-management",
+  "version": "1.0.0",
+  "description": "Project management extension for pi — epics, issues, assets, and prioritized work tracking",
+  "type": "module",
+  "keywords": ["pi-package"],
+  "pi": {
+    "extensions": ["./index.ts"]
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-tui": "*"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dkmaker/pi-extension-project-management.git"
+  }
+}
