@@ -126,9 +126,10 @@ function generateSpec(db: ProjectFile): object {
 
     // Research notes
     if (issue.research && issue.research.length > 0) {
-      parts.push(add("Text", { text: `**Research** (${issue.research.length})`, variant: "body" }));
+      parts.push(add("Separator", { orientation: null }));
+      parts.push(add("Heading", { text: `🔬 Research (${issue.research.length})`, level: "h3" }));
       const rItems = issue.research.map(r => ({
-        title: `${researchIcon(r.type)} ${r.type} — ${r.addedAt.split("T")[0]}`,
+        title: `${researchIcon(r.type)} ${r.type.toUpperCase()} — ${r.addedAt.split("T")[0]}`,
         content: r.content,
       }));
       parts.push(add("Accordion", { items: rItems, type: "single" }));
@@ -193,11 +194,12 @@ function generateSpec(db: ProjectFile): object {
 
     // Research notes
     if (issue.research && issue.research.length > 0) {
-      lines.push(`**Research** (${issue.research.length})`);
+      lines.push(`---`);
+      lines.push(`### 🔬 Research (${issue.research.length})`);
       lines.push("");
       for (const r of issue.research) {
         lines.push(`---`);
-        lines.push(`${researchIcon(r.type)} **${r.type}** — ${r.addedAt.split("T")[0]}`);
+        lines.push(`#### ${researchIcon(r.type)} ${r.type.toUpperCase()} — ${r.addedAt.split("T")[0]}`);
         lines.push("");
         lines.push(r.content);
         lines.push("");
@@ -270,9 +272,10 @@ function generateSpec(db: ProjectFile): object {
 
     // Epic research notes
     if (epic.research.length > 0) {
-      epicChildren.push(add("Text", { text: `**Research** (${epic.research.length})`, variant: "body" }));
+      epicChildren.push(add("Separator", { orientation: null }));
+      epicChildren.push(add("Heading", { text: `🔬 Research (${epic.research.length})`, level: "h3" }));
       const rItems = epic.research.map(r => ({
-        title: `${researchIcon(r.type)} ${r.type} — ${r.addedAt.split("T")[0]}`,
+        title: `${researchIcon(r.type)} ${r.type.toUpperCase()} — ${r.addedAt.split("T")[0]}`,
         content: r.content,
       }));
       epicChildren.push(add("Accordion", { items: rItems, type: "single" }));
@@ -493,7 +496,7 @@ function generateHTML(projectId: string): string {
       separator: { border: "none", borderTop: "1px solid #27272a", margin: "16px 0" },
       accordion: { border: "1px solid #27272a", borderRadius: 8, overflow: "hidden", marginTop: 8 },
       accordionItem: { borderBottom: "1px solid #27272a" },
-      accordionTrigger: { width: "100%", background: "none", border: "none", color: "#e4e4e7", padding: "10px 14px", textAlign: "left", cursor: "pointer", fontSize: 13, fontWeight: 500 },
+      accordionTrigger: { width: "100%", background: "none", border: "none", color: "#e4e4e7", padding: "10px 14px", textAlign: "left", cursor: "pointer", fontSize: 13, fontWeight: 600, letterSpacing: "0.01em" },
       accordionContent: { padding: "10px 14px", fontSize: 13, color: "#a1a1aa", whiteSpace: "pre-wrap", lineHeight: 1.5 },
     };
 
