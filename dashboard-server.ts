@@ -153,83 +153,91 @@ function generateSpec(db: ProjectFile): object {
   }
 
   // ─── Helper: build issue as an accordion item ────────────────────────
-  function issueAccordionItem(issue: Issue): { title: string; content: string; id?: string } {
-    // Build a markdown representation for the accordion content
-    const lines: string[] = [];
+  // Returns HTML directly for better UX control (not markdown)
+  function issueAccordionItem(issue: Issue): { title: string; content: string; id?: string; isHtml?: boolean } {
+    const sections: string[] = [];
 
-    // Badges line
-    lines.push(`**${typeIcon(issue.type)} ${issue.type}** · ${statusLabel("issue", issue.status)}`);
-    lines.push("");
-
+    // Description (render as markdown)
     if (issue.description) {
-      lines.push(issue.description);
-      lines.push("");
+      sections.push(`<div class="issue-section"><div class="md-content">${md(issue.description)}</div></div>`);
     }
 
     // Linked issues
     if (issue.linkedIssueIds && issue.linkedIssueIds.length > 0) {
-      const linkedNames = issue.linkedIssueIds.map(lid => {
+      const links = issue.linkedIssueIds.map(lid => {
         const linked = db.issues.find(i => i.id === lid);
-        return linked ? `[${typeIcon(linked.type)} ${lid} — ${linked.title}](#issue-${lid})` : `\`${lid}\``;
-      });
-      lines.push(`**Linked issues:** ${linkedNames.join(", ")}`);
-      lines.push("");
+        if (linked) {
+          return `<a href="#issue-${lid}" class="issue-link">${typeIcon(linked.type)} ${lid} — ${linked.title}</a>`;
+        }
+        return `<code>${lid}</code>`;
+      }).join("");
+      sections.push(`<div class="issue-section"><div class="section-label">🔗 Linked Issues</div>${links}</div>`);
     }
 
     // Questions
     if (issue.questions && issue.questions.length > 0) {
-      lines.push(`**Questions** (${issue.questions.filter(q => q.answer).length}/${issue.questions.length} answered)`);
-      lines.push("");
+      const answered = issue.questions.filter(q => q.answer).length;
+      let qHtml = `<div class="section-label">❓ Questions (${answered}/${issue.questions.length} answered)</div>`;
       for (const q of issue.questions) {
-        const req = q.required !== false ? " 🔴" : " ⚪";
-        lines.push(`> ❓ ${q.text}${req}`);
+        const req = q.required !== false;
+        const reqLabel = req ? `<span class="req-badge req-required">required</span>` : `<span class="req-badge req-optional">optional</span>`;
         if (q.answer) {
-          lines.push(`> ✅ ${q.answer}`);
+          qHtml += `<div class="question-card answered">
+            <div class="question-text">${esc(q.text)} ${reqLabel}</div>
+            <div class="answer-text">✅ ${esc(q.answer)}</div>
+          </div>`;
         } else {
-          lines.push(`> _Unanswered_`);
+          qHtml += `<div class="question-card unanswered">
+            <div class="question-text">${esc(q.text)} ${reqLabel}</div>
+            <div class="answer-text unanswered-label">Awaiting answer</div>
+          </div>`;
         }
-        lines.push("");
       }
+      sections.push(`<div class="issue-section">${qHtml}</div>`);
     }
 
     // Research notes
     if (issue.research && issue.research.length > 0) {
-      lines.push(`---`);
-      lines.push(`### 🔬 Research (${issue.research.length})`);
-      lines.push("");
+      let rHtml = `<div class="section-label">🔬 Research (${issue.research.length})</div>`;
       for (const r of issue.research) {
-        lines.push(`---`);
-        lines.push(`#### ${researchIcon(r.type)} ${r.type.toUpperCase()} — ${r.addedAt.split("T")[0]}`);
-        lines.push("");
-        lines.push(r.content);
-        lines.push("");
+        const typeClass = r.type === "reference" ? "ref" : r.type === "comment" ? "cmt" : "ex";
+        rHtml += `<details class="research-item research-${typeClass}">
+          <summary>${researchIcon(r.type)} <strong>${r.type.toUpperCase()}</strong> — ${r.addedAt.split("T")[0]}</summary>
+          <div class="md-content">${md(r.content)}</div>
+        </details>`;
       }
+      sections.push(`<div class="issue-section">${rHtml}</div>`);
     }
 
     // Close info
     if (issue.status === "closed" && issue.closeMessage) {
-      lines.push(`---`);
-      lines.push(`✅ **Closed:** ${issue.closeMessage}`);
+      let closeHtml = `<div class="close-banner">✅ <strong>Closed:</strong> ${esc(issue.closeMessage)}</div>`;
       if (issue.validations && issue.validations.length > 0) {
         for (const v of issue.validations) {
-          lines.push(`${v.met ? "✅" : "❌"} **${v.criterion}** — ${v.evidence}`);
+          closeHtml += `<div class="validation-item">${v.met ? "✅" : "❌"} <strong>${esc(v.criterion)}</strong> — ${esc(v.evidence)}</div>`;
         }
       }
+      sections.push(`<div class="issue-section">${closeHtml}</div>`);
     }
 
     // Epic back-link
     if (issue.epicId) {
       const epic = db.epics.find(e => e.id === issue.epicId);
       if (epic) {
-        lines.push(`**Epic:** [${epic.id} — ${epic.title}](#epic-${epic.id})`);
+        sections.push(`<div class="issue-section"><a href="#epic-${epic.id}" class="epic-backlink">📋 Epic: ${epic.id} — ${esc(epic.title)}</a></div>`);
       }
     }
 
     return {
       title: `${typeIcon(issue.type)} [${issue.id}] ${issue.title} — ${statusLabel("issue", issue.status)}`,
-      content: lines.join("\n"),
+      content: sections.join(""),
       id: `issue-${issue.id}`,
+      isHtml: true,
     };
+  }
+
+  function esc(s: string): string {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
   // ─── Epics (with issues inside) ──────────────────────────────────────
@@ -438,6 +446,42 @@ function generateHTML(projectId: string): string {
     .md-content table { border-collapse: collapse; width: 100%; margin: 6px 0; }
     .md-content th, .md-content td { border: 1px solid #27272a; padding: 4px 8px; font-size: 12px; }
     .md-content th { background: #18181b; color: #a1a1aa; }
+
+    /* Issue sections */
+    .issue-section { margin: 12px 0; }
+    .section-label { font-size: 15px; font-weight: 700; color: #fafafa; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #27272a; }
+
+    /* Question cards */
+    .question-card { background: #1c1c20; border: 1px solid #27272a; border-radius: 8px; padding: 12px 16px; margin: 8px 0; }
+    .question-card.answered { border-left: 3px solid #22c55e; }
+    .question-card.unanswered { border-left: 3px solid #f59e0b; }
+    .question-text { font-size: 15px; color: #e4e4e7; margin-bottom: 6px; }
+    .answer-text { font-size: 14px; color: #a1a1aa; }
+    .unanswered-label { color: #f59e0b; font-style: italic; }
+    .req-badge { font-size: 11px; padding: 1px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+    .req-required { background: #7f1d1d; color: #fca5a5; }
+    .req-optional { background: #27272a; color: #71717a; }
+
+    /* Research items */
+    .research-item { background: #1c1c20; border: 1px solid #27272a; border-radius: 8px; margin: 8px 0; overflow: hidden; }
+    .research-item summary { padding: 10px 14px; cursor: pointer; font-size: 14px; color: #e4e4e7; list-style: none; }
+    .research-item summary::-webkit-details-marker { display: none; }
+    .research-item summary::before { content: "▸ "; }
+    .research-item[open] summary::before { content: "▾ "; }
+    .research-item .md-content { padding: 0 14px 14px; }
+    .research-ref { border-left: 3px solid #3b82f6; }
+    .research-cmt { border-left: 3px solid #a78bfa; }
+    .research-ex { border-left: 3px solid #34d399; }
+
+    /* Links */
+    .issue-link { display: block; padding: 6px 12px; margin: 4px 0; background: #1c1c20; border: 1px solid #27272a; border-radius: 6px; color: #60a5fa; text-decoration: none; font-size: 14px; }
+    .issue-link:hover { background: #27272a; }
+    .epic-backlink { color: #60a5fa; text-decoration: none; font-size: 14px; }
+    .epic-backlink:hover { text-decoration: underline; }
+
+    /* Close banner */
+    .close-banner { background: #14532d22; border: 1px solid #166534; border-radius: 8px; padding: 10px 14px; font-size: 14px; color: #bbf7d0; }
+    .validation-item { font-size: 13px; color: #a1a1aa; margin: 4px 0 4px 8px; }
   </style>
   <script type="importmap">
   {
@@ -485,19 +529,19 @@ function generateHTML(projectId: string): string {
     // ── Renderers ────────────────────────────────────────────────────
     const styles = {
       card: { background: "#18181b", border: "1px solid #27272a", borderRadius: 12, padding: 20, marginBottom: 12 },
-      badge: { display: "inline-block", padding: "2px 10px", borderRadius: 9999, fontSize: 12, marginRight: 4, background: "#27272a", color: "#e4e4e7" },
-      badgeSecondary: { display: "inline-block", padding: "2px 10px", borderRadius: 9999, fontSize: 12, marginRight: 4, background: "#3f3f46", color: "#a1a1aa" },
-      badgeOutline: { display: "inline-block", padding: "2px 10px", borderRadius: 9999, fontSize: 12, marginRight: 4, border: "1px solid #3f3f46", color: "#a1a1aa" },
-      heading: { h1: { fontSize: 28, fontWeight: 700, marginBottom: 8 }, h2: { fontSize: 22, fontWeight: 600, marginBottom: 8 }, h3: { fontSize: 18, fontWeight: 600, marginBottom: 4 } },
-      text: { body: { color: "#e4e4e7", fontSize: 14, lineHeight: 1.6 }, muted: { color: "#71717a", fontSize: 13, lineHeight: 1.5 } },
-      table: { width: "100%", borderCollapse: "collapse", fontSize: 13, marginTop: 8 },
-      th: { textAlign: "left", padding: "8px 12px", borderBottom: "1px solid #27272a", color: "#a1a1aa", fontWeight: 500 },
-      td: { padding: "8px 12px", borderBottom: "1px solid #18181b", color: "#e4e4e7" },
+      badge: { display: "inline-block", padding: "3px 12px", borderRadius: 9999, fontSize: 13, marginRight: 6, background: "#27272a", color: "#e4e4e7" },
+      badgeSecondary: { display: "inline-block", padding: "3px 12px", borderRadius: 9999, fontSize: 13, marginRight: 6, background: "#3f3f46", color: "#a1a1aa" },
+      badgeOutline: { display: "inline-block", padding: "3px 12px", borderRadius: 9999, fontSize: 13, marginRight: 6, border: "1px solid #3f3f46", color: "#a1a1aa" },
+      heading: { h1: { fontSize: 32, fontWeight: 700, marginBottom: 10 }, h2: { fontSize: 24, fontWeight: 600, marginBottom: 10 }, h3: { fontSize: 20, fontWeight: 600, marginBottom: 6 } },
+      text: { body: { color: "#e4e4e7", fontSize: 16, lineHeight: 1.7 }, muted: { color: "#a1a1aa", fontSize: 15, lineHeight: 1.6 } },
+      table: { width: "100%", borderCollapse: "collapse", fontSize: 14, marginTop: 8 },
+      th: { textAlign: "left", padding: "10px 14px", borderBottom: "1px solid #27272a", color: "#a1a1aa", fontWeight: 500 },
+      td: { padding: "10px 14px", borderBottom: "1px solid #18181b", color: "#e4e4e7" },
       separator: { border: "none", borderTop: "1px solid #27272a", margin: "16px 0" },
       accordion: { border: "1px solid #27272a", borderRadius: 8, overflow: "hidden", marginTop: 8 },
       accordionItem: { borderBottom: "1px solid #27272a" },
-      accordionTrigger: { width: "100%", background: "none", border: "none", color: "#e4e4e7", padding: "10px 14px", textAlign: "left", cursor: "pointer", fontSize: 13, fontWeight: 600, letterSpacing: "0.01em" },
-      accordionContent: { padding: "10px 14px", fontSize: 13, color: "#a1a1aa", whiteSpace: "pre-wrap", lineHeight: 1.5 },
+      accordionTrigger: { width: "100%", background: "none", border: "none", color: "#e4e4e7", padding: "12px 16px", textAlign: "left", cursor: "pointer", fontSize: 15, fontWeight: 600 },
+      accordionContent: { padding: "12px 16px", fontSize: 15, color: "#d4d4d8", lineHeight: 1.6 },
     };
 
     function RefWrap({ refText, children }) {
@@ -546,7 +590,7 @@ function generateHTML(projectId: string): string {
               style: { ...styles.accordionTrigger, background: openIndex === i ? "#1f1f23" : "transparent" },
               onClick: () => setOpenIndex(openIndex === i ? null : i)
             }, (openIndex === i ? "▾ " : "▸ ") + item.title),
-            openIndex === i ? h("div", { className: "md-content", style: styles.accordionContent, dangerouslySetInnerHTML: { __html: md(item.content) } }) : null
+            openIndex === i ? h("div", { className: item.isHtml ? "" : "md-content", style: styles.accordionContent, dangerouslySetInnerHTML: { __html: item.isHtml ? item.content : md(item.content) } }) : null
           )
         )
       );
@@ -573,7 +617,7 @@ function generateHTML(projectId: string): string {
           const refText = refMatch ? refMatch[1] : null;
           return h(RefWrap, { key: elementId, refText },
             h("div", { id: p.anchorId || undefined, style: styles.card },
-              p.title ? h("h3", { style: { fontSize: 16, fontWeight: 600, marginBottom: 8, color: "#fafafa" } }, p.title) : null,
+              p.title ? h("h3", { style: { fontSize: 20, fontWeight: 700, marginBottom: 10, color: "#fafafa" } }, p.title) : null,
               p.description ? h("p", { style: styles.text.muted }, p.description) : null,
               h("div", { style: { display: "flex", flexDirection: "column", gap: 10, marginTop: p.title || p.description ? 10 : 0 } }, ...childNodes)
             )
