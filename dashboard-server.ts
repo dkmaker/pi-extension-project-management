@@ -688,6 +688,23 @@ export function isServerRunning(): boolean {
   return activeServer !== null;
 }
 
+/** Call on extension load to re-adopt a server from a previous session */
+export async function initFromLock(): Promise<void> {
+  if (activeServer) return;
+  const lock = readLock();
+  if (!lock) return;
+  const alive = await isPortListening(lock.port);
+  if (alive) {
+    activeServer = {
+      port: lock.port,
+      projectId: lock.projectId,
+      close: () => { removeLock(); activeServer = null; },
+    };
+  } else {
+    removeLock();
+  }
+}
+
 export function getServerInfo(): { port: number; url: string } | null {
   if (activeServer) {
     return { port: activeServer.port, url: `http://localhost:${activeServer.port}` };

@@ -11,7 +11,7 @@ import { registerToolDocsTool } from "./tool-docs.js";
 import { registerDashboard } from "./dashboard.js";
 import { registerCommands } from "./commands.js";
 import { resolveEpicFocus } from "./priorities.js";
-import { isServerRunning, getServerInfo } from "./dashboard-server.js";
+import { isServerRunning, getServerInfo, initFromLock } from "./dashboard-server.js";
 
 const PROJECT_TOOLS = new Set([
   "epic_add", "epic_show", "epic_list", "epic_update", "epic_advance",
@@ -237,6 +237,9 @@ export default function (pi: ExtensionAPI) {
     }
     return origRegisterTool(def);
   };
+
+  // --- Re-adopt dashboard server from previous session ---
+  initFromLock().catch(() => {});
 
   // --- Register tools ---
   registerEpicTools(pi);
