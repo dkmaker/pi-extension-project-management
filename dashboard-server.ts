@@ -68,13 +68,16 @@ function getProjectId(): string {
 
 // ─── Spec generation ─────────────────────────────────────────────────────────
 
+function researchIcon(type: string): string {
+  return type === "reference" ? "📎" : type === "comment" ? "💬" : "📝";
+}
+
 function generateSpec(db: ProjectFile): object {
   const elements: Record<string, any> = {};
   const rootChildren: string[] = [];
   let counter = 0;
   const id = () => `el-${++counter}`;
 
-  // Helper to add element
   const add = (type: string, props: any, children?: string[]): string => {
     const eid = id();
     elements[eid] = { type, props, children: children ?? [] };
@@ -87,181 +90,264 @@ function generateSpec(db: ProjectFile): object {
     text: `${process.cwd()} · ${db.epics.length} epics · ${db.issues.length} issues · ${db.assets.length} assets`,
     variant: "muted",
   });
-  const headerStack = add("Stack", { direction: "vertical", gap: "sm", align: null, justify: null }, [headerTitle, headerSub]);
-  rootChildren.push(headerStack);
+  rootChildren.push(add("Stack", { direction: "vertical", gap: "sm", align: null, justify: null }, [headerTitle, headerSub]));
   rootChildren.push(add("Separator", { orientation: null }));
 
-  // ─── Epics ───────────────────────────────────────────────────────────
-  if (db.epics.length > 0) {
-    const epicsSectionTitle = add("Heading", { text: "Epics", level: "h2" });
-    rootChildren.push(epicsSectionTitle);
+  // ─── Helper: build full issue card (expandable) ──────────────────────
+  function buildIssueContent(issue: Issue): string[] {
+    const parts: string[] = [];
 
-    for (const epic of db.epics) {
-      const epicChildren: string[] = [];
-
-      // Status + priority badges
-      const statusBadge = add("Badge", { text: statusLabel("epic", epic.status), variant: epic.status === "closed" ? "secondary" : "default" });
-      const priorityBadge = add("Badge", { text: `P${epic.priority}`, variant: "outline" });
-      const badgeRow = add("Stack", { direction: "horizontal", gap: "sm", align: null, justify: null }, [statusBadge, priorityBadge]);
-      epicChildren.push(badgeRow);
-
-      // Description
-      if (epic.description) {
-        epicChildren.push(add("Text", { text: epic.description, variant: "body" }));
-      }
-
-      // Todos
-      if (epic.todos.length > 0) {
-        const todoItems: string[] = [];
-        for (const todo of epic.todos) {
-          todoItems.push(add("Text", {
-            text: `${todo.done ? "✅" : "⬜"} ${todo.text}`,
-            variant: todo.done ? "muted" : "body",
-          }));
-        }
-        const todosLabel = add("Text", { text: `**Todos** (${epic.todos.filter(t => t.done).length}/${epic.todos.length})`, variant: "body" });
-        epicChildren.push(todosLabel);
-        epicChildren.push(add("Stack", { direction: "vertical", gap: "sm", align: null, justify: null }, todoItems));
-      }
-
-      // Success criteria
-      if (epic.successCriteria.length > 0) {
-        const scLabel = add("Text", { text: "**Success Criteria:**", variant: "body" });
-        const scItems = epic.successCriteria.map(sc => add("Text", { text: `• ${sc}`, variant: "muted" }));
-        epicChildren.push(scLabel);
-        epicChildren.push(add("Stack", { direction: "vertical", gap: "sm", align: null, justify: null }, scItems));
-      }
-
-      // Linked issues
-      const linkedIssues = db.issues.filter(i => i.epicId === epic.id);
-      if (linkedIssues.length > 0) {
-        const rows = linkedIssues.map(i => [
-          `${typeIcon(i.type)} ${i.type}`,
-          i.title,
-          statusLabel("issue", i.status),
-          i.id,
-        ]);
-        epicChildren.push(add("Table", {
-          columns: ["Type", "Title", "Status", "ID"],
-          rows,
-          caption: `${linkedIssues.length} linked issue(s)`,
-        }));
-      }
-
-      // Research notes
-      if (epic.research.length > 0) {
-        const accordionItems = epic.research.map(r => ({
-          title: `${r.type} — ${r.addedAt.split("T")[0]}`,
-          content: r.content,
-        }));
-        epicChildren.push(add("Accordion", { items: accordionItems, type: "single" }));
-      }
-
-      const epicCard = add("Card", {
-        title: `[${epic.id}] ${epic.title}`,
-        description: null,
-        maxWidth: "full",
-        centered: null,
-      }, epicChildren);
-      rootChildren.push(epicCard);
+    // Description
+    if (issue.description) {
+      parts.push(add("Text", { text: issue.description, variant: "body" }));
     }
 
-    rootChildren.push(add("Separator", { orientation: null }));
+    // Linked issues
+    if (issue.linkedIssueIds && issue.linkedIssueIds.length > 0) {
+      const linkedNames = issue.linkedIssueIds.map(lid => {
+        const linked = db.issues.find(i => i.id === lid);
+        return linked ? `\`${lid}\` ${linked.title}` : `\`${lid}\`` ;
+      }).join(", ");
+      parts.push(add("Text", { text: `**Linked:** ${linkedNames}`, variant: "muted" }));
+    }
+
+    // Questions
+    if (issue.questions && issue.questions.length > 0) {
+      parts.push(add("Text", { text: `**Questions** (${issue.questions.filter(q => q.answer).length}/${issue.questions.length} answered)`, variant: "body" }));
+      for (const q of issue.questions) {
+        const req = q.required !== false ? " 🔴" : " ⚪";
+        if (q.answer) {
+          parts.push(add("Text", { text: `> ❓ ${q.text}${req}\n>\n> ✅ ${q.answer}`, variant: "body" }));
+        } else {
+          parts.push(add("Text", { text: `> ❓ ${q.text}${req}\n>\n> _Unanswered_`, variant: "muted" }));
+        }
+      }
+    }
+
+    // Research notes
+    if (issue.research && issue.research.length > 0) {
+      parts.push(add("Text", { text: `**Research** (${issue.research.length})`, variant: "body" }));
+      const rItems = issue.research.map(r => ({
+        title: `${researchIcon(r.type)} ${r.type} — ${r.addedAt.split("T")[0]}`,
+        content: r.content,
+      }));
+      parts.push(add("Accordion", { items: rItems, type: "single" }));
+    }
+
+    // Close info
+    if (issue.status === "closed" && issue.closeMessage) {
+      parts.push(add("Alert", {
+        title: "Closed",
+        message: issue.closeMessage,
+        type: "success",
+      }));
+      if (issue.validations && issue.validations.length > 0) {
+        for (const v of issue.validations) {
+          parts.push(add("Text", { text: `${v.met ? "✅" : "❌"} **${v.criterion}**\n${v.evidence}`, variant: "muted" }));
+        }
+      }
+    }
+
+    return parts;
   }
 
-  // ─── Issues (unlinked) ──────────────────────────────────────────────
+  // ─── Helper: build issue as an accordion item ────────────────────────
+  function issueAccordionItem(issue: Issue): { title: string; content: string } {
+    // Build a markdown representation for the accordion content
+    const lines: string[] = [];
+
+    // Badges line
+    lines.push(`**${typeIcon(issue.type)} ${issue.type}** · ${statusLabel("issue", issue.status)}`);
+    lines.push("");
+
+    if (issue.description) {
+      lines.push(issue.description);
+      lines.push("");
+    }
+
+    // Linked issues
+    if (issue.linkedIssueIds && issue.linkedIssueIds.length > 0) {
+      const linkedNames = issue.linkedIssueIds.map(lid => {
+        const linked = db.issues.find(i => i.id === lid);
+        return linked ? `\`${lid}\` ${linked.title}` : `\`${lid}\``;
+      });
+      lines.push(`**Linked issues:** ${linkedNames.join(", ")}`);
+      lines.push("");
+    }
+
+    // Questions
+    if (issue.questions && issue.questions.length > 0) {
+      lines.push(`**Questions** (${issue.questions.filter(q => q.answer).length}/${issue.questions.length} answered)`);
+      lines.push("");
+      for (const q of issue.questions) {
+        const req = q.required !== false ? " 🔴" : " ⚪";
+        lines.push(`> ❓ ${q.text}${req}`);
+        if (q.answer) {
+          lines.push(`> ✅ ${q.answer}`);
+        } else {
+          lines.push(`> _Unanswered_`);
+        }
+        lines.push("");
+      }
+    }
+
+    // Research notes
+    if (issue.research && issue.research.length > 0) {
+      lines.push(`**Research** (${issue.research.length})`);
+      lines.push("");
+      for (const r of issue.research) {
+        lines.push(`---`);
+        lines.push(`${researchIcon(r.type)} **${r.type}** — ${r.addedAt.split("T")[0]}`);
+        lines.push("");
+        lines.push(r.content);
+        lines.push("");
+      }
+    }
+
+    // Close info
+    if (issue.status === "closed" && issue.closeMessage) {
+      lines.push(`---`);
+      lines.push(`✅ **Closed:** ${issue.closeMessage}`);
+      if (issue.validations && issue.validations.length > 0) {
+        for (const v of issue.validations) {
+          lines.push(`${v.met ? "✅" : "❌"} **${v.criterion}** — ${v.evidence}`);
+        }
+      }
+    }
+
+    const statusIcon = issue.status === "closed" ? "🏁" : issue.status === "in-progress" ? "🔧" : "";
+    return {
+      title: `${typeIcon(issue.type)} [${issue.id}] ${issue.title} — ${statusLabel("issue", issue.status)}`,
+      content: lines.join("\n"),
+    };
+  }
+
+  // ─── Epics (with issues inside) ──────────────────────────────────────
+  for (const epic of db.epics) {
+    const epicChildren: string[] = [];
+
+    // Status + priority badges
+    const statusBadge = add("Badge", { text: statusLabel("epic", epic.status), variant: epic.status === "closed" ? "secondary" : "default" });
+    const priorityBadge = add("Badge", { text: `P${epic.priority}`, variant: "outline" });
+    epicChildren.push(add("Stack", { direction: "horizontal", gap: "sm", align: null, justify: null }, [statusBadge, priorityBadge]));
+
+    // Description
+    if (epic.description) {
+      epicChildren.push(add("Text", { text: epic.description, variant: "body" }));
+    }
+
+    // Todos
+    if (epic.todos.length > 0) {
+      epicChildren.push(add("Text", { text: `**Todos** (${epic.todos.filter(t => t.done).length}/${epic.todos.length})`, variant: "body" }));
+      const todoItems = epic.todos.map(todo => add("Text", {
+        text: `${todo.done ? "✅" : "⬜"} ${todo.text}`,
+        variant: todo.done ? "muted" : "body",
+      }));
+      epicChildren.push(add("Stack", { direction: "vertical", gap: "sm", align: null, justify: null }, todoItems));
+    }
+
+    // Success criteria
+    if (epic.successCriteria.length > 0) {
+      epicChildren.push(add("Text", { text: "**Success Criteria:**", variant: "body" }));
+      const scItems = epic.successCriteria.map(sc => add("Text", { text: `• ${sc}`, variant: "muted" }));
+      epicChildren.push(add("Stack", { direction: "vertical", gap: "sm", align: null, justify: null }, scItems));
+    }
+
+    // Relevant files
+    if (epic.relevantFiles && epic.relevantFiles.length > 0) {
+      epicChildren.push(add("Text", { text: "**Relevant Files:**", variant: "body" }));
+      const fileItems = epic.relevantFiles.map(f => add("Text", { text: `\`${f.file}\` — ${f.reason}`, variant: "muted" }));
+      epicChildren.push(add("Stack", { direction: "vertical", gap: "sm", align: null, justify: null }, fileItems));
+    }
+
+    // Epic research notes
+    if (epic.research.length > 0) {
+      epicChildren.push(add("Text", { text: `**Research** (${epic.research.length})`, variant: "body" }));
+      const rItems = epic.research.map(r => ({
+        title: `${researchIcon(r.type)} ${r.type} — ${r.addedAt.split("T")[0]}`,
+        content: r.content,
+      }));
+      epicChildren.push(add("Accordion", { items: rItems, type: "single" }));
+    }
+
+    // ── Issues inside this epic (as expandable accordion) ──────────────
+    const linkedIssues = db.issues.filter(i => i.epicId === epic.id);
+    if (linkedIssues.length > 0) {
+      epicChildren.push(add("Separator", { orientation: null }));
+      const openCount = linkedIssues.filter(i => i.status !== "closed").length;
+      const closedCount = linkedIssues.length - openCount;
+      epicChildren.push(add("Text", { text: `**Issues** (${openCount} open, ${closedCount} closed)`, variant: "body" }));
+
+      const issueItems = linkedIssues.map(issue => issueAccordionItem(issue));
+      epicChildren.push(add("Accordion", { items: issueItems, type: "single" }));
+    }
+
+    rootChildren.push(add("Card", {
+      title: `[${epic.id}] ${epic.title}`,
+      description: null,
+      maxWidth: "full",
+      centered: null,
+    }, epicChildren));
+  }
+
+  // ─── Unlinked Issues (virtual epic container) ────────────────────────
   const unlinkedIssues = db.issues.filter(i => !i.epicId);
   if (unlinkedIssues.length > 0) {
-    rootChildren.push(add("Heading", { text: "Unlinked Issues", level: "h2" }));
+    const unlinkedChildren: string[] = [];
+    unlinkedChildren.push(add("Badge", { text: `${unlinkedIssues.length} issue(s)`, variant: "outline" }));
 
-    for (const issue of unlinkedIssues) {
-      rootChildren.push(buildIssueCard(issue, add));
-    }
-    rootChildren.push(add("Separator", { orientation: null }));
-  }
+    const issueItems = unlinkedIssues.map(issue => issueAccordionItem(issue));
+    unlinkedChildren.push(add("Accordion", { items: issueItems, type: "single" }));
 
-  // Also show all issues in a summary table
-  if (db.issues.length > 0) {
-    rootChildren.push(add("Heading", { text: "All Issues", level: "h2" }));
-    const rows = db.issues.map(i => [
-      i.id,
-      `${typeIcon(i.type)} ${i.type}`,
-      i.title,
-      statusLabel("issue", i.status),
-      i.epicId || "—",
-    ]);
-    rootChildren.push(add("Table", {
-      columns: ["ID", "Type", "Title", "Status", "Epic"],
-      rows,
-      caption: `${db.issues.length} total issue(s)`,
-    }));
-    rootChildren.push(add("Separator", { orientation: null }));
+    rootChildren.push(add("Card", {
+      title: "📋 Unlinked Issues",
+      description: null,
+      maxWidth: "full",
+      centered: null,
+    }, unlinkedChildren));
   }
 
   // ─── Assets ──────────────────────────────────────────────────────────
   if (db.assets.length > 0) {
-    rootChildren.push(add("Heading", { text: "Assets", level: "h2" }));
+    const assetChildren: string[] = [];
 
     const byCategory: Record<string, Asset[]> = {};
     for (const a of db.assets) {
       (byCategory[a.categorySlug] ??= []).push(a);
     }
 
-    const accordionItems = Object.entries(byCategory).map(([slug, assets]) => {
+    const catItems = Object.entries(byCategory).map(([slug, assets]) => {
       const catDesc = db.categories.find(c => c.slug === slug)?.description || slug;
-      const assetLines = assets.map(a =>
-        `**[${a.id}] ${a.title}**${a.project ? " 📌" : ""}\n${a.context}\n`
-      ).join("\n");
-      return { title: `${slug} (${assets.length})`, content: `${catDesc}\n\n${assetLines}` };
+      const lines = [`*${catDesc}*\n`];
+      for (const a of assets) {
+        lines.push(`### [${a.id}] ${a.title}${a.project ? " 📌 project" : ""}${a.trigger ? ` ⚡${a.trigger.event}` : ""}`);
+        lines.push(`*${a.context}*\n`);
+        lines.push(a.body);
+        lines.push("");
+        if (a.sources && a.sources.length > 0) {
+          lines.push("**Sources:**");
+          for (const s of a.sources) {
+            lines.push(`- ${s.type === "url" ? `[${s.path}](${s.path})` : `\`${s.path}\``} — ${s.description}`);
+          }
+          lines.push("");
+        }
+      }
+      return { title: `${slug} (${assets.length})`, content: lines.join("\n") };
     });
 
-    rootChildren.push(add("Accordion", { items: accordionItems, type: "single" }));
+    assetChildren.push(add("Accordion", { items: catItems, type: "single" }));
+
+    rootChildren.push(add("Card", {
+      title: `📦 Assets (${db.assets.length})`,
+      description: null,
+      maxWidth: "full",
+      centered: null,
+    }, assetChildren));
   }
 
   // ─── Root ────────────────────────────────────────────────────────────
   const root = add("Stack", { direction: "vertical", gap: "lg", align: null, justify: null }, rootChildren);
-
   return { root, elements };
-}
-
-function buildIssueCard(issue: Issue, add: (type: string, props: any, children?: string[]) => string): string {
-  const children: string[] = [];
-
-  // Badges
-  const typeBadge = add("Badge", { text: `${typeIcon(issue.type)} ${issue.type}`, variant: "default" });
-  const statusBadge = add("Badge", { text: statusLabel("issue", issue.status), variant: issue.status === "closed" ? "secondary" : "default" });
-  const badgeRow = add("Stack", { direction: "horizontal", gap: "sm", align: null, justify: null }, [typeBadge, statusBadge]);
-  children.push(badgeRow);
-
-  // Description
-  if (issue.description) {
-    children.push(add("Text", { text: issue.description, variant: "body" }));
-  }
-
-  // Questions
-  if (issue.questions.length > 0) {
-    const qItems = issue.questions.map(q => ({
-      title: `❓ ${q.text}`,
-      content: q.answer || "_Unanswered_",
-    }));
-    children.push(add("Accordion", { items: qItems, type: "single" }));
-  }
-
-  // Research
-  if (issue.research.length > 0) {
-    const rItems = issue.research.map(r => ({
-      title: `${r.type} — ${r.addedAt.split("T")[0]}`,
-      content: r.content,
-    }));
-    children.push(add("Accordion", { items: rItems, type: "single" }));
-  }
-
-  return add("Card", {
-    title: `[${issue.id}] ${issue.title}`,
-    description: null,
-    maxWidth: "full",
-    centered: null,
-  }, children);
 }
 
 function statusLabel(kind: "epic" | "issue", status: string): string {
