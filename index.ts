@@ -11,6 +11,7 @@ import { registerToolDocsTool } from "./tool-docs.js";
 import { registerDashboard } from "./dashboard.js";
 import { registerCommands } from "./commands.js";
 import { resolveEpicFocus } from "./priorities.js";
+import { isServerRunning, getServerInfo } from "./dashboard-server.js";
 
 const PROJECT_TOOLS = new Set([
   "epic_add", "epic_show", "epic_list", "epic_update", "epic_advance",
@@ -131,9 +132,14 @@ export default function (pi: ExtensionAPI) {
     pi.appendEntry("project-init", { ts: Date.now() });
 
     // Brief status (visible + LLM context)
-    const brief = (r.epics.length || r.issues.length || r.assets.length)
+    let brief = (r.epics.length || r.issues.length || r.assets.length)
       ? formatBrief(r)
       : "# 📦 Project Status\n\n*No epics, issues, or assets yet.* Use `epic_add`, `issue_add`, or `asset_add` to get started.";
+
+    const serverInfo = getServerInfo();
+    if (serverInfo) {
+      brief += `\n\n🌐 **Dashboard:** Live at ${serverInfo.url}`;
+    }
 
     pi.sendMessage(
       { customType: "project-dashboard", content: brief, display: true },
@@ -200,6 +206,11 @@ export default function (pi: ExtensionAPI) {
       }
 
       lines.push(`⚠️ REQUIRED: You MUST advance issues through the workflow (draft→researched→ready→in-progress) BEFORE starting implementation work. Do NOT write code, run commands, or make changes for an issue that is not in "in-progress" status. Advance it first using \`issue_advance\`.`);
+
+      const serverInfo = getServerInfo();
+      if (serverInfo) {
+        lines.push(`[DASHBOARD] Live dashboard running at ${serverInfo.url}`);
+      }
 
       return {
         message: {

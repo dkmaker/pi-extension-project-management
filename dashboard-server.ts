@@ -598,3 +598,8 @@ export function stopServer(): boolean {
 export function isServerRunning(): boolean {
   return activeServer !== null;
 }
+
+export function getServerInfo(): { port: number; url: string } | null {
+  if (!activeServer) return null;
+  return { port: activeServer.port, url: `http://localhost:${activeServer.port}` };
+}
