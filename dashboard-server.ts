@@ -48,18 +48,6 @@ function removeLock(): void {
   try { unlinkSync(p); } catch {}
 }
 
-async function isPortAlive(port: number): Promise<boolean> {
-  return new Promise((resolve) => {
-    const req = (await import("http")).default.get(`http://localhost:${port}/api/spec`, (res: any) => {
-      resolve(res.statusCode === 200);
-      res.resume();
-    });
-    req.on("error", () => resolve(false));
-    req.setTimeout(1000, () => { req.destroy(); resolve(false); });
-  });
-}
-
-// Workaround: isPortAlive needs to be sync-compatible, use net instead
 async function isPortListening(port: number): Promise<boolean> {
   const net = await import("net");
   return new Promise((resolve) => {
