@@ -320,6 +320,22 @@ function generateHTML(projectId: string): string {
       transition: opacity 0.2s; pointer-events: none; z-index: 100;
     }
     #toast.show { opacity: 1; }
+
+    /* Markdown rendered content */
+    .md-content h1, .md-content h2, .md-content h3 { color: #fafafa; margin: 8px 0 4px; }
+    .md-content h1 { font-size: 20px; } .md-content h2 { font-size: 17px; } .md-content h3 { font-size: 15px; }
+    .md-content p { margin: 4px 0; }
+    .md-content ul, .md-content ol { margin: 4px 0; padding-left: 20px; }
+    .md-content li { margin: 2px 0; }
+    .md-content code { background: #27272a; padding: 1px 5px; border-radius: 3px; font-size: 12px; color: #e4e4e7; }
+    .md-content pre { background: #0f0f11; border: 1px solid #27272a; border-radius: 6px; padding: 10px; overflow-x: auto; margin: 6px 0; }
+    .md-content pre code { background: none; padding: 0; }
+    .md-content a { color: #60a5fa; text-decoration: underline; }
+    .md-content strong { color: #fafafa; }
+    .md-content blockquote { border-left: 3px solid #3f3f46; padding-left: 10px; color: #a1a1aa; margin: 6px 0; }
+    .md-content table { border-collapse: collapse; width: 100%; margin: 6px 0; }
+    .md-content th, .md-content td { border: 1px solid #27272a; padding: 4px 8px; font-size: 12px; }
+    .md-content th { background: #18181b; color: #a1a1aa; }
   </style>
   <script type="importmap">
   {
@@ -327,7 +343,8 @@ function generateHTML(projectId: string): string {
       "react": "https://esm.sh/react@19.1.0",
       "react-dom": "https://esm.sh/react-dom@19.1.0",
       "react-dom/client": "https://esm.sh/react-dom@19.1.0/client",
-      "react/jsx-runtime": "https://esm.sh/react@19.1.0/jsx-runtime"
+      "react/jsx-runtime": "https://esm.sh/react@19.1.0/jsx-runtime",
+      "marked": "https://esm.sh/marked@15.0.0"
     }
   }
   </script>
@@ -340,7 +357,15 @@ function generateHTML(projectId: string): string {
   <script type="module">
     import React from "react";
     import { createRoot } from "react-dom/client";
+    import { marked } from "marked";
     const h = React.createElement;
+
+    // Configure marked for inline rendering
+    marked.setOptions({ breaks: true, gfm: true });
+    function md(text) {
+      if (!text) return "";
+      return marked.parse(text);
+    }
 
     // ── Toast ────────────────────────────────────────────────────────
     function showToast(msg) {
@@ -390,7 +415,7 @@ function generateHTML(projectId: string): string {
               style: { ...styles.accordionTrigger, background: openIndex === i ? "#1f1f23" : "transparent" },
               onClick: () => setOpenIndex(openIndex === i ? null : i)
             }, (openIndex === i ? "▾ " : "▸ ") + item.title),
-            openIndex === i ? h("div", { style: styles.accordionContent }, item.content) : null
+            openIndex === i ? h("div", { className: "md-content", style: styles.accordionContent, dangerouslySetInnerHTML: { __html: md(item.content) } }) : null
           )
         )
       );
@@ -426,7 +451,7 @@ function generateHTML(projectId: string): string {
         case "Heading":
           return h(p.level || "h2", { key: elementId, style: styles.heading[p.level] || styles.heading.h2 }, p.text);
         case "Text":
-          return h("p", { key: elementId, style: styles.text[p.variant] || styles.text.body }, p.text);
+          return h("div", { key: elementId, className: "md-content", style: styles.text[p.variant] || styles.text.body, dangerouslySetInnerHTML: { __html: md(p.text) } });
         case "Badge": {
           const variant = p.variant || "default";
           const s = variant === "secondary" ? styles.badgeSecondary : variant === "outline" ? styles.badgeOutline : styles.badge;
