@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "http";
-import { readFileSync, watchFile, unwatchFile, existsSync } from "fs";
-import { join } from "path";
+import { readFileSync, writeFileSync, watchFile, unwatchFile, existsSync, unlinkSync, mkdirSync } from "fs";
+import { join, dirname } from "path";
 import { createHash } from "crypto";
 import { projectPath, load } from "./store.js";
 import type { ProjectFile, Epic, Issue, Asset, AssetCategory } from "./types.js";
@@ -20,6 +20,57 @@ interface ServerInstance {
 // ─── Globals ─────────────────────────────────────────────────────────────────
 
 let activeServer: ServerInstance | null = null;
+
+// ─── Lock file ───────────────────────────────────────────────────────────────
+
+function lockFilePath(): string {
+  return join(process.cwd(), ".pi", "project", "dashboard.lock");
+}
+
+function writeLock(port: number, projectId: string): void {
+  const p = lockFilePath();
+  mkdirSync(dirname(p), { recursive: true });
+  writeFileSync(p, JSON.stringify({ port, projectId, pid: process.pid }), "utf-8");
+}
+
+function readLock(): { port: number; projectId: string; pid: number } | null {
+  const p = lockFilePath();
+  if (!existsSync(p)) return null;
+  try {
+    return JSON.parse(readFileSync(p, "utf-8"));
+  } catch {
+    return null;
+  }
+}
+
+function removeLock(): void {
+  const p = lockFilePath();
+  try { unlinkSync(p); } catch {}
+}
+
+async function isPortAlive(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const req = (await import("http")).default.get(`http://localhost:${port}/api/spec`, (res: any) => {
+      resolve(res.statusCode === 200);
+      res.resume();
+    });
+    req.on("error", () => resolve(false));
+    req.setTimeout(1000, () => { req.destroy(); resolve(false); });
+  });
+}
+
+// Workaround: isPortAlive needs to be sync-compatible, use net instead
+async function isPortListening(port: number): Promise<boolean> {
+  const net = await import("net");
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    socket.setTimeout(500);
+    socket.on("connect", () => { socket.destroy(); resolve(true); });
+    socket.on("timeout", () => { socket.destroy(); resolve(false); });
+    socket.on("error", () => resolve(false));
+    socket.connect(port, "127.0.0.1");
+  });
+}
 
 // ─── Project ID ──────────────────────────────────────────────────────────────
 
@@ -492,6 +543,28 @@ export async function startServer(): Promise<{ port: number; projectId: string; 
     return { port: activeServer.port, projectId: activeServer.projectId, url: `http://localhost:${activeServer.port}` };
   }
 
+  // Check lock file — is a server already running from a previous session?
+  const lock = readLock();
+  if (lock) {
+    const alive = await isPortListening(lock.port);
+    if (alive) {
+      // Re-adopt the existing server (we can't control it, but we know it's there)
+      activeServer = {
+        port: lock.port,
+        projectId: lock.projectId,
+        close: () => {
+          // Can't close a server from a previous session, just clear the reference
+          removeLock();
+          activeServer = null;
+        },
+      };
+      return { port: lock.port, projectId: lock.projectId, url: `http://localhost:${lock.port}` };
+    } else {
+      // Stale lock file
+      removeLock();
+    }
+  }
+
   const projectId = getProjectId();
   const port = await findPort(3100);
   const clients: SSEClient[] = [];
@@ -572,6 +645,8 @@ export async function startServer(): Promise<{ port: number; projectId: string; 
     });
   }
 
+  writeLock(port, projectId);
+
   activeServer = {
     port,
     projectId,
@@ -580,6 +655,7 @@ export async function startServer(): Promise<{ port: number; projectId: string; 
       if (existsSync(dbPath)) unwatchFile(dbPath);
       for (const c of clients) try { c.res.end(); } catch {}
       clients.length = 0;
+      removeLock();
       activeServer = null;
     },
   };
@@ -600,6 +676,13 @@ export function isServerRunning(): boolean {
 }
 
 export function getServerInfo(): { port: number; url: string } | null {
-  if (!activeServer) return null;
-  return { port: activeServer.port, url: `http://localhost:${activeServer.port}` };
+  if (activeServer) {
+    return { port: activeServer.port, url: `http://localhost:${activeServer.port}` };
+  }
+  // Check lock file for server from previous session
+  const lock = readLock();
+  if (lock) {
+    return { port: lock.port, url: `http://localhost:${lock.port}` };
+  }
+  return null;
 }
