@@ -1,0 +1,35 @@
+{
+  "version": 7,
+  "epics": [],
+  "issues": [
+    {
+      "id": "jqz3gsqr",
+      "type": "feature",
+      "title": "Live-updating web dashboard with `/project-serve` command",
+      "description": "Add a `/project-serve` command that starts a local web server serving a read-only, live-updating dashboard of the project's epics, issues, and assets. Uses [json-render](https://github.com/vercel-labs/json-render) with shadcn components for rendering the project database. Every element has a \"copy reference\" button so users can paste precise references back into the agent chat.\n\n**Architecture:**\n- **Server (extension-side):** Node.js `http` module — serves static HTML + SSE endpoint. Watches `database.json` for changes and pushes updates.\n- **Client (browser):** Single HTML page loading React + `@json-render/shadcn` from CDN (esm.sh). Renders a spec generated from the database. SSE connection for live updates.\n- **No npm dependencies** — everything client-side loads via CDN, server uses only Node.js built-ins.\n\n**Multi-project support:**\n- Auto-finds an available port (starting from 3100, incrementing)\n- URL includes a project identifier derived from cwd, e.g. `http://localhost:3142/project/a1b2c3/`\n\n**Copy-reference:**\n- Each element (epic, issue, asset, todo, research note) has a hover \"📋\" button\n- Copies a reference like `[epic:abc123] Title` for pasting into agent chat\n\n**Files affected:**\n- New `dashboard-server.ts` — HTTP server, file watcher, SSE, spec generation\n- `commands.ts` — register `/project-serve` command\n- `index.ts` — wire up the new command",
+      "status": "in-progress",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "## json-render Research\n\n### What it is\njson-render is a \"Generative UI\" framework from Vercel Labs. You define a **catalog** of components with typed props (via Zod), then render a JSON **spec** (tree of `{type, props, children}` elements) through a **registry** of component implementations.\n\n### Key package: `@json-render/shadcn`\n- 36 pre-built shadcn/ui components: Card, Stack, Grid, Heading, Text, Badge, Table, Accordion, Alert, Progress, Separator, Button, Input, Select, etc.\n- Perfect for a read-only dashboard — Table, Card, Badge, Stack, Heading, Text, Alert, Accordion, Progress cover all our needs.\n\n### Architecture Challenge\njson-render is a **React framework** — it needs React, ReactDOM, and a build step (or CDN). The pi extension runs as interpreted TypeScript inside the agent. We need to bridge these:\n\n**Proposed approach:**\n1. **Server side (extension):** Use Node.js `http` module to start a server. Serve static HTML + SSE endpoint for live updates. Watch `database.json` for changes.\n2. **Client side (browser):** A single HTML file that loads React + json-render + shadcn from CDN (esm.sh or unpkg). Renders the project database as a json-render spec. Connects to SSE for live updates.\n\n### Spec Generation\nThe extension will need a `specFromDatabase()` function that transforms `database.json` into a json-render spec:\n- Epics → Card with status badges, todos as checklists, linked issues\n- Issues → Table rows or Cards with type icons, status badges\n- Assets → Grouped by category in Accordion sections\n- Each element gets a `data-ref` attribute for copy-reference functionality\n\n### Multi-project / Unique URLs\n- Auto-find available port (try 3100+, increment)\n- URL path includes project identifier (hash of cwd or project name)\n- e.g. `http://localhost:3142/project/a1b2c3/`\n\n### Dependencies concern\n- No npm dependencies needed in the extension itself — everything loads via CDN on the client\n- Server is just Node.js `http` + `fs.watch`\n- The spec JSON is generated server-side from the database",
+          "addedAt": "2026-03-09T14:20:03.861Z"
+        },
+        {
+          "type": "reference",
+          "content": "## Available shadcn Components (relevant subset)\n\n| Component | Use case in dashboard |\n|-----------|----------------------|\n| **Card** | Epic cards, issue cards, asset cards |\n| **Stack** | Layout — vertical/horizontal grouping |\n| **Grid** | Multi-column layouts (e.g. epic grid) |\n| **Heading** | Section headers (h1-h3) |\n| **Text** | Descriptions, body text, muted captions |\n| **Badge** | Status labels (draft/ready/in-progress/closed), issue types (bug/feature/chore) |\n| **Table** | Issue lists, asset lists |\n| **Accordion** | Collapsible sections (research notes, asset categories) |\n| **Alert** | Warnings, info banners |\n| **Progress** | Epic completion (todos done/total) |\n| **Separator** | Visual dividers |\n| **Tabs** | Switch between Epics / Issues / Assets views |\n\n### Copy-Reference Design\nEach rendered element wraps in a container with:\n- A small \"📋\" button on hover\n- Clicking copies a reference like `[epic:abc123] Title` or `[issue:def456] Title`\n- User pastes this into agent chat for precise linking",
+          "addedAt": "2026-03-09T14:20:13.603Z"
+        }
+      ],
+      "createdAt": "2026-03-09T14:17:33.225Z",
+      "updatedAt": "2026-03-09T14:21:21.774Z",
+      "autoValidation": {
+        "type": "human",
+        "strategy": "User confirms the dashboard serves, live-updates, and copy-reference works in browser"
+      }
+    }
+  ],
+  "categories": [],
+  "assets": []
+}

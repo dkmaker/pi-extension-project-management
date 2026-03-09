@@ -3,6 +3,7 @@ import { load, activeEpics, nextEpic } from "./store.js";
 import { formatBrief, formatIssue, formatAssetsContext } from "./format.js";
 import { resolveEpicFocus } from "./priorities.js";
 import { ISSUE_TYPE_ICON } from "./constants.js";
+import { startServer, stopServer, isServerRunning } from "./dashboard-server.js";
 
 export function registerCommands(pi: ExtensionAPI) {
   pi.registerCommand("project-stats", {
@@ -224,6 +225,32 @@ export function registerCommands(pi: ExtensionAPI) {
         },
         { triggerTurn: true, deliverAs: "steer" },
       );
+    },
+  });
+
+  pi.registerCommand("project-serve", {
+    description: "Start a live-updating web dashboard for the project",
+    handler: async (_args, ctx) => {
+      try {
+        const result = await startServer();
+        ctx.ui.notify(
+          `🌐 Dashboard running at ${result.url}\nProject ID: ${result.projectId}\nPress Ctrl+C or run /project-serve-stop to stop.`,
+          "info"
+        );
+      } catch (e: any) {
+        ctx.ui.notify(`❌ Failed to start dashboard: ${e.message}`, "error");
+      }
+    },
+  });
+
+  pi.registerCommand("project-serve-stop", {
+    description: "Stop the project dashboard web server",
+    handler: async (_args, ctx) => {
+      if (stopServer()) {
+        ctx.ui.notify("🛑 Dashboard server stopped.", "info");
+      } else {
+        ctx.ui.notify("No dashboard server is running.", "warn");
+      }
     },
   });
 }
