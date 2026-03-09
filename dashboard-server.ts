@@ -152,7 +152,7 @@ function generateSpec(db: ProjectFile): object {
   }
 
   // ─── Helper: build issue as an accordion item ────────────────────────
-  function issueAccordionItem(issue: Issue): { title: string; content: string } {
+  function issueAccordionItem(issue: Issue): { title: string; content: string; id?: string } {
     // Build a markdown representation for the accordion content
     const lines: string[] = [];
 
@@ -169,7 +169,7 @@ function generateSpec(db: ProjectFile): object {
     if (issue.linkedIssueIds && issue.linkedIssueIds.length > 0) {
       const linkedNames = issue.linkedIssueIds.map(lid => {
         const linked = db.issues.find(i => i.id === lid);
-        return linked ? `\`${lid}\` ${linked.title}` : `\`${lid}\``;
+        return linked ? `[${typeIcon(linked.type)} ${lid} — ${linked.title}](#issue-${lid})` : `\`${lid}\``;
       });
       lines.push(`**Linked issues:** ${linkedNames.join(", ")}`);
       lines.push("");
@@ -215,10 +215,18 @@ function generateSpec(db: ProjectFile): object {
       }
     }
 
-    const statusIcon = issue.status === "closed" ? "🏁" : issue.status === "in-progress" ? "🔧" : "";
+    // Epic back-link
+    if (issue.epicId) {
+      const epic = db.epics.find(e => e.id === issue.epicId);
+      if (epic) {
+        lines.push(`**Epic:** [${epic.id} — ${epic.title}](#epic-${epic.id})`);
+      }
+    }
+
     return {
       title: `${typeIcon(issue.type)} [${issue.id}] ${issue.title} — ${statusLabel("issue", issue.status)}`,
       content: lines.join("\n"),
+      id: `issue-${issue.id}`,
     };
   }
 
@@ -287,6 +295,7 @@ function generateSpec(db: ProjectFile): object {
       description: null,
       maxWidth: "full",
       centered: null,
+      anchorId: `epic-${epic.id}`,
     }, epicChildren));
   }
 
@@ -373,12 +382,16 @@ function generateHTML(projectId: string): string {
   <title>Project Dashboard</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #0a0a0b;
       color: #fafafa;
       min-height: 100vh;
     }
+    /* Highlight target anchor briefly */
+    :target { animation: highlight 2s ease; }
+    @keyframes highlight { 0%,30% { outline: 2px solid #3b82f6; outline-offset: 4px; } 100% { outline-color: transparent; } }
     #app { max-width: 1200px; margin: 0 auto; padding: 24px; }
     #connection-status {
       position: fixed; top: 12px; right: 12px; padding: 4px 12px;
@@ -493,10 +506,39 @@ function generateHTML(projectId: string): string {
     }
 
     function AccordionComp({ items }) {
-      const [openIndex, setOpenIndex] = React.useState(null);
+      // Auto-open item if URL hash matches an item's id
+      const [openIndex, setOpenIndex] = React.useState(() => {
+        const hash = window.location.hash.slice(1);
+        if (hash) {
+          const idx = items.findIndex(item => item.id === hash);
+          if (idx >= 0) return idx;
+        }
+        return null;
+      });
+
+      // Listen for hash changes to auto-open and scroll
+      React.useEffect(() => {
+        function onHash() {
+          const hash = window.location.hash.slice(1);
+          if (!hash) return;
+          const idx = items.findIndex(item => item.id === hash);
+          if (idx >= 0) {
+            setOpenIndex(idx);
+            setTimeout(() => {
+              const el = document.getElementById(hash);
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 100);
+          }
+        }
+        window.addEventListener("hashchange", onHash);
+        // Also handle initial hash
+        if (window.location.hash) onHash();
+        return () => window.removeEventListener("hashchange", onHash);
+      }, [items]);
+
       return h("div", { style: styles.accordion },
         items.map((item, i) =>
-          h("div", { key: i, style: styles.accordionItem },
+          h("div", { key: item.id || i, id: item.id || undefined, style: styles.accordionItem },
             h("button", {
               style: { ...styles.accordionTrigger, background: openIndex === i ? "#1f1f23" : "transparent" },
               onClick: () => setOpenIndex(openIndex === i ? null : i)
@@ -527,7 +569,7 @@ function generateHTML(projectId: string): string {
           const refMatch = p.title?.match(/\\[([a-z0-9]+)\\]/);
           const refText = refMatch ? refMatch[1] : null;
           return h(RefWrap, { key: elementId, refText },
-            h("div", { style: styles.card },
+            h("div", { id: p.anchorId || undefined, style: styles.card },
               p.title ? h("h3", { style: { fontSize: 16, fontWeight: 600, marginBottom: 8, color: "#fafafa" } }, p.title) : null,
               p.description ? h("p", { style: styles.text.muted }, p.description) : null,
               h("div", { style: { display: "flex", flexDirection: "column", gap: 10, marginTop: p.title || p.description ? 10 : 0 } }, ...childNodes)
