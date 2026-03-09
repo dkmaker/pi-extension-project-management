@@ -436,7 +436,7 @@ function generateHTML(projectId: string): string {
     /* Highlight target anchor briefly */
     :target { animation: highlight 2s ease; }
     @keyframes highlight { 0%,30% { outline: 2px solid #3b82f6; outline-offset: 4px; } 100% { outline-color: transparent; } }
-    #app { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    #app { width: 100%; margin: 0 auto; padding: 24px 40px; }
     #connection-status {
       position: fixed; top: 12px; right: 12px; padding: 4px 12px;
       border-radius: 9999px; font-size: 12px; z-index: 50;
