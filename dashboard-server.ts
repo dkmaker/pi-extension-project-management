@@ -68,6 +68,39 @@ function getProjectId(): string {
 
 // ─── Spec generation ─────────────────────────────────────────────────────────
 
+// Simple server-side markdown to HTML (no npm deps)
+function mdToHtml(text: string): string {
+  if (!text) return "";
+  let html = text
+    // Code blocks (``` ... ```)
+    .replace(/```(\w*)\n([\s\S]*?)```/g, (_m, _lang, code) => `<pre><code>${code.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>`)
+    // Inline code
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // Headers
+    .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // Bold + italic
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/_(.+?)_/g, '<em>$1</em>')
+    // Links
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+    // Horizontal rules
+    .replace(/^---$/gm, '<hr>')
+    // Unordered lists
+    .replace(/^[*\-] (.+)$/gm, '<li>$1</li>')
+    // Wrap consecutive <li> in <ul>
+    .replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>')
+    // Paragraphs (double newline)
+    .replace(/\n\n/g, '</p><p>')
+    // Single newlines to <br>
+    .replace(/\n/g, '<br>');
+  return `<p>${html}</p>`;
+}
+
 function researchIcon(type: string): string {
   return type === "reference" ? "📎" : type === "comment" ? "💬" : "📝";
 }
@@ -159,7 +192,7 @@ function generateSpec(db: ProjectFile): object {
 
     // Description (render as markdown)
     if (issue.description) {
-      sections.push(`<div class="issue-section"><div class="md-content">${md(issue.description)}</div></div>`);
+      sections.push(`<div class="issue-section"><div class="md-content">${mdToHtml(issue.description)}</div></div>`);
     }
 
     // Linked issues
@@ -203,7 +236,7 @@ function generateSpec(db: ProjectFile): object {
         const typeClass = r.type === "reference" ? "ref" : r.type === "comment" ? "cmt" : "ex";
         rHtml += `<details class="research-item research-${typeClass}">
           <summary>${researchIcon(r.type)} <strong>${r.type.toUpperCase()}</strong> — ${r.addedAt.split("T")[0]}</summary>
-          <div class="md-content">${md(r.content)}</div>
+          <div class="md-content">${mdToHtml(r.content)}</div>
         </details>`;
       }
       sections.push(`<div class="issue-section">${rHtml}</div>`);
