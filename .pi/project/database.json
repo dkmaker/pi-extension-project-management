@@ -458,17 +458,18 @@
       "type": "feature",
       "title": "Add distinct background color to /config widget panel",
       "description": "The `/config` TUI widget blends into the terminal background, making it hard to distinguish the widget boundary. Add a background color to each rendered line so the widget panel stands out clearly from the rest of the UI.",
-      "status": "ready",
+      "status": "in-progress",
       "epicId": "mu7pvx9d",
       "linkedIssueIds": [],
       "questions": [],
       "research": [],
       "createdAt": "2026-03-10T16:30:15.987Z",
-      "updatedAt": "2026-03-10T16:30:20.373Z",
+      "updatedAt": "2026-03-10T16:30:29.339Z",
       "autoValidation": {
         "type": "human",
         "strategy": "User visually confirms the /config widget has a distinct background that separates it from the terminal background"
-      }
+      },
+      "startCommit": "bf5d39df35ae9feb5791c4f4a97cacbee448fa12"
     }
   ],
   "categories": [

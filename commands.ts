@@ -390,7 +390,20 @@ class ConfigWidget implements Component, Focusable {
 
     const t = this.theme;
     const entries = this.getEntries();
-    const lines: string[] = [];
+    const rawLines: string[] = [];
+    // Helper: pad a line to full width then apply panel background
+    const bg = (line: string): string => {
+      const padded = line + " ".repeat(Math.max(0, width - visibleWidth(line)));
+      return t.bg("selectedBg", padded);
+    };
+    const lines = new Proxy(rawLines, {
+      get(target, prop, receiver) {
+        if (prop === "push") {
+          return (...args: string[]) => target.push(...args.map(bg));
+        }
+        return Reflect.get(target, prop, receiver);
+      }
+    });
 
     // Header
     const title = " ⚙ Project Config ";
@@ -461,9 +474,9 @@ class ConfigWidget implements Component, Focusable {
       lines.push(truncateToWidth(t.fg("warning", ` ${this.message}`), width));
     }
 
-    this.cachedLines = lines;
+    this.cachedLines = rawLines;
     this.cachedWidth = width;
-    return lines;
+    return rawLines;
   }
 
   invalidate(): void {
