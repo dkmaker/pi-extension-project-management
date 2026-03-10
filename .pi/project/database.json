@@ -99,19 +99,20 @@
       "questions": [],
       "research": [],
       "createdAt": "2026-03-10T11:11:06.053Z",
-      "updatedAt": "2026-03-10T11:45:00.449Z",
+      "updatedAt": "2026-03-10T13:03:06.637Z",
       "autoValidation": {
         "type": "human",
         "strategy": "User confirms the warning appears on write/edit when no issue is in-progress, and that the turn_start reminder and initial policy injection work correctly."
       },
-      "epicId": "4ede9rp0"
+      "epicId": "4ede9rp0",
+      "closeReviewed": true
     },
     {
       "id": "fqdkjlyp",
       "type": "feature",
       "title": "Add \"deferred\" close reason for issues and epics",
       "description": "Park issues/epics as \"deferred\" rather than adding a new status. Uses a `closeReason` validated enum field on close. Deferred items are hidden from default listings but identifiable via `include_deferred` flag.\n\n**Rules:**\n- Deferring an issue or epic requires **human approval** — an agent cannot defer autonomously\n- Deferring an epic **automatically defers all linked open issues**\n- Deferred items are closed with `closeReason: \"deferred\"` (vs default `\"done\"`)\n- `issue_reopen` / `epic_reopen` brings deferred items back\n\n**Implementation:**\n- `types.ts` — add `closeReason: \"done\" | \"deferred\" | \"wont-fix\"` field to Issue and Epic\n- `issues.ts` / `epics.ts` — validate `closeReason` on close; epic defer cascades to linked open issues\n- `issue_list` / `epic_list` — exclude deferred by default (already excluded as closed), add `include_deferred` flag to surface them\n- `tool-docs.ts` — update `issue_close` / `epic_close` docs with `closeReason` field and human-approval note\n- `next_work` — no changes needed (deferred items are closed, already ignored)\n\n**Human approval enforcement:**\n- The `issue_close` and `epic_close` tools must document that `closeReason: \"deferred\"` requires explicit user confirmation before the agent may call it",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -122,19 +123,29 @@
         }
       ],
       "createdAt": "2026-03-10T11:12:59.063Z",
-      "updatedAt": "2026-03-10T12:50:34.336Z",
+      "updatedAt": "2026-03-10T13:26:01.636Z",
       "autoValidation": {
         "type": "agent",
         "strategy": "Defer an issue, verify it disappears from issue_list, verify it shows with include_deferred, resume it and verify it returns to previous status."
       },
-      "epicId": "4ede9rp0"
+      "epicId": "4ede9rp0",
+      "closeMessage": "Implemented closeReason (done/deferred/wont-fix) on issues and epics. Deferred requires human approval, epic defer cascades to linked issues, reopen restores cascade. Fully tested.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Park issues/epics as \"deferred\" rather than adding a new status. Uses a `closeReason` validated enum field on close. Deferred items are hidden from default listings but identifiable via `include_deferred` flag.\n\n**Rules:**\n- Deferring an issue or epic requires **human approval** — an agent cannot defer autonomously\n- Deferring an epic **automatically defers all linked open issues**\n- Deferred items are closed with `closeReason: \"deferred\"` (vs default `\"done\"`)\n- `issue_reopen` / `epic_reopen` brings deferred items back\n\n**Implementation:**\n- `types.ts` — add `closeReason: \"done\" | \"deferred\" | \"wont-fix\"` field to Issue and Epic\n- `issues.ts` / `epics.ts` — validate `closeReason` on close; epic defer cascades to linked open issues\n- `issue_list` / `epic_list` — exclude deferred by default (already excluded as closed), add `include_deferred` flag to surface them\n- `tool-docs.ts` — update `issue_close` / `epic_close` docs with `closeReason` field and human-approval note\n- `next_work` — no changes needed (deferred items are closed, already ignored)\n\n**Human approval enforcement:**\n- The `issue_close` and `epic_close` tools must document that `closeReason: \"deferred\"` requires explicit user confirmation before the agent may call it",
+          "evidence": "Validated via live tool testing: (1) defer without user approval → blocked with ⛔; (2) defer with approval → issue closed as 📦 deferred; (3) missing from issue_list; (4) visible with include_deferred=true; (5) issue_reopen restored to draft and cleared closeReason; (6) epic defer without user_approval → blocked; (7) epic defer with user_approval → cascaded to linked issues; (8) epic_reopen restored both epic and auto-deferred issues.",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-10T13:26:01.636Z"
     },
     {
       "id": "pv1lk7v7",
       "type": "bug",
       "title": "issue_close silently fails to close when met: false — issue stays in-progress",
       "description": "When calling `issue_close` with `met: false` (e.g. skipping or abandoning an issue), the tool returns an error-style message (`❌ Requirement not met`) but **does not update the issue status to `closed`**. The issue remains stuck in `in-progress`, blocking other issues from starting and polluting `next_work`.\\n\\n**Root cause:** The early-return guard at step 2 (`if (!params.met) return ...`) fires before `issue.status = \\\"closed\\\"` is ever reached. A `met: false` close is a legitimate workflow action (abandoned, skipped, out-of-scope) and should still transition the issue to `closed`.\\n\\n**Fix:** When `met: false`, still close the issue (set `status = \\\"closed\\\"`, persist, clean up `closeReviewed`) but record `met: false` in the validation — consistent with how epic_close handles unmet criteria.\\n\\n**File:** `issues.ts` ~line 313",
-      "status": "draft",
+      "status": "closed",
       "epicId": "4ede9rp0",
       "linkedIssueIds": [
         "ugf7af4l"
@@ -142,11 +153,21 @@
       "questions": [],
       "research": [],
       "createdAt": "2026-03-10T11:51:53.956Z",
-      "updatedAt": "2026-03-10T11:51:56.970Z",
+      "updatedAt": "2026-03-10T13:28:07.742Z",
       "autoValidation": {
         "type": "agent",
         "strategy": "Call issue_close with met: false on a test in-progress issue, then confirm its status is closed via issue_show and that next_work no longer surfaces it."
-      }
+      },
+      "validations": [
+        {
+          "criterion": "When calling `issue_close` with `met: false` (e.g. skipping or abandoning an issue), the tool returns an error-style message (`❌ Requirement not met`) but **does not update the issue status to `closed`**. The issue remains stuck in `in-progress`, blocking other issues from starting and polluting `next_work`.\\n\\n**Root cause:** The early-return guard at step 2 (`if (!params.met) return ...`) fires before `issue.status = \\\"closed\\\"` is ever reached. A `met: false` close is a legitimate workflow action (abandoned, skipped, out-of-scope) and should still transition the issue to `closed`.\\n\\n**Fix:** When `met: false`, still close the issue (set `status = \\\"closed\\\"`, persist, clean up `closeReviewed`) but record `met: false` in the validation — consistent with how epic_close handles unmet criteria.\\n\\n**File:** `issues.ts` ~line 313",
+          "evidence": "Fixed: removed early-return on met:false, now closes the issue with met:false recorded in validations. Tested: issue_close with met:false correctly sets status=closed, shows ❌ Closed (unmet) label, is no longer in-progress, and does not block next_work.",
+          "met": true
+        }
+      ],
+      "closeMessage": "Fixed met:false early-return in issue_close — now closes the issue and records unmet validation instead of returning an error and leaving it in-progress.",
+      "closeReason": "done",
+      "closedAt": "2026-03-10T13:28:07.742Z"
     }
   ],
   "categories": [],

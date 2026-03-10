@@ -323,7 +323,17 @@ export function registerIssueTools(pi: ExtensionAPI) {
         return { content: [{ type: "text", text: `Step 2 requires: ${missing.join(", ")}.` }] };
       }
       if (!params.met && closeReason === "done") {
-        return { content: [{ type: "text", text: `❌ Requirement not met: ${params.evidence}\n\nFix the issue, then try again.` }] };
+        // Still close the issue — met: false is a legitimate action (abandoned/skipped/out-of-scope)
+        // but record it as unmet so it's visible in history
+        issue.status = "closed";
+        issue.closeMessage = params.message;
+        issue.closeReason = "done";
+        issue.closeReviewed = undefined;
+        issue.validations = [{ criterion: issue.description, evidence: params.evidence || "", met: false }];
+        issue.closedAt = now();
+        issue.updatedAt = now();
+        save(r);
+        return { content: [{ type: "text", text: `${icon} ❌ Closed (unmet) **${issue.id}**: ${issue.title}\n\n> ${params.message}\n\n**Not met:** ${params.evidence}` }] };
       }
 
       // Validation type enforcement (only for "done" — deferred/wont-fix skip functional validation)
