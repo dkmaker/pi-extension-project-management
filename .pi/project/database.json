@@ -7,18 +7,18 @@
       "description": "Improvements to enforce proper issue workflow and manage issue/epic lifecycle. Includes soft-blocking file writes without an active issue, and a deferred status to park items without closing them.",
       "body": "## Overview\nTwo complementary improvements to make the issue lifecycle more robust:\n\n1. **Soft-block file writes** — enforce that the agent only modifies files when an issue is actively in-progress, via layered policy injection and tool-result warnings.\n2. **Deferred status** — allow issues and epics to be parked without closing them, keeping the active view clean while preserving context.\n\n## Implementation Plan\n\n### Soft-block file writes (thlp7pym)\n- `before_agent_start`: inject full workflow policy into system prompt explaining the issue lifecycle and the rule that file writes require an in-progress issue.\n- `turn_start`: inject a lightweight status line each turn (`📍 Current: [issue:id] Title (in-progress)` or `⚠️ No issue in-progress`).\n- `tool_result` hook on `write`, `edit`, and `bash` (matching write patterns: `>`, `>>`, `tee`, `sed -i`, `mv`, `cp`): append a soft warning when no issue is in-progress.\n- **File:** `index.ts`\n\n### Deferred status (fqdkjlyp)\n- Add `deferred` as a valid status for issues and epics (side-channel, not part of the sequential flow).\n- New tools: `issue_defer` / `epic_defer` (with optional reason), `issue_resume` / `epic_resume` (restores previous status).\n- `issue_list` / `epic_list`: exclude deferred by default, add `include_deferred` flag.\n- `next_work`: ignore deferred items entirely.\n- **Files:** `types.ts`, `issues.ts`, `epics.ts`, `store.ts`, `tool-docs.ts`",
       "priority": 1,
-      "status": "planned",
+      "status": "closed",
       "relevantFiles": [],
       "todos": [],
       "successCriteria": [
         "Before-agent-start hook injects a clear workflow policy explaining that file writes require an in-progress issue",
         "Each turn start injects a single-line status showing the current in-progress issue or a warning that none is active",
         "Write/edit/bash tool results append a visible soft warning when no issue is in-progress and a file mutation pattern is detected",
-        "A `deferred` status exists for both issues and epics and can be set via `issue_defer` / `epic_defer` tools with an optional reason",
-        "`issue_resume` / `epic_resume` restore items to their previous pre-defer status",
-        "`issue_list` and `epic_list` exclude deferred items by default, and include them when `include_deferred: true` is passed",
-        "`next_work` never surfaces deferred items",
-        "All new tools are documented in `tool-docs.ts` and behave consistently with existing tools"
+        "A closeReason field (done/deferred/wont-fix) exists on issues and epics, set via existing issue_close/epic_close tools — replaces the originally planned issue_defer/epic_defer tools (rejected: unnecessary complexity)",
+        "Deferring an epic auto-defers all linked open issues; reopening restores them — replaces the originally planned issue_resume/epic_resume tools (rejected: issue_reopen/epic_reopen already handle this)",
+        "issue_list and epic_list exclude deferred items by default, and include them when include_deferred: true is passed",
+        "next_work never surfaces deferred items",
+        "All changes are documented in tool-docs.ts and behave consistently with existing tools"
       ],
       "research": [
         {
@@ -28,7 +28,52 @@
         }
       ],
       "createdAt": "2026-03-10T11:44:56.964Z",
-      "updatedAt": "2026-03-10T11:46:12.976Z"
+      "updatedAt": "2026-03-10T13:41:45.140Z",
+      "closeMessage": "All workflow discipline improvements delivered. Soft-block write gate, per-turn status injection, and closeReason (deferred/wont-fix) implemented. Original defer/resume tools rejected in favour of simpler closeReason on existing close tools.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Before-agent-start hook injects a clear workflow policy explaining that file writes require an in-progress issue",
+          "evidence": "before_agent_start in index.ts always injects [WORKFLOW POLICY] line — confirmed live in every turn context",
+          "met": true
+        },
+        {
+          "criterion": "Each turn start injects a single-line status showing the current in-progress issue or a warning that none is active",
+          "evidence": "before_agent_start injects '📍 Current: [id] title (in-progress)' or '⚠️ No issue in-progress' — confirmed live in testing",
+          "met": true
+        },
+        {
+          "criterion": "Write/edit/bash tool results append a visible soft warning when no issue is in-progress and a file mutation pattern is detected",
+          "evidence": "tool_result gate in index.ts fires on write/edit and bash write patterns (>, >>, tee, sed -i, mv, cp etc.) — tested live: Write tool and echo > triggered gate, ls/cat did not",
+          "met": true
+        },
+        {
+          "criterion": "A closeReason field (done/deferred/wont-fix) exists on issues and epics, set via existing issue_close/epic_close tools — replaces the originally planned issue_defer/epic_defer tools (rejected: unnecessary complexity)",
+          "evidence": "closeReason: 'done'|'deferred'|'wont-fix' added to Issue and Epic types; issue_close/epic_close accept close_reason param — tested live",
+          "met": true
+        },
+        {
+          "criterion": "Deferring an epic auto-defers all linked open issues; reopening restores them — replaces the originally planned issue_resume/epic_resume tools (rejected: issue_reopen/epic_reopen already handle this)",
+          "evidence": "epic_close with deferred cascades to all linked open issues; epic_reopen restores auto-deferred issues — tested live with cascade count in output",
+          "met": true
+        },
+        {
+          "criterion": "issue_list and epic_list exclude deferred items by default, and include them when include_deferred: true is passed",
+          "evidence": "include_deferred flag added to issue_list and epic_list — tested: deferred items hidden by default, visible with include_deferred:true",
+          "met": true
+        },
+        {
+          "criterion": "next_work never surfaces deferred items",
+          "evidence": "Deferred items are closed (status=closed), already excluded from next_work which ignores closed items — no changes needed",
+          "met": true
+        },
+        {
+          "criterion": "All changes are documented in tool-docs.ts and behave consistently with existing tools",
+          "evidence": "tool-docs.ts updated for issue_close, epic_close, issue_list, epic_list, issue_reopen, epic_reopen with closeReason docs and human-approval notes",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-10T13:41:45.140Z"
     }
   ],
   "issues": [
