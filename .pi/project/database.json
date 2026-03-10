@@ -101,6 +101,57 @@
       "closeReason": "done",
       "validations": [],
       "closedAt": "2026-03-10T16:34:14.823Z"
+    },
+    {
+      "id": "tedhxd22",
+      "title": "Issue Traceability & File Capture",
+      "description": "Adds automatic file-change tracking to in-progress issues, giving each issue a living record of what was touched. Optionally gates closure behind per-file change notes for full traceability.",
+      "body": "## Goal\\nAutomatically track which files are created/written/edited during an in-progress issue and surface them as references on that issue. Optionally require a one-sentence change note per file before the issue can be closed.\\n\\n## Approach\\n1. Two new config flags (`issues.capture_edited_files`, `issues.require_file_change_notes`), both default `false`\\n2. Hook pi write/edit tool events in `index.ts` — when capture is enabled and an issue is in-progress, add a `reference` research note with a distinguishable `[auto]` prefix and the file path (deduplicated)\\n3. Close gate in issue close logic — when `require_file_change_notes` is enabled, scan auto-captured references and block if any lack a follow-up change note\\n\\n## Files Affected\\n- `config.ts` — new config entries\\n- `index.ts` — tool event hooks for write/edit\\n- `issues.ts` — close gate logic\\n- `commands.ts` — potentially surface auto-refs in issue display",
+      "priority": 3,
+      "status": "in-progress",
+      "relevantFiles": [
+        {
+          "file": "config.ts",
+          "reason": "Add two new bool config entries under issues prefix"
+        },
+        {
+          "file": "index.ts",
+          "reason": "Hook write/edit tool events to capture file references"
+        },
+        {
+          "file": "issues.ts",
+          "reason": "Add close gate for require_file_change_notes"
+        },
+        {
+          "file": "commands.ts",
+          "reason": "May need updates to display auto-captured references"
+        }
+      ],
+      "todos": [
+        {
+          "text": "Implement auto-capture of edited files as issue references (config-gated)",
+          "done": false
+        },
+        {
+          "text": "Implement require_file_change_notes close gate (config-gated)",
+          "done": false
+        }
+      ],
+      "successCriteria": [
+        "Config flags exist, default to false, and appear in /config widget under 'issues' group",
+        "When capture_edited_files is on and an issue is in-progress, every file passed to write/edit is added as a reference note (deduplicated)",
+        "When require_file_change_notes is on, issue close is blocked with a clear error listing files missing change notes",
+        "When both flags are off (default), behaviour is identical to current — no references captured, no close gate"
+      ],
+      "research": [
+        {
+          "type": "comment",
+          "content": "Auto-captured file references use a `[auto]` prefix in the research note content so the close gate can distinguish them from manually added references. Change notes are added by the agent as a follow-up research note referencing the same file path.",
+          "addedAt": "2026-03-10T16:44:34.368Z"
+        }
+      ],
+      "createdAt": "2026-03-10T16:44:11.755Z",
+      "updatedAt": "2026-03-10T16:44:53.800Z"
     }
   ],
   "issues": [
@@ -485,6 +536,23 @@
       ],
       "closeCommit": "fcfa586",
       "closedAt": "2026-03-10T16:33:33.375Z"
+    },
+    {
+      "id": "otwttz68",
+      "type": "feature",
+      "title": "Auto-capture edited files as issue references with optional close-time change notes",
+      "description": "When working on an in-progress issue, there's no automatic record of which files were actually touched — that context lives only in git history. This feature adds two opt-in config switches: one that silently captures every file written/edited during an issue and records it as a reference on that issue, and a second that gates issue closure behind a one-sentence \"what changed\" note per captured file. Both are disabled by default.\n\n## Config entries (both default `false`)\n- `issues.capture_edited_files` — auto-add written/edited files as issue references when an issue is in-progress\n- `issues.require_file_change_notes` — block issue close until each captured file has a one-sentence change note\n\n## Implementation\n\n**`config.ts`**\n- Add two new bool `ConfigEntry` items under the `issues` prefix\n\n**`index.ts`**\n- Hook into pi's write/edit tool events; when `issues.capture_edited_files` is enabled and an issue is in-progress, call `issue_research` with `type: \"reference\"` recording the file path (deduplicate — skip if already captured)\n\n**`issues.ts` / close gate**\n- When `issues.require_file_change_notes` is enabled, scan auto-captured file references on the issue at close time; if any lack a change note, block closure with a clear error listing the missing files\n\n**Data model**\n- No schema changes needed — auto-captured files use the existing research notes structure with a distinguishable prefix (e.g. `[auto] path/to/file`) so the gate logic can identify them",
+      "status": "ready",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-10T16:38:35.830Z",
+      "updatedAt": "2026-03-10T16:44:50.673Z",
+      "autoValidation": {
+        "type": "human",
+        "strategy": "User confirms: (1) files are auto-captured as references when config is on, (2) issue close is blocked when require_file_change_notes is on and notes are missing, (3) both default to off"
+      },
+      "epicId": "tedhxd22"
     }
   ],
   "categories": [
