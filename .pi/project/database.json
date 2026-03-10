@@ -81,22 +81,26 @@
       "description": "Adds a typed config system to the project manager and builds git workflow guards on top of it. Config enables runtime toggling of behaviour without code changes; git integration enforces branch discipline and commit hygiene throughout the issue/epic lifecycle.",
       "body": "",
       "priority": 2,
-      "status": "in-progress",
+      "status": "closed",
       "relevantFiles": [],
       "todos": [
         {
           "text": "Implement config system (registry, defaults, /config TUI widget)",
-          "done": false
+          "done": true
         },
         {
           "text": "Implement git workflow integration (guards, branch management, commit tracking)",
-          "done": false
+          "done": true
         }
       ],
       "successCriteria": [],
       "research": [],
       "createdAt": "2026-03-10T16:07:26.741Z",
-      "updatedAt": "2026-03-10T16:07:39.457Z"
+      "updatedAt": "2026-03-10T16:34:14.823Z",
+      "closeMessage": "All config and git workflow integration work is complete. Config system with /config TUI widget shipped; git guards enforcing branch discipline and commit hygiene are live.",
+      "closeReason": "done",
+      "validations": [],
+      "closedAt": "2026-03-10T16:34:14.823Z"
     }
   ],
   "issues": [
@@ -458,18 +462,29 @@
       "type": "feature",
       "title": "Add distinct background color to /config widget panel",
       "description": "The `/config` TUI widget blends into the terminal background, making it hard to distinguish the widget boundary. Add a background color to each rendered line so the widget panel stands out clearly from the rest of the UI.",
-      "status": "in-progress",
+      "status": "closed",
       "epicId": "mu7pvx9d",
       "linkedIssueIds": [],
       "questions": [],
       "research": [],
       "createdAt": "2026-03-10T16:30:15.987Z",
-      "updatedAt": "2026-03-10T16:30:29.339Z",
+      "updatedAt": "2026-03-10T16:33:33.375Z",
       "autoValidation": {
         "type": "human",
         "strategy": "User visually confirms the /config widget has a distinct background that separates it from the terminal background"
       },
-      "startCommit": "bf5d39df35ae9feb5791c4f4a97cacbee448fa12"
+      "startCommit": "bf5d39df35ae9feb5791c4f4a97cacbee448fa12",
+      "closeMessage": "Applied selectedBg background to all /config widget lines via a Proxy on the lines array. User confirmed it works.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "The `/config` TUI widget blends into the terminal background, making it hard to distinguish the widget boundary. Add a background color to each rendered line so the widget panel stands out clearly from the rest of the UI.",
+          "evidence": "User confirmed \"MUCH better it works as expected\".",
+          "met": true
+        }
+      ],
+      "closeCommit": "fcfa586",
+      "closedAt": "2026-03-10T16:33:33.375Z"
     }
   ],
   "categories": [
