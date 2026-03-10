@@ -68,6 +68,20 @@ const migrations: Record<number, Migration> = {
     data.version = 7;
     return data;
   },
+
+  // v7 → v8: add config object
+  7: (data) => {
+    if (!data.config) data.config = {};
+    data.version = 8;
+    return data;
+  },
+
+  // v8 → v9: add git fields to epics and issues (all optional, no-op migration)
+  8: (data) => {
+    // gitBranch on epics, startCommit/closeCommit on issues — all optional, nothing to backfill
+    data.version = 9;
+    return data;
+  },
 };
 
 /**

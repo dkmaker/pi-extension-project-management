@@ -87,12 +87,16 @@ export function registerNextWork(pi: ExtensionAPI) {
         }
       }
 
-      // 4. Unplanned issues (not linked to any epic)
-      const unplanned = r.issues.filter((i) => !i.epicId && i.status !== "closed");
-      if (unplanned.length) {
-        sections.push(`\n---\n## 🔗 Unplanned Issues (${unplanned.length})`);
-        for (const i of unplanned) sections.push(`- ${formatIssue(i)}`);
+      // 4. Unassigned bugs — always surface (even without epic), they're urgent
+      const unassignedBugs = r.issues.filter((i) => !i.epicId && i.status !== "closed" && i.type === "bug");
+      if (unassignedBugs.length) {
+        sections.push(`\n---\n## 🐛 Unassigned Bugs (${unassignedBugs.length}) — assign to an epic to action`);
+        for (const i of unassignedBugs) sections.push(`- ${formatIssue(i)}`);
       }
+
+      // Note: other unassigned issues (features, chores, etc.) are intentionally excluded —
+      // they live in the "unassigned" parking-lot bucket and must be assigned to an epic first.
+      // Use `issue_list --unassigned true` to triage them.
 
       // 5. Nothing at all
       if (!sections.length) {

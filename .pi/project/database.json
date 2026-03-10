@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 9,
   "epics": [
     {
       "id": "4ede9rp0",
@@ -74,6 +74,29 @@
         }
       ],
       "closedAt": "2026-03-10T13:41:45.140Z"
+    },
+    {
+      "id": "mu7pvx9d",
+      "title": "Config & Git Workflow Integration",
+      "description": "Adds a typed config system to the project manager and builds git workflow guards on top of it. Config enables runtime toggling of behaviour without code changes; git integration enforces branch discipline and commit hygiene throughout the issue/epic lifecycle.",
+      "body": "",
+      "priority": 2,
+      "status": "in-progress",
+      "relevantFiles": [],
+      "todos": [
+        {
+          "text": "Implement config system (registry, defaults, /config TUI widget)",
+          "done": false
+        },
+        {
+          "text": "Implement git workflow integration (guards, branch management, commit tracking)",
+          "done": false
+        }
+      ],
+      "successCriteria": [],
+      "research": [],
+      "createdAt": "2026-03-10T16:07:26.741Z",
+      "updatedAt": "2026-03-10T16:07:39.457Z"
     }
   ],
   "issues": [
@@ -222,6 +245,172 @@
       "closeMessage": "Fixed met:false early-return in issue_close — now closes the issue and records unmet validation instead of returning an error and leaving it in-progress.",
       "closeReason": "done",
       "closedAt": "2026-03-10T13:28:07.742Z"
+    },
+    {
+      "id": "mgt2eeva",
+      "type": "idea",
+      "title": "Unassigned bucket: future parking lot with smart context injection",
+      "description": "Issues without an epic go into a virtual **\"Unassigned\"** bucket and are treated as **future/parked** — they never appear in `next_work` and are excluded from full session context. The project status header injects only a lightweight summary (e.g. *\"3 unassigned ideas, 1 unassigned feature\"*) so the agent is aware they exist without polluting context.\n\n**Bugs are the exception** — unassigned bugs are always fully listed at session start since they are immediately relevant regardless of epic assignment.\n\nTo make an unassigned non-bug item workable, it must be explicitly assigned to an epic first.\n\n`issue_list` gets a new optional `unassigned: boolean` filter parameter — when `true`, returns only issues with no `epic_id`. This is the explicit way to view and triage the parking lot.",
+      "status": "closed",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "Files to change: `issues.ts` (add `unassigned` filter to `issue_list`), `next-work.ts` (remove unplanned section from `next_work`), `format.ts` (`formatBrief` and `formatDashboard` - replace full unplanned list with count-by-type summary + full bug listing), `index.ts` (`before_agent_start` - inject unassigned bugs fully, others as count only)",
+          "addedAt": "2026-03-10T15:51:33.777Z"
+        }
+      ],
+      "createdAt": "2026-03-10T15:50:48.539Z",
+      "updatedAt": "2026-03-10T15:52:55.491Z",
+      "closeMessage": "Implemented the unassigned parking-lot bucket across all touch points",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Issues without an epic go into a virtual **\"Unassigned\"** bucket and are treated as **future/parked** — they never appear in `next_work` and are excluded from full session context. The project status header injects only a lightweight summary (e.g. *\"3 unassigned ideas, 1 unassigned feature\"*) so the agent is aware they exist without polluting context.\n\n**Bugs are the exception** — unassigned bugs are always fully listed at session start since they are immediately relevant regardless of epic assignment.\n\nTo make an unassigned non-bug item workable, it must be explicitly assigned to an epic first.\n\n`issue_list` gets a new optional `unassigned: boolean` filter parameter — when `true`, returns only issues with no `epic_id`. This is the explicit way to view and triage the parking lot.",
+          "evidence": "All four touch points implemented and verified via grep: issue_list has unassigned param, next_work gates non-bug unassigned issues, formatBrief/formatDashboard show bugs in full + others as count, before_agent_start injects unassigned bugs fully and other types as a count summary",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-10T15:52:55.491Z"
+    },
+    {
+      "id": "dy8mq4im",
+      "type": "feature",
+      "title": "Test unassigned parking lot feature",
+      "description": "Temporary test issue to verify unassigned bucket behavior — no epic linked.",
+      "status": "closed",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-10T15:56:33.664Z",
+      "updatedAt": "2026-03-10T15:57:45.899Z",
+      "closeMessage": "Test issue — closing after successful unassigned bucket verification",
+      "closeReason": "wont-fix",
+      "validations": [
+        {
+          "criterion": "Temporary test issue to verify unassigned bucket behavior — no epic linked.",
+          "evidence": "Temporary test issue, no longer needed",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-10T15:57:45.899Z"
+    },
+    {
+      "id": "yftiw17z",
+      "type": "bug",
+      "title": "Test unassigned bug",
+      "description": "Temporary test bug — no epic linked, should always be visible.",
+      "status": "closed",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-10T15:56:36.085Z",
+      "updatedAt": "2026-03-10T15:57:49.027Z",
+      "closeMessage": "Test issue — closing after successful unassigned bug visibility verification",
+      "closeReason": "wont-fix",
+      "validations": [
+        {
+          "criterion": "Temporary test bug — no epic linked, should always be visible.",
+          "evidence": "Temporary test issue, no longer needed",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-10T15:57:49.027Z"
+    },
+    {
+      "id": "7hq83jxg",
+      "type": "feature",
+      "title": "Config system with registry, defaults, and TUI widget",
+      "description": "Adds a typed config registry to the project manager so runtime behaviour can be toggled without editing source. Config lives as its own object in `database.json` with hardcoded defaults that are always applied as fallback — so a \"reset to defaults\" is trivially possible. Solves the problem of hardcoded behaviour (e.g. workflow gates, context verbosity, future knobs) that currently requires a code change to adjust.\n\n## Implementation\n\n### `config.ts` (new)\nDefines a `ConfigRegistry` — a typed map of keys to descriptors:\n```ts\n{ key, label, description, type: \"bool\" | \"string\" | \"select\", default, options? }\n```\nExports `getConfig(r)` (merges DB values over defaults) and `setConfig(r, key, value)`.\n\n### `types.ts`\nAdd `config: Record<string, unknown>` to `ProjectFile`. Bump `CURRENT_VERSION` for migration.\n\n### `migrations.ts`\nMigration to add empty `config: {}` to existing databases.\n\n### `commands.ts`\n`/config` command: renders all registry entries with current values in a TUI widget — booleans as toggleable checkboxes, selects as a cycling picker, strings as an inline edit prompt. Selecting an item updates it immediately via `setConfig`.\n\n### `tool-docs.ts`\nDocument the config keys so the agent knows what's available.\n\n## Initial config keys\n| Key | Type | Default | Purpose |\n|---|---|---|---|\n| `workflow.write_gate` | bool | `true` | Enable/disable the file-write gate |\n| `context.unassigned_bugs_in_steering` | bool | `true` | Show unassigned bugs in per-turn steering |\n| `context.brief_verbosity` | select | `\"normal\"` | `\"minimal\"` / `\"normal\"` / `\"verbose\"` |",
+      "status": "closed",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "Files to create/change: new `config.ts` (registry + getConfig/setConfig), `types.ts` (add `config` field to ProjectFile, bump CURRENT_VERSION), `migrations.ts` (add migration for config field), `commands.ts` (add `/config` TUI command), `index.ts` (wire getConfig into write gate and steering), `tool-docs.ts` (document config keys). TUI widget uses pi's List/Input components for bool toggle, select cycling, string editing.",
+          "addedAt": "2026-03-10T16:07:48.170Z"
+        }
+      ],
+      "createdAt": "2026-03-10T16:02:37.555Z",
+      "updatedAt": "2026-03-10T16:13:21.799Z",
+      "epicId": "mu7pvx9d",
+      "validations": [
+        {
+          "criterion": "Adds a typed config registry to the project manager so runtime behaviour can be toggled without editing source. Config lives as its own object in `database.json` with hardcoded defaults that are always applied as fallback — so a \"reset to defaults\" is trivially possible. Solves the problem of hardcoded behaviour (e.g. workflow gates, context verbosity, future knobs) that currently requires a code change to adjust.\n\n## Implementation\n\n### `config.ts` (new)\nDefines a `ConfigRegistry` — a typed map of keys to descriptors:\n```ts\n{ key, label, description, type: \"bool\" | \"string\" | \"select\", default, options? }\n```\nExports `getConfig(r)` (merges DB values over defaults) and `setConfig(r, key, value)`.\n\n### `types.ts`\nAdd `config: Record<string, unknown>` to `ProjectFile`. Bump `CURRENT_VERSION` for migration.\n\n### `migrations.ts`\nMigration to add empty `config: {}` to existing databases.\n\n### `commands.ts`\n`/config` command: renders all registry entries with current values in a TUI widget — booleans as toggleable checkboxes, selects as a cycling picker, strings as an inline edit prompt. Selecting an item updates it immediately via `setConfig`.\n\n### `tool-docs.ts`\nDocument the config keys so the agent knows what's available.\n\n## Initial config keys\n| Key | Type | Default | Purpose |\n|---|---|---|---|\n| `workflow.write_gate` | bool | `true` | Enable/disable the file-write gate |\n| `context.unassigned_bugs_in_steering` | bool | `true` | Show unassigned bugs in per-turn steering |\n| `context.brief_verbosity` | select | `\"normal\"` | `\"minimal\"` / `\"normal\"` / `\"verbose\"` |",
+          "evidence": "Command renamed from `config` to `project-config` in commands.ts — consistent with /project-serve naming convention.",
+          "met": true
+        }
+      ],
+      "closeMessage": "Renamed /config to /project-config for naming consistency",
+      "closeReason": "done",
+      "closedAt": "2026-03-10T16:13:21.799Z"
+    },
+    {
+      "id": "td4gn2ut",
+      "type": "feature",
+      "title": "Git workflow integration with config-gated guards",
+      "description": "Integrates git into the issue/epic lifecycle so the project manager can enforce branch discipline and commit hygiene automatically. Each guard is individually toggleable via the config system (depends on **[7hq83jxg]**). When `git.require_commit_on_close` is enabled, a commit SHA **must** be attached to the close message — `issue_close` is hard-blocked without it, and the SHA is stored on the issue as a permanent audit trail.\n\n## Config keys (all under `git.*`)\n| Key | Type | Default | Purpose |\n|---|---|---|---|\n| `git.enabled` | bool | `false` | Master switch — all guards no-op if false |\n| `git.epic_branch` | bool | `true` | Create branch when epic goes in-progress |\n| `git.require_clean_worktree` | bool | `true` | Block issue start if worktree is dirty |\n| `git.require_epic_branch` | bool | `true` | Block issue start if epic branch doesn't exist |\n| `git.require_commit_on_close` | bool | `true` | Block issue close if no new commits since issue started |\n| `git.require_commit_id_on_close` | bool | `true` | Block `issue_close` unless a valid commit SHA is provided |\n| `git.merge_check_on_epic_close` | bool | `true` | Warn if epic branch not merged when closing epic |\n\n## New files\n**`git.ts`** — thin shell wrapper: `isClean()`, `currentBranch()`, `branchExists(name)`, `createBranch(name)`, `commitExists(sha)`, `hasCommitsSince(sha)`.\n\n## Changes to existing files\n\n**`types.ts`** — add `gitBranch?: string` to `Epic`, `startCommit?: string` and `closeCommit?: string` to `Issue`.\n\n**`migrations.ts`** — migration for new optional fields.\n\n**`issue_advance`** → in-progress: check clean worktree + epic branch exists (if guards enabled).\n\n**`issue_close`** — add `commit_id?: string` param. When `git.enabled` + `git.require_commit_id_on_close`: hard-block if missing or SHA invalid (`git cat-file -t <sha>`). Store as `closeCommit` on issue. Show in output and `issue_show`.\n\n**`epic_advance`** → in-progress: auto-create branch `epic/{id}-{slug}` (if `git.epic_branch`).\n\n**`epic_close`** — warn if epic branch not merged into default branch (if `git.merge_check_on_epic_close`).\n\n**`tool-docs.ts`** — document git params and config keys.\n\n## Branch naming\n`epic/{epic-id}-{slugified-title}` — issues commit on the epic branch directly.\n\n## Dependency\nImplement **after** [7hq83jxg] (config system) — all guards route through it.",
+      "status": "closed",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "Files: new `git.ts` (shell wrappers: isClean, currentBranch, branchExists, createBranch, commitExists, hasCommitsSince). Hook into: `epics.ts` epic_advance→in-progress (createBranch), `issues.ts` issue_advance→in-progress (clean worktree + epic branch check), `issues.ts` issue_close (commit existence + commit_id param). New fields on types: Epic.gitBranch, Issue.startCommit, Issue.closeCommit. Migration v8→v9. All guards route through getConfigValue with git.enabled master switch.",
+          "addedAt": "2026-03-10T16:16:20.604Z"
+        }
+      ],
+      "createdAt": "2026-03-10T16:06:56.329Z",
+      "updatedAt": "2026-03-10T16:19:34.024Z",
+      "epicId": "mu7pvx9d",
+      "closeMessage": "Git workflow integration fully implemented with all config-gated guards",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Integrates git into the issue/epic lifecycle so the project manager can enforce branch discipline and commit hygiene automatically. Each guard is individually toggleable via the config system (depends on **[7hq83jxg]**). When `git.require_commit_on_close` is enabled, a commit SHA **must** be attached to the close message — `issue_close` is hard-blocked without it, and the SHA is stored on the issue as a permanent audit trail.\n\n## Config keys (all under `git.*`)\n| Key | Type | Default | Purpose |\n|---|---|---|---|\n| `git.enabled` | bool | `false` | Master switch — all guards no-op if false |\n| `git.epic_branch` | bool | `true` | Create branch when epic goes in-progress |\n| `git.require_clean_worktree` | bool | `true` | Block issue start if worktree is dirty |\n| `git.require_epic_branch` | bool | `true` | Block issue start if epic branch doesn't exist |\n| `git.require_commit_on_close` | bool | `true` | Block issue close if no new commits since issue started |\n| `git.require_commit_id_on_close` | bool | `true` | Block `issue_close` unless a valid commit SHA is provided |\n| `git.merge_check_on_epic_close` | bool | `true` | Warn if epic branch not merged when closing epic |\n\n## New files\n**`git.ts`** — thin shell wrapper: `isClean()`, `currentBranch()`, `branchExists(name)`, `createBranch(name)`, `commitExists(sha)`, `hasCommitsSince(sha)`.\n\n## Changes to existing files\n\n**`types.ts`** — add `gitBranch?: string` to `Epic`, `startCommit?: string` and `closeCommit?: string` to `Issue`.\n\n**`migrations.ts`** — migration for new optional fields.\n\n**`issue_advance`** → in-progress: check clean worktree + epic branch exists (if guards enabled).\n\n**`issue_close`** — add `commit_id?: string` param. When `git.enabled` + `git.require_commit_id_on_close`: hard-block if missing or SHA invalid (`git cat-file -t <sha>`). Store as `closeCommit` on issue. Show in output and `issue_show`.\n\n**`epic_advance`** → in-progress: auto-create branch `epic/{id}-{slug}` (if `git.epic_branch`).\n\n**`epic_close`** — warn if epic branch not merged into default branch (if `git.merge_check_on_epic_close`).\n\n**`tool-docs.ts`** — document git params and config keys.\n\n## Branch naming\n`epic/{epic-id}-{slugified-title}` — issues commit on the epic branch directly.\n\n## Dependency\nImplement **after** [7hq83jxg] (config system) — all guards route through it.",
+          "evidence": "git.ts created with full shell wrappers. types.ts has gitBranch on Epic, startCommit/closeCommit on Issue, bumped to v9. migrations.ts has v8→v9. epics.ts auto-creates branch on in-progress and shows merge check on epic_close. issues.ts blocks issue start on dirty worktree / missing epic branch, records startCommit on start, blocks close without commits / commit_id, stores closeCommit. format.ts shows git fields in issue_show.",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-10T16:19:34.024Z"
+    },
+    {
+      "id": "xdh7s4t0",
+      "type": "chore",
+      "title": "Rename /config command to /project-config",
+      "description": "Rename the `/config` command to `/project-config` for consistency with other project manager commands like `/project-serve`.",
+      "status": "closed",
+      "epicId": "mu7pvx9d",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-10T16:12:30.034Z",
+      "updatedAt": "2026-03-10T16:12:54.211Z",
+      "closeMessage": "Closing — will reopen original issue instead",
+      "closeReason": "wont-fix",
+      "validations": [
+        {
+          "criterion": "Rename the `/config` command to `/project-config` for consistency with other project manager commands like `/project-serve`.",
+          "evidence": "User wants to handle this via the original issue instead",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-10T16:12:54.211Z"
+    },
+    {
+      "id": "ve5rgor0",
+      "type": "idea",
+      "title": "Split git config into git.epics.* and git.issues.* sections",
+      "description": "Currently all git guards live under a flat `git.*` namespace, making it impossible to disable epic-level behaviour (branch creation, merge checks) without also disabling issue-level behaviour (clean worktree, commit tracking). This splits the registry into three sections: `git.enabled` (master switch), `git.epics.*` (branch auto-create, merge check on close), and `git.issues.*` (require clean worktree, require epic branch, require commit on close, require commit ID). Each section can be fully disabled independently while the master switch still kills everything at once.",
+      "status": "ready",
+      "epicId": "mu7pvx9d",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-10T16:21:49.969Z",
+      "updatedAt": "2026-03-10T16:22:37.431Z"
     }
   ],
   "categories": [
@@ -244,5 +433,14 @@
       "createdAt": "2026-03-10T13:28:33.474Z",
       "updatedAt": "2026-03-10T13:28:33.474Z"
     }
-  ]
+  ],
+  "config": {
+    "workflow.write_gate": true,
+    "context.brief_verbosity": "normal",
+    "context.unassigned_bugs_in_steering": false,
+    "git.enabled": true,
+    "git.epic_branch": false,
+    "git.require_epic_branch": false,
+    "git.merge_check_on_epic_close": false
+  }
 }

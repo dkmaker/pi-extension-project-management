@@ -5,6 +5,8 @@ import { EPIC_TRANSITIONS, EPIC_NEXT, type CloseReason } from "./types.js";
 import { load, save, genId, now, activeEpics } from "./store.js";
 import { formatEpic, formatIssue } from "./format.js";
 import { EPIC_STATUS_LABEL } from "./constants.js";
+import { getConfigValue } from "./config.js";
+import { isGitRepo, branchExists, createBranch, epicBranchName, defaultBranch, isMergedInto } from "./git.js";
 
 function adviceFor(epic: Epic, issues: { epicId?: string; status: string }[]): string {
   const linked = issues.filter((i) => i.epicId === epic.id);
@@ -203,9 +205,29 @@ export function registerEpicTools(pi: ExtensionAPI) {
       epic.status = next;
       epic.updatedAt = now();
 
+      // Git: auto-create epic branch when going in-progress
+      let gitNote = "";
+      if (next === "in-progress" && getConfigValue<boolean>(r, "git.enabled") && getConfigValue<boolean>(r, "git.epic_branch")) {
+        if (isGitRepo()) {
+          const branchName = epicBranchName(epic.id, epic.title);
+          if (branchExists(branchName)) {
+            gitNote = `\n\n🌿 Git branch already exists: \`${branchName}\``;
+            epic.gitBranch = branchName;
+          } else {
+            const err = createBranch(branchName);
+            if (err) {
+              gitNote = `\n\n⚠️ Could not create git branch \`${branchName}\`: ${err}`;
+            } else {
+              gitNote = `\n\n🌿 Created and switched to git branch: \`${branchName}\``;
+              epic.gitBranch = branchName;
+            }
+          }
+        }
+      }
+
       save(r);
 
-      const out = `⏩ **${epic.id}** ${epic.title}: ${EPIC_STATUS_LABEL[oldStatus]} → ${EPIC_STATUS_LABEL[next]}\n\n${advice}`;
+      const out = `⏩ **${epic.id}** ${epic.title}: ${EPIC_STATUS_LABEL[oldStatus]} → ${EPIC_STATUS_LABEL[next]}\n\n${advice}${gitNote}`;
 
       return { content: [{ type: "text", text: out }] };
     },
@@ -279,6 +301,21 @@ export function registerEpicTools(pi: ExtensionAPI) {
         if (openLinked.length) {
           out += `\n## ⚠️ Open Issues (${openLinked.length})\n`;
           for (const i of openLinked) out += `- ${formatIssue(i)}\n`;
+        }
+
+        // Git: merge check
+        if (getConfigValue<boolean>(r, "git.enabled") && getConfigValue<boolean>(r, "git.merge_check_on_epic_close")) {
+          if (epic.gitBranch && isGitRepo()) {
+            const target = defaultBranch();
+            if (!isMergedInto(epic.gitBranch, target)) {
+              out += `\n## ⚠️ Git Branch Not Merged\n`;
+              out += `Branch \`${epic.gitBranch}\` has not been merged into \`${target}\`.\n`;
+              out += `Merge or squash before closing, or proceed if this is intentional.\n`;
+            } else {
+              out += `\n## ✅ Git Branch Merged\n`;
+              out += `Branch \`${epic.gitBranch}\` is merged into \`${target}\`.\n`;
+            }
+          }
         }
 
         return { content: [{ type: "text", text: out }] };

@@ -33,6 +33,8 @@ export interface Issue {
   closeReason?: CloseReason;
   validations?: Validation[];
   research: ResearchNote[];
+  startCommit?: string;  // HEAD SHA when issue went in-progress
+  closeCommit?: string;  // commit SHA attached on close
   createdAt: string;
   updatedAt: string;
   closedAt?: string;
@@ -45,6 +47,7 @@ export interface Epic {
   body: string;
   priority: number;
   status: EpicStatus;
+  gitBranch?: string;    // branch created when epic went in-progress
   closeMessage?: string;
   closeReason?: CloseReason;
   validations?: Validation[];
@@ -85,7 +88,7 @@ export interface Asset {
   updatedAt: string;
 }
 
-export const CURRENT_VERSION = 7;
+export const CURRENT_VERSION = 9;
 
 export interface Validation {
   criterion: string;
@@ -99,6 +102,7 @@ export interface ProjectFile {
   issues: Issue[];
   categories: AssetCategory[];
   assets: Asset[];
+  config: Record<string, unknown>;
 }
 
 export const ISSUE_TRANSITIONS: Record<IssueStatus, IssueStatus[]> = {

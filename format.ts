@@ -70,6 +70,8 @@ export function formatIssueVerbose(issue: Issue, epics: Epic[], assets: Asset[] 
   if (issue.validations?.length) {
     out += `\n\n**Validated:** ✅ ${issue.validations[0].evidence}`;
   }
+  if ((issue as any).startCommit) out += `\n\n**Started at commit:** \`${(issue as any).startCommit}\``;
+  if ((issue as any).closeCommit) out += `\n**Closed with commit:** \`${(issue as any).closeCommit}\``;
   out += linkedAssets("issue", issue.id, assets);
   return out;
 }
@@ -171,8 +173,20 @@ export function formatDashboard(r: ProjectFile): string {
 
   const unlinked = issues.filter((i) => !i.epicId && i.status !== "closed");
   if (unlinked.length) {
-    out += `\n\n---\n## 🔗 Unplanned Issues\n`;
-    for (const i of unlinked) out += `\n- ${formatIssue(i)}`;
+    const unlinkedBugs = unlinked.filter((i) => i.type === "bug");
+    const unlinkedOther = unlinked.filter((i) => i.type !== "bug");
+    out += `\n\n---\n## 📥 Unassigned (${unlinked.length}) — assign to an epic to action\n`;
+    if (unlinkedBugs.length) {
+      out += `\n### 🐛 Bugs (always relevant)\n`;
+      for (const i of unlinkedBugs) out += `\n- ${formatIssue(i)}`;
+    }
+    if (unlinkedOther.length) {
+      // Group by type, show counts only — use `issue_list --unassigned true` to triage
+      const byType: Record<string, number> = {};
+      for (const i of unlinkedOther) byType[i.type] = (byType[i.type] || 0) + 1;
+      out += `\n${Object.entries(byType).map(([t, c]) => `- ${ISSUE_TYPE_ICON[t as keyof typeof ISSUE_TYPE_ICON] || "•"} ${c} ${t}(s)`).join("\n")}`;
+      out += `\n\n*Use \`issue_list\` with \`unassigned: true\` to view and triage.*`;
+    }
   }
 
   return out;
@@ -216,7 +230,18 @@ export function formatBrief(r: ProjectFile): string {
   }
 
   if (unplanned.length) {
-    lines.push(`⚠ ${unplanned.length} unplanned issue(s) need triage`);
+    const unplannedBugs = unplanned.filter(i => i.type === "bug");
+    const unplannedOther = unplanned.filter(i => i.type !== "bug");
+    if (unplannedBugs.length) {
+      lines.push(`🐛 Unassigned bugs (${unplannedBugs.length}): ${unplannedBugs.map(i => `[${i.id}] ${i.title}`).join(", ")}`);
+    }
+    if (unplannedOther.length) {
+      // Count by type — don't flood context
+      const byType: Record<string, number> = {};
+      for (const i of unplannedOther) byType[i.type] = (byType[i.type] || 0) + 1;
+      const summary = Object.entries(byType).map(([t, c]) => `${c} ${t}(s)`).join(", ");
+      lines.push(`📥 Unassigned: ${summary} — use \`issue_list\` with \`unassigned: true\` to triage`);
+    }
   }
 
   return lines.join("\n");
@@ -249,7 +274,7 @@ export function statusBarText(r: ProjectFile, theme: any): string {
 
   // Issue counts
   if (issueOpen) parts.push(theme.fg("success", `${issueOpen} open issues`));
-  if (unplanned) parts.push(theme.fg("warning", `${unplanned} unplanned ⚠`));
+  if (unplanned) parts.push(theme.fg("warning", `${unplanned} unassigned 📥`));
   if (unansweredQ) parts.push(theme.fg("warning", `${unansweredQ} questions ❓`));
 
   if (!parts.length) return theme.fg("dim", "📦 no items");

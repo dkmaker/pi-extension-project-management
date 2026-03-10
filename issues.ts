@@ -5,6 +5,8 @@ import { ISSUE_TRANSITIONS, ISSUE_NEXT, type CloseReason } from "./types.js";
 import { load, save, genId, now } from "./store.js";
 import { formatIssue, formatIssueVerbose } from "./format.js";
 import { ISSUE_STATUS_LABEL, ISSUE_TYPE_ICON } from "./constants.js";
+import { getConfigValue } from "./config.js";
+import { isGitRepo, isClean, branchExists, epicBranchName, headSha, commitExists, hasCommitsSince } from "./git.js";
 
 function adviceFor(issue: Issue): string {
   const researchCount = issue.research.length;
@@ -128,6 +130,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
       epic_id: Type.Optional(Type.String({ description: "Filter by linked epic ID" })),
       type: Type.Optional(IssueTypeSchema),
       status: Type.Optional(Type.Union([Type.Literal("draft"), Type.Literal("researched"), Type.Literal("ready"), Type.Literal("in-progress"), Type.Literal("closed")], { description: "Filter by status" })),
+      unassigned: Type.Optional(Type.Boolean({ description: "If true, show only issues NOT linked to any epic (the unassigned/parking-lot bucket)", default: false })),
     }),
     async execute(_id, params) {
       const r = load();
@@ -138,6 +141,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
       } else {
         issues = params.include_closed ? r.issues : r.issues.filter((i) => i.status !== "closed");
       }
+      if (params.unassigned) issues = issues.filter((i) => !i.epicId);
       if (params.epic_id) issues = issues.filter((i) => i.epicId === params.epic_id);
       if (params.type) issues = issues.filter((i) => i.type === params.type);
       if (params.status && !params.include_deferred) issues = issues.filter((i) => i.status === params.status);
@@ -225,9 +229,34 @@ export function registerIssueTools(pi: ExtensionAPI) {
         }
       }
 
+      // Git guards for starting an issue
+      if (next === "in-progress" && getConfigValue<boolean>(r, "git.enabled") && isGitRepo()) {
+        // Require clean worktree
+        if (getConfigValue<boolean>(r, "git.require_clean_worktree") && !isClean()) {
+          return { content: [{ type: "text", text: `⛔ Git: Working tree is dirty. Commit or stash your changes before starting an issue.` }] };
+        }
+        // Require epic branch to exist
+        if (getConfigValue<boolean>(r, "git.require_epic_branch") && issue.epicId) {
+          const epic = r.epics.find(e => e.id === issue.epicId);
+          if (epic) {
+            const expectedBranch = epicBranchName(epic.id, epic.title);
+            if (!branchExists(expectedBranch)) {
+              return { content: [{ type: "text", text: `⛔ Git: Epic branch \`${expectedBranch}\` does not exist. Advance the epic to in-progress first to create it.` }] };
+            }
+          }
+        }
+      }
+
       const advice = adviceFor(issue);
       const oldStatus = issue.status;
       issue.status = next;
+
+      // Record HEAD SHA when starting work
+      if (next === "in-progress" && getConfigValue<boolean>(r, "git.enabled") && isGitRepo()) {
+        const sha = headSha();
+        if (sha) issue.startCommit = sha;
+      }
+
       issue.updatedAt = now();
 
       save(r);
@@ -254,6 +283,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
       evidence: Type.Optional(Type.String({ description: "Evidence/proof that the issue requirement was fulfilled" })),
       met: Type.Optional(Type.Boolean({ description: "Whether the requirement was met (required for step 2)" })),
       close_reason: Type.Optional(Type.Union([Type.Literal("done"), Type.Literal("deferred"), Type.Literal("wont-fix")], { description: "Reason for closing (default: done). 'deferred' requires explicit user approval." })),
+      commit_id: Type.Optional(Type.String({ description: "Git commit SHA to attach to this close (required when git.require_commit_id_on_close is enabled)" })),
     }),
     async execute(_id, params) {
       const r = load();
@@ -313,6 +343,25 @@ export function registerIssueTools(pi: ExtensionAPI) {
         return { content: [{ type: "text", text: out }] };
       }
 
+      // Step 2: git guards before closing
+      if (issue.closeReviewed && getConfigValue<boolean>(r, "git.enabled") && isGitRepo() && params.close_reason !== "deferred" && params.close_reason !== "wont-fix") {
+        // Require commits since issue started
+        if (getConfigValue<boolean>(r, "git.require_commit_on_close") && issue.startCommit) {
+          if (!hasCommitsSince(issue.startCommit)) {
+            return { content: [{ type: "text", text: `⛔ Git: No commits found since this issue was started. Commit your work before closing.` }] };
+          }
+        }
+        // Require commit_id param
+        if (getConfigValue<boolean>(r, "git.require_commit_id_on_close")) {
+          if (!params.commit_id) {
+            return { content: [{ type: "text", text: `⛔ Git: A commit SHA is required to close this issue (\`commit_id\` param). Provide the commit that implements this work.` }] };
+          }
+          if (!commitExists(params.commit_id)) {
+            return { content: [{ type: "text", text: `⛔ Git: Commit \`${params.commit_id}\` not found in this repository. Double-check the SHA.` }] };
+          }
+        }
+      }
+
       // Step 2: validate and close
       if (params.evidence === undefined || !params.message || params.met === undefined) {
         const missing = [
@@ -350,15 +399,17 @@ export function registerIssueTools(pi: ExtensionAPI) {
       issue.closeReason = closeReason;
       issue.closeReviewed = undefined; // clean up
       issue.validations = [{ criterion: issue.description, evidence: params.evidence || "", met: params.met ?? true }];
+      if (params.commit_id) issue.closeCommit = params.commit_id;
       issue.closedAt = now();
       issue.updatedAt = now();
 
       save(r);
 
       const reasonLabel = closeReason === "deferred" ? "📦 Deferred" : closeReason === "wont-fix" ? "🚫 Won't Fix" : "🏁 Closed";
+      const commitLine = params.commit_id ? `\n\n🔗 Commit: \`${params.commit_id}\`` : "";
       const validationLine = closeReason === "done"
-        ? `\n\n**Validated:** ✅ ${params.evidence}`
-        : `\n\n**Reason:** ${params.evidence || closeReason}`;
+        ? `\n\n**Validated:** ✅ ${params.evidence}${commitLine}`
+        : `\n\n**Reason:** ${params.evidence || closeReason}${commitLine}`;
       return {
         content: [{
           type: "text",

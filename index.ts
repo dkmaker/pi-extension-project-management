@@ -12,6 +12,7 @@ import { registerDashboard } from "./dashboard.js";
 import { registerCommands } from "./commands.js";
 import { resolveEpicFocus } from "./priorities.js";
 import { isServerRunning, getServerInfo, initFromLock } from "./dashboard-server.js";
+import { getConfigValue } from "./config.js";
 
 const PROJECT_TOOLS = new Set([
   "epic_add", "epic_show", "epic_list", "epic_update", "epic_advance",
@@ -85,6 +86,8 @@ export default function (pi: ExtensionAPI) {
     if (isWriteOperation(event.toolName, event.input)) {
       try {
         const r = load();
+        const writeGateEnabled = getConfigValue<boolean>(r, "workflow.write_gate");
+        if (!writeGateEnabled) return undefined;
         const inProgressIssue = r.issues.find(i => i.status === "in-progress");
         if (!inProgressIssue) {
           const openIssues = r.issues.filter(i => i.status !== "closed");
@@ -228,6 +231,22 @@ export default function (pi: ExtensionAPI) {
               break;
           }
         }
+      }
+
+      // Unassigned bugs — always listed (urgent regardless of epic), unless config disables it
+      const bugsInSteering = getConfigValue<boolean>(r, "context.unassigned_bugs_in_steering");
+      const unassignedBugs = r.issues.filter(i => !i.epicId && i.status !== "closed" && i.type === "bug");
+      if (bugsInSteering && unassignedBugs.length) {
+        lines.push(`[UNASSIGNED BUGS] ${unassignedBugs.length} bug(s) need attention: ${unassignedBugs.map(i => `[${i.id}] ${i.title} (${i.status})`).join(", ")}`);
+      }
+
+      // Other unassigned issues — count only, don't pollute context
+      const unassignedOther = r.issues.filter(i => !i.epicId && i.status !== "closed" && i.type !== "bug");
+      if (unassignedOther.length) {
+        const byType: Record<string, number> = {};
+        for (const i of unassignedOther) byType[i.type] = (byType[i.type] || 0) + 1;
+        const summary = Object.entries(byType).map(([t, c]) => `${c} ${t}(s)`).join(", ");
+        lines.push(`[UNASSIGNED] ${summary} in parking lot — assign to an epic before working on them (use \`issue_list\` with \`unassigned: true\`)`);
       }
 
       const serverInfo = getServerInfo();

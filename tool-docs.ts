@@ -271,9 +271,31 @@ Returns the highest-priority work item based on:
 1. In-progress epic → in-progress issue → ready issue → next todo → researched issue → draft issue
 2. Next planned epic to start
 3. Next draft epic to prepare
-4. Unplanned issues (not linked to any epic)
+
+Note: unassigned issues (no epic) are excluded from next_work. Use \`issue_list\` with \`unassigned: true\` to triage them.
 
 No parameters.`,
+
+  project_config: `## /config — View and edit project manager config
+Opens an interactive TUI widget to toggle and edit all config settings.
+
+### Config keys
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| \`workflow.write_gate\` | bool | true | Block file writes when no issue is in-progress |
+| \`context.brief_verbosity\` | select | normal | LLM context verbosity at session start (minimal/normal/verbose) |
+| \`context.unassigned_bugs_in_steering\` | bool | true | Show unassigned bugs in per-turn steering context |
+| \`git.enabled\` | bool | false | Master switch for git workflow guards |
+| \`git.epic_branch\` | bool | true | Create git branch when epic goes in-progress |
+| \`git.require_clean_worktree\` | bool | true | Block issue start if worktree is dirty |
+| \`git.require_epic_branch\` | bool | true | Block issue start if epic branch doesn't exist |
+| \`git.require_commit_on_close\` | bool | true | Block issue close if no new commits since issue started |
+| \`git.require_commit_id_on_close\` | bool | true | Block issue_close unless a valid commit SHA is provided |
+| \`git.merge_check_on_epic_close\` | bool | true | Warn if epic branch not merged when closing epic |
+
+### Widget controls
+- **↑↓** navigate, **Enter/Space** toggle bool or cycle select, **r** reset to default, **Ctrl+R** reset all, **Esc** close
+- String fields: Enter opens inline edit, type to change, Enter to save, Esc to cancel`,
 };
 
 export function registerToolDocsTool(pi: ExtensionAPI) {
