@@ -429,18 +429,46 @@
       "type": "feature",
       "title": "Split git config section into epics/issues subgroups in /config widget",
       "description": "The `/config` TUI widget groups all `git.*` keys under a single \"git\" heading. The user wants visual separation between epic-related git settings and issue-related git settings.\n\n**Change:** Update the render grouping logic in `commands.ts` so that:\n- `git.enabled` stays under heading **`git`**\n- `git.epics.*` keys get a subheading **`git · epics`**\n- `git.issues.*` keys get a subheading **`git · issues`**\n\nThis requires using a deeper key prefix (up to 2 segments) for grouping when the second segment is \"epics\" or \"issues\".",
-      "status": "in-progress",
+      "status": "closed",
       "epicId": "mu7pvx9d",
       "linkedIssueIds": [],
       "questions": [],
       "research": [],
       "createdAt": "2026-03-10T16:28:20.135Z",
-      "updatedAt": "2026-03-10T16:28:56.037Z",
+      "updatedAt": "2026-03-10T16:30:11.452Z",
       "autoValidation": {
         "type": "human",
         "strategy": "User visually confirms the /config widget shows two separate git subgroups"
       },
-      "startCommit": "6a6ec82ff42309e132234091db0af8adec38b887"
+      "startCommit": "6a6ec82ff42309e132234091db0af8adec38b887",
+      "closeMessage": "User confirmed the split looks perfect. Grouping logic updated in commands.ts render() to use 2-segment prefix for git subgroups.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "The `/config` TUI widget groups all `git.*` keys under a single \"git\" heading. The user wants visual separation between epic-related git settings and issue-related git settings.\n\n**Change:** Update the render grouping logic in `commands.ts` so that:\n- `git.enabled` stays under heading **`git`**\n- `git.epics.*` keys get a subheading **`git · epics`**\n- `git.issues.*` keys get a subheading **`git · issues`**\n\nThis requires using a deeper key prefix (up to 2 segments) for grouping when the second segment is \"epics\" or \"issues\".",
+          "evidence": "User confirmed \"PERFECT\" — git · epics and git · issues subgroups are visible and correct in /config widget.",
+          "met": true
+        }
+      ],
+      "closeCommit": "00cbc44",
+      "closedAt": "2026-03-10T16:30:11.452Z"
+    },
+    {
+      "id": "uhqfuw4h",
+      "type": "feature",
+      "title": "Add distinct background color to /config widget panel",
+      "description": "The `/config` TUI widget blends into the terminal background, making it hard to distinguish the widget boundary. Add a background color to each rendered line so the widget panel stands out clearly from the rest of the UI.",
+      "status": "ready",
+      "epicId": "mu7pvx9d",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-10T16:30:15.987Z",
+      "updatedAt": "2026-03-10T16:30:20.373Z",
+      "autoValidation": {
+        "type": "human",
+        "strategy": "User visually confirms the /config widget has a distinct background that separates it from the terminal background"
+      }
     }
   ],
   "categories": [
@@ -471,6 +499,8 @@
     "git.enabled": true,
     "git.epic_branch": false,
     "git.require_epic_branch": false,
-    "git.merge_check_on_epic_close": false
+    "git.merge_check_on_epic_close": false,
+    "git.epics.auto_branch": false,
+    "git.epics.merge_check_on_close": false
   }
 }
