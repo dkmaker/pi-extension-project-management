@@ -65,11 +65,11 @@ export default function (pi: ExtensionAPI) {
   // Detect bash commands that perform file writes
   const BASH_WRITE_PATTERN = /(?:^|\s|&&|\|)(?:>|>>|tee\s|sed\s+-i|mv\s|cp\s|install\s|chmod\s|mkdir\s|rm\s|touch\s|cat\s+.*>)/;
 
-  const FILE_WRITE_TOOLS = new Set(["Edit", "Write"]);
+  const FILE_WRITE_TOOLS = new Set(["edit", "write"]);
 
   function isWriteOperation(toolName: string, input?: any): boolean {
     if (FILE_WRITE_TOOLS.has(toolName)) return true;
-    if (toolName === "Bash") {
+    if (toolName === "bash") {
       const cmd: string = input?.command || "";
       return BASH_WRITE_PATTERN.test(cmd);
     }

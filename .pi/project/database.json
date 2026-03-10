@@ -94,7 +94,7 @@
       "type": "feature",
       "title": "Soft-block file writes when no issue is in-progress",
       "description": "Enforce proper issue workflow with a layered approach:\n\n1. **`before_agent_start`** — injects full workflow policy into system prompt describing the issue lifecycle (draft → researched → ready → in-progress → closed) and the rule that file writes are only allowed when an issue is in-progress.\n2. **`turn_start`** — injects a single status line like `📍 Current: [issue:abc] Title (in-progress)` or `⚠️ No issue in-progress` as a lightweight reminder each turn.\n3. **`tool_result`** on `write`/`edit`/`bash` (write patterns like `>`, `>>`, `tee`, `sed -i`, `mv`, `cp`) — appends a warning when no issue is in-progress. This is the actual soft gate.\n\n**File:** `index.ts`",
-      "status": "in-progress",
+      "status": "draft",
       "linkedIssueIds": [],
       "questions": [],
       "research": [],
