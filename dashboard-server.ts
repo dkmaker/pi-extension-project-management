@@ -200,7 +200,7 @@ function generateSpec(db: ProjectFile): object {
       const links = issue.linkedIssueIds.map(lid => {
         const linked = db.issues.find(i => i.id === lid);
         if (linked) {
-          return `<a href="#issue-${lid}" class="issue-link">${typeIcon(linked.type)} ${lid} — ${linked.title}</a>`;
+          return `<div class="ref-container-inline"><a href="#issue-${lid}" class="issue-link">${typeIcon(linked.type)} ${lid} — ${linked.title}</a>${htmlCopyBtn(`[issue:${lid}] ${linked.title}`)}</div>`;
         }
         return `<code>${lid}</code>`;
       }).join("");
@@ -211,17 +211,19 @@ function generateSpec(db: ProjectFile): object {
     if (issue.questions && issue.questions.length > 0) {
       const answered = issue.questions.filter(q => q.answer).length;
       let qHtml = `<div class="section-label">❓ Questions (${answered}/${issue.questions.length} answered)</div>`;
-      for (const q of issue.questions) {
+      for (let qi = 0; qi < issue.questions.length; qi++) {
+        const q = issue.questions[qi];
         const req = q.required !== false;
         const reqLabel = req ? `<span class="req-badge req-required">required</span>` : `<span class="req-badge req-optional">optional</span>`;
+        const qCopy = htmlCopyBtn(`[issue:${issue.id}:q:${qi}] ${q.text}`);
         if (q.answer) {
-          qHtml += `<div class="question-card answered">
-            <div class="question-text">${esc(q.text)} ${reqLabel}</div>
+          qHtml += `<div class="question-card answered ref-container-inline">
+            <div class="question-text">${esc(q.text)} ${reqLabel} ${qCopy}</div>
             <div class="answer-text">✅ ${esc(q.answer)}</div>
           </div>`;
         } else {
-          qHtml += `<div class="question-card unanswered">
-            <div class="question-text">${esc(q.text)} ${reqLabel}</div>
+          qHtml += `<div class="question-card unanswered ref-container-inline">
+            <div class="question-text">${esc(q.text)} ${reqLabel} ${qCopy}</div>
             <div class="answer-text unanswered-label">Awaiting answer</div>
           </div>`;
         }
@@ -232,10 +234,12 @@ function generateSpec(db: ProjectFile): object {
     // Research notes
     if (issue.research && issue.research.length > 0) {
       let rHtml = `<div class="section-label">🔬 Research (${issue.research.length})</div>`;
-      for (const r of issue.research) {
+      for (let ri = 0; ri < issue.research.length; ri++) {
+        const r = issue.research[ri];
         const typeClass = r.type === "reference" ? "ref" : r.type === "comment" ? "cmt" : "ex";
-        rHtml += `<details class="research-item research-${typeClass}">
-          <summary>${researchIcon(r.type)} <strong>${r.type.toUpperCase()}</strong> — ${r.addedAt.split("T")[0]}</summary>
+        const rCopy = htmlCopyBtn(`[issue:${issue.id}:research:${ri}] ${r.type}`);
+        rHtml += `<details class="research-item research-${typeClass} ref-container-inline">
+          <summary>${researchIcon(r.type)} <strong>${r.type.toUpperCase()}</strong> — ${r.addedAt.split("T")[0]} ${rCopy}</summary>
           <div class="md-content">${mdToHtml(r.content)}</div>
         </details>`;
       }
@@ -273,6 +277,10 @@ function generateSpec(db: ProjectFile): object {
     return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
+  function htmlCopyBtn(refText: string): string {
+    return `<button class="copy-ref inline-copy" onclick="event.stopPropagation();navigator.clipboard.writeText('${refText.replace(/'/g, "\\'")}').then(()=>{const el=document.getElementById('toast');el.textContent='Copied: ${refText.replace(/'/g, "\\'")}';el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1500)})">📋</button>`;
+  }
+
   // ─── Epics (with issues inside) ──────────────────────────────────────
   for (const epic of db.epics) {
     const epicChildren: string[] = [];
@@ -290,9 +298,10 @@ function generateSpec(db: ProjectFile): object {
     // Todos
     if (epic.todos.length > 0) {
       epicChildren.push(add("Text", { text: `**Todos** (${epic.todos.filter(t => t.done).length}/${epic.todos.length})`, variant: "body" }));
-      const todoItems = epic.todos.map(todo => add("Text", {
+      const todoItems = epic.todos.map((todo, ti) => add("Text", {
         text: `${todo.done ? "✅" : "⬜"} ${todo.text}`,
         variant: todo.done ? "muted" : "body",
+        ref: `[epic:${epic.id}:todo:${ti}] ${todo.text}`,
       }));
       epicChildren.push(add("Stack", { direction: "vertical", gap: "sm", align: null, justify: null }, todoItems));
     }
@@ -300,7 +309,7 @@ function generateSpec(db: ProjectFile): object {
     // Success criteria
     if (epic.successCriteria.length > 0) {
       epicChildren.push(add("Text", { text: "**Success Criteria:**", variant: "body" }));
-      const scItems = epic.successCriteria.map(sc => add("Text", { text: `• ${sc}`, variant: "muted" }));
+      const scItems = epic.successCriteria.map((sc, si) => add("Text", { text: `• ${sc}`, variant: "muted", ref: `[epic:${epic.id}:sc:${si}] ${sc}` }));
       epicChildren.push(add("Stack", { direction: "vertical", gap: "sm", align: null, justify: null }, scItems));
     }
 
@@ -315,9 +324,10 @@ function generateSpec(db: ProjectFile): object {
     if (epic.research.length > 0) {
       epicChildren.push(add("Separator", { orientation: null }));
       epicChildren.push(add("Heading", { text: `🔬 Research (${epic.research.length})`, level: "h3" }));
-      const rItems = epic.research.map(r => ({
+      const rItems = epic.research.map((r, ri) => ({
         title: `${researchIcon(r.type)} ${r.type.toUpperCase()} — ${r.addedAt.split("T")[0]}`,
         content: r.content,
+        ref: `[epic:${epic.id}:research:${ri}] ${r.type}`,
       }));
       epicChildren.push(add("Accordion", { items: rItems, type: "single" }));
     }
@@ -379,7 +389,8 @@ function generateSpec(db: ProjectFile): object {
         lines.push("");
         if (a.sources && a.sources.length > 0) {
           lines.push("**Sources:**");
-          for (const s of a.sources) {
+          for (let si = 0; si < a.sources.length; si++) {
+            const s = a.sources[si];
             lines.push(`- ${s.type === "url" ? `[${s.path}](${s.path})` : `\`${s.path}\``} — ${s.description}`);
           }
           lines.push("");
@@ -454,6 +465,10 @@ function generateHTML(projectId: string): string {
     .copy-ref:hover { background: #3f3f46; color: #fafafa; }
     .ref-container { position: relative; }
     .ref-container:hover .copy-ref { opacity: 1; }
+    .ref-container-inline { position: relative; }
+    .ref-container-inline .inline-copy { opacity: 0; position: absolute; top: 4px; right: 4px; }
+    .ref-container-inline:hover .inline-copy { opacity: 1; }
+    .inline-copy { cursor: pointer; }
 
     /* Toast */
     #toast {
@@ -618,11 +633,12 @@ function generateHTML(projectId: string): string {
 
       return h("div", { style: styles.accordion },
         items.map((item, i) =>
-          h("div", { key: item.id || i, id: item.id || undefined, style: styles.accordionItem },
+          h("div", { key: item.id || i, id: item.id || undefined, style: { ...styles.accordionItem, position: "relative" } },
             h("button", {
               style: { ...styles.accordionTrigger, background: openIndex === i ? "#1f1f23" : "transparent" },
               onClick: () => setOpenIndex(openIndex === i ? null : i)
             }, (openIndex === i ? "▾ " : "▸ ") + item.title),
+            item.ref ? h("button", { className: "copy-ref inline-copy", style: { position: "absolute", right: 8, top: 8 }, onClick: (e) => { e.stopPropagation(); copyRef(item.ref); } }, "📋") : null,
             openIndex === i ? h("div", { className: item.isHtml ? "" : "md-content", style: styles.accordionContent, dangerouslySetInnerHTML: { __html: item.isHtml ? item.content : md(item.content) } }) : null
           )
         )
@@ -658,8 +674,10 @@ function generateHTML(projectId: string): string {
         }
         case "Heading":
           return h(p.level || "h2", { key: elementId, style: styles.heading[p.level] || styles.heading.h2 }, p.text);
-        case "Text":
-          return h("div", { key: elementId, className: "md-content", style: styles.text[p.variant] || styles.text.body, dangerouslySetInnerHTML: { __html: md(p.text) } });
+        case "Text": {
+          const textEl = h("div", { key: elementId, className: "md-content", style: styles.text[p.variant] || styles.text.body, dangerouslySetInnerHTML: { __html: md(p.text) } });
+          return p.ref ? h(RefWrap, { key: elementId, refText: p.ref }, textEl) : textEl;
+        }
         case "Badge": {
           const variant = p.variant || "default";
           const s = variant === "secondary" ? styles.badgeSecondary : variant === "outline" ? styles.badgeOutline : styles.badge;

@@ -1,13 +1,43 @@
 {
   "version": 7,
-  "epics": [],
+  "epics": [
+    {
+      "id": "4ede9rp0",
+      "title": "Workflow Discipline & Issue Lifecycle Improvements",
+      "description": "Improvements to enforce proper issue workflow and manage issue/epic lifecycle. Includes soft-blocking file writes without an active issue, and a deferred status to park items without closing them.",
+      "body": "## Overview\nTwo complementary improvements to make the issue lifecycle more robust:\n\n1. **Soft-block file writes** — enforce that the agent only modifies files when an issue is actively in-progress, via layered policy injection and tool-result warnings.\n2. **Deferred status** — allow issues and epics to be parked without closing them, keeping the active view clean while preserving context.\n\n## Implementation Plan\n\n### Soft-block file writes (thlp7pym)\n- `before_agent_start`: inject full workflow policy into system prompt explaining the issue lifecycle and the rule that file writes require an in-progress issue.\n- `turn_start`: inject a lightweight status line each turn (`📍 Current: [issue:id] Title (in-progress)` or `⚠️ No issue in-progress`).\n- `tool_result` hook on `write`, `edit`, and `bash` (matching write patterns: `>`, `>>`, `tee`, `sed -i`, `mv`, `cp`): append a soft warning when no issue is in-progress.\n- **File:** `index.ts`\n\n### Deferred status (fqdkjlyp)\n- Add `deferred` as a valid status for issues and epics (side-channel, not part of the sequential flow).\n- New tools: `issue_defer` / `epic_defer` (with optional reason), `issue_resume` / `epic_resume` (restores previous status).\n- `issue_list` / `epic_list`: exclude deferred by default, add `include_deferred` flag.\n- `next_work`: ignore deferred items entirely.\n- **Files:** `types.ts`, `issues.ts`, `epics.ts`, `store.ts`, `tool-docs.ts`",
+      "priority": 1,
+      "status": "planned",
+      "relevantFiles": [],
+      "todos": [],
+      "successCriteria": [
+        "Before-agent-start hook injects a clear workflow policy explaining that file writes require an in-progress issue",
+        "Each turn start injects a single-line status showing the current in-progress issue or a warning that none is active",
+        "Write/edit/bash tool results append a visible soft warning when no issue is in-progress and a file mutation pattern is detected",
+        "A `deferred` status exists for both issues and epics and can be set via `issue_defer` / `epic_defer` tools with an optional reason",
+        "`issue_resume` / `epic_resume` restore items to their previous pre-defer status",
+        "`issue_list` and `epic_list` exclude deferred items by default, and include them when `include_deferred: true` is passed",
+        "`next_work` never surfaces deferred items",
+        "All new tools are documented in `tool-docs.ts` and behave consistently with existing tools"
+      ],
+      "research": [
+        {
+          "type": "comment",
+          "content": "The soft-block approach is intentionally a **warning**, not a hard block — the agent can still proceed but is reminded of the policy. This avoids workflow friction while still enforcing discipline through visibility. The `tool_result` hook is the most effective layer since it fires at the moment of the violation.",
+          "addedAt": "2026-03-10T11:46:09.620Z"
+        }
+      ],
+      "createdAt": "2026-03-10T11:44:56.964Z",
+      "updatedAt": "2026-03-10T11:46:12.976Z"
+    }
+  ],
   "issues": [
     {
       "id": "jqz3gsqr",
       "type": "feature",
       "title": "Live-updating web dashboard with `/project-serve` command",
       "description": "Add a `/project-serve` command that starts a local web server serving a read-only, live-updating dashboard of the project's epics, issues, and assets. Uses [json-render](https://github.com/vercel-labs/json-render) with shadcn components for rendering the project database. Every element has a \"copy reference\" button so users can paste precise references back into the agent chat.\n\n**Architecture:**\n- **Server (extension-side):** Node.js `http` module — serves static HTML + SSE endpoint. Watches `database.json` for changes and pushes updates.\n- **Client (browser):** Single HTML page loading React + `@json-render/shadcn` from CDN (esm.sh). Renders a spec generated from the database. SSE connection for live updates.\n- **No npm dependencies** — everything client-side loads via CDN, server uses only Node.js built-ins.\n\n**Multi-project support:**\n- Auto-finds an available port (starting from 3100, incrementing)\n- URL includes a project identifier derived from cwd, e.g. `http://localhost:3142/project/a1b2c3/`\n\n**Copy-reference:**\n- Each element (epic, issue, asset, todo, research note) has a hover \"📋\" button\n- Copies a reference like `[epic:abc123] Title` for pasting into agent chat\n\n**Files affected:**\n- New `dashboard-server.ts` — HTTP server, file watcher, SSE, spec generation\n- `commands.ts` — register `/project-serve` command\n- `index.ts` — wire up the new command",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -23,10 +53,99 @@
         }
       ],
       "createdAt": "2026-03-09T14:17:33.225Z",
-      "updatedAt": "2026-03-09T14:21:21.774Z",
+      "updatedAt": "2026-03-09T21:40:23.039Z",
       "autoValidation": {
         "type": "human",
         "strategy": "User confirms the dashboard serves, live-updates, and copy-reference works in browser"
+      },
+      "closeMessage": "Dashboard server fully implemented with SSE live updates, json-render/shadcn UI, multi-project support, and top-level copy-reference buttons. Sub-item copy buttons tracked in ugf7af4l.",
+      "validations": [
+        {
+          "criterion": "Add a `/project-serve` command that starts a local web server serving a read-only, live-updating dashboard of the project's epics, issues, and assets. Uses [json-render](https://github.com/vercel-labs/json-render) with shadcn components for rendering the project database. Every element has a \"copy reference\" button so users can paste precise references back into the agent chat.\n\n**Architecture:**\n- **Server (extension-side):** Node.js `http` module — serves static HTML + SSE endpoint. Watches `database.json` for changes and pushes updates.\n- **Client (browser):** Single HTML page loading React + `@json-render/shadcn` from CDN (esm.sh). Renders a spec generated from the database. SSE connection for live updates.\n- **No npm dependencies** — everything client-side loads via CDN, server uses only Node.js built-ins.\n\n**Multi-project support:**\n- Auto-finds an available port (starting from 3100, incrementing)\n- URL includes a project identifier derived from cwd, e.g. `http://localhost:3142/project/a1b2c3/`\n\n**Copy-reference:**\n- Each element (epic, issue, asset, todo, research note) has a hover \"📋\" button\n- Copies a reference like `[epic:abc123] Title` for pasting into agent chat\n\n**Files affected:**\n- New `dashboard-server.ts` — HTTP server, file watcher, SSE, spec generation\n- `commands.ts` — register `/project-serve` command\n- `index.ts` — wire up the new command",
+          "evidence": "All files exist and are wired up: dashboard-server.ts (926 lines), dashboard.ts (597 lines), commands.ts has /project-serve and /project-serve-stop registered. User confirmed \"It is created\". Copy-reference for sub-items tracked separately in ugf7af4l.",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-09T21:40:23.039Z"
+    },
+    {
+      "id": "ugf7af4l",
+      "type": "feature",
+      "title": "Add copy-reference buttons to all atomic dashboard elements",
+      "description": "Currently the dashboard's 📋 copy-reference button only appears on top-level Cards (epics/issues/assets). Sub-items like questions, research notes, todos, linked issues, success criteria, and asset sources have no copy button, making it impossible to reference them precisely in agent chat.\n\n**Scope:** Extend `RefWrap` usage or add inline copy buttons to all atomic units:\n- **Questions** → `[issue:id:q:0] question text`\n- **Research notes** → `[issue:id:research:0] title` / `[epic:id:research:0]`\n- **Todos** → `[epic:id:todo:0] todo text`\n- **Linked issues** → `[issue:linkedId] title`\n- **Success criteria** → `[epic:id:sc:0] criterion text`\n- **Asset sources** → `[asset:id:source:0] path`\n\n**Files affected:** `dashboard-server.ts` only — modify HTML rendering sections (~lines 213-260, 292-330) to wrap each sub-item with copy-reference functionality.",
+      "status": "closed",
+      "linkedIssueIds": [
+        "pv1lk7v7"
+      ],
+      "questions": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "## Current State Audit\n\n**HAS copy buttons (via `RefWrap` on Card component, line 651):**\n- ✅ Top-level Cards: epics, issues, assets\n\n**MISSING copy buttons — all sub-items rendered as raw HTML or json-render Text elements without `RefWrap`:**\n- ❌ Questions (lines ~213-230, HTML `question-card` divs)\n- ❌ Research notes (lines ~234-244, HTML `<details>` elements)\n- ❌ Todos (lines ~292-298, json-render Text elements)\n- ❌ Linked issues (lines ~200-208, HTML `<a>` elements)\n- ❌ Success criteria (lines ~302-305, json-render Text elements)\n- ❌ Relevant files (lines ~308-312, json-render Text elements)\n- ❌ Asset sources (not checked but likely same pattern)\n\n**Implementation notes:**\n- Issues use raw HTML rendering (`isHtml: true`), so copy buttons need inline HTML copy buttons (not `RefWrap` which is React)\n- Epics use json-render spec elements, so they could use `RefWrap` — but sub-items are plain `Text` nodes without ref metadata\n- The `copyRef()` JS function and `.copy-ref` CSS already exist and can be reused",
+          "addedAt": "2026-03-09T20:48:10.657Z"
+        }
+      ],
+      "createdAt": "2026-03-09T20:38:06.101Z",
+      "updatedAt": "2026-03-10T11:51:56.970Z",
+      "closeReviewed": true
+    },
+    {
+      "id": "thlp7pym",
+      "type": "feature",
+      "title": "Soft-block file writes when no issue is in-progress",
+      "description": "Enforce proper issue workflow with a layered approach:\n\n1. **`before_agent_start`** — injects full workflow policy into system prompt describing the issue lifecycle (draft → researched → ready → in-progress → closed) and the rule that file writes are only allowed when an issue is in-progress.\n2. **`turn_start`** — injects a single status line like `📍 Current: [issue:abc] Title (in-progress)` or `⚠️ No issue in-progress` as a lightweight reminder each turn.\n3. **`tool_result`** on `write`/`edit`/`bash` (write patterns like `>`, `>>`, `tee`, `sed -i`, `mv`, `cp`) — appends a warning when no issue is in-progress. This is the actual soft gate.\n\n**File:** `index.ts`",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-10T11:11:06.053Z",
+      "updatedAt": "2026-03-10T11:45:00.449Z",
+      "autoValidation": {
+        "type": "human",
+        "strategy": "User confirms the warning appears on write/edit when no issue is in-progress, and that the turn_start reminder and initial policy injection work correctly."
+      },
+      "epicId": "4ede9rp0"
+    },
+    {
+      "id": "fqdkjlyp",
+      "type": "feature",
+      "title": "Add \"deferred\" status for issues and epics",
+      "description": "Sometimes issues/epics need to be parked — waiting on external input, deprioritized, or blocked. Currently they clutter the active view. Add a \"deferred\" status that hides items from default listings and agent context, showing only minimal info (ID + title) when explicitly requested.\n\n**Implementation:**\n- Add `deferred` as a valid status for issues and epics (parallel to the main flow, not sequential)\n- New `issue_defer` / `epic_defer` tools to park items (with optional reason)\n- New `issue_resume` / `epic_resume` tools to bring them back to their previous status\n- `issue_list` / `epic_list` exclude deferred by default (like closed), add `include_deferred` flag\n- `next_work` ignores deferred items\n\n**Files:** `types.ts`, `issues.ts`, `epics.ts`, `store.ts`, `tool-docs.ts`",
+      "status": "in-progress",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "comment",
+          "content": "`deferred` is a side-channel status — not part of the sequential draft→researched→ready→in-progress→closed flow. Items retain their original status internally so `resume` can restore them. Implementation touches: `types.ts` (union), `issues.ts` / `epics.ts` (defer/resume logic), `store.ts` (persistence), `tool-docs.ts` (new tool docs), and list/next_work filtering.",
+          "addedAt": "2026-03-10T11:49:31.417Z"
+        }
+      ],
+      "createdAt": "2026-03-10T11:12:59.063Z",
+      "updatedAt": "2026-03-10T11:50:45.547Z",
+      "autoValidation": {
+        "type": "agent",
+        "strategy": "Defer an issue, verify it disappears from issue_list, verify it shows with include_deferred, resume it and verify it returns to previous status."
+      },
+      "epicId": "4ede9rp0"
+    },
+    {
+      "id": "pv1lk7v7",
+      "type": "bug",
+      "title": "issue_close silently fails to close when met: false — issue stays in-progress",
+      "description": "When calling `issue_close` with `met: false` (e.g. skipping or abandoning an issue), the tool returns an error-style message (`❌ Requirement not met`) but **does not update the issue status to `closed`**. The issue remains stuck in `in-progress`, blocking other issues from starting and polluting `next_work`.\\n\\n**Root cause:** The early-return guard at step 2 (`if (!params.met) return ...`) fires before `issue.status = \\\"closed\\\"` is ever reached. A `met: false` close is a legitimate workflow action (abandoned, skipped, out-of-scope) and should still transition the issue to `closed`.\\n\\n**Fix:** When `met: false`, still close the issue (set `status = \\\"closed\\\"`, persist, clean up `closeReviewed`) but record `met: false` in the validation — consistent with how epic_close handles unmet criteria.\\n\\n**File:** `issues.ts` ~line 313",
+      "status": "draft",
+      "epicId": "4ede9rp0",
+      "linkedIssueIds": [
+        "ugf7af4l"
+      ],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-10T11:51:53.956Z",
+      "updatedAt": "2026-03-10T11:51:56.970Z",
+      "autoValidation": {
+        "type": "agent",
+        "strategy": "Call issue_close with met: false on a test in-progress issue, then confirm its status is closed via issue_show and that next_work no longer surfaces it."
       }
     }
   ],

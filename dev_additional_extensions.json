@@ -1,0 +1,9 @@
+{
+  "extensions": [
+    "~/.pi/packagemanager/packages/file-rules/extensions/file-rules.ts",
+    "~/.pi/packagemanager/packages/pi-docs/index.ts",
+    "~/.pi/packagemanager/packages/pi-docs/widget-lib/index.ts"
+  ],
+  "skills": [],
+  "prompts": []
+}
