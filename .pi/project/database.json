@@ -542,17 +542,18 @@
       "type": "feature",
       "title": "Auto-capture edited files as issue references with optional close-time change notes",
       "description": "When working on an in-progress issue, there's no automatic record of which files were actually touched — that context lives only in git history. This feature adds two opt-in config switches: one that silently captures every file written/edited during an issue and records it as a reference on that issue, and a second that gates issue closure behind a one-sentence \"what changed\" note per captured file. Both are disabled by default.\n\n## Config entries (both default `false`)\n- `issues.capture_edited_files` — auto-add written/edited files as issue references when an issue is in-progress\n- `issues.require_file_change_notes` — block issue close until each captured file has a one-sentence change note\n\n## Implementation\n\n**`config.ts`**\n- Add two new bool `ConfigEntry` items under the `issues` prefix\n\n**`index.ts`**\n- Hook into pi's write/edit tool events; when `issues.capture_edited_files` is enabled and an issue is in-progress, call `issue_research` with `type: \"reference\"` recording the file path (deduplicate — skip if already captured)\n\n**`issues.ts` / close gate**\n- When `issues.require_file_change_notes` is enabled, scan auto-captured file references on the issue at close time; if any lack a change note, block closure with a clear error listing the missing files\n\n**Data model**\n- No schema changes needed — auto-captured files use the existing research notes structure with a distinguishable prefix (e.g. `[auto] path/to/file`) so the gate logic can identify them",
-      "status": "ready",
+      "status": "in-progress",
       "linkedIssueIds": [],
       "questions": [],
       "research": [],
       "createdAt": "2026-03-10T16:38:35.830Z",
-      "updatedAt": "2026-03-10T16:44:50.673Z",
+      "updatedAt": "2026-03-10T16:45:08.901Z",
       "autoValidation": {
         "type": "human",
         "strategy": "User confirms: (1) files are auto-captured as references when config is on, (2) issue close is blocked when require_file_change_notes is on and notes are missing, (3) both default to off"
       },
-      "epicId": "tedhxd22"
+      "epicId": "tedhxd22",
+      "startCommit": "9b2b4a408120ac0c62783d7a3067c28dd3951747"
     }
   ],
   "categories": [

@@ -362,6 +362,23 @@ export function registerIssueTools(pi: ExtensionAPI) {
         }
       }
 
+      // Gate: require file change notes for auto-captured files
+      if (issue.closeReviewed && getConfigValue<boolean>(r, "issues.require_file_change_notes")) {
+        const autoCaptured = issue.research
+          .filter(n => n.type === "reference" && n.content.startsWith("[auto] "))
+          .map(n => n.content.slice(7)); // strip "[auto] "
+        if (autoCaptured.length > 0) {
+          const missing = autoCaptured.filter(filePath => {
+            const noteTag = `[change-note] ${filePath}`;
+            return !issue.research.some(n => n.type === "comment" && n.content.startsWith(noteTag));
+          });
+          if (missing.length > 0) {
+            const fileList = missing.map(f => `  - \`${f}\``).join("\n");
+            return { content: [{ type: "text", text: `⛔ File change notes required before closing. Add a one-sentence \`issue_research\` note (type: "comment") starting with \`[change-note] <path>\` for each file:\n${fileList}` }] };
+          }
+        }
+      }
+
       // Step 2: validate and close
       if (params.evidence === undefined || !params.message || params.met === undefined) {
         const missing = [

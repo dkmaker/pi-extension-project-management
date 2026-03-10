@@ -110,6 +110,31 @@ export default function (pi: ExtensionAPI) {
       } catch {}
     }
 
+    // Auto-capture edited files as issue references
+    if (FILE_WRITE_TOOLS.has(event.toolName) && event.input?.path) {
+      try {
+        const r = load();
+        if (getConfigValue<boolean>(r, "issues.capture_edited_files")) {
+          const inProgressIssue = r.issues.find(i => i.status === "in-progress");
+          if (inProgressIssue) {
+            const filePath: string = event.input.path;
+            const autoTag = `[auto] ${filePath}`;
+            const alreadyCaptured = inProgressIssue.research.some(
+              n => n.type === "reference" && n.content === autoTag
+            );
+            if (!alreadyCaptured) {
+              inProgressIssue.research.push({
+                type: "reference",
+                content: autoTag,
+                addedAt: new Date().toISOString(),
+              });
+              save(r);
+            }
+          }
+        }
+      } catch {}
+    }
+
     // Check for policy triggers
     const policyEvent = TOOL_TO_EVENT[event.toolName];
     if (policyEvent) {

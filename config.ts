@@ -115,6 +115,22 @@ export const CONFIG_REGISTRY: ConfigEntry[] = [
     description: "Block issue_close unless a valid commit SHA is provided",
     default: true,
   },
+
+  // Issues — file traceability
+  {
+    type: "bool",
+    key: "issues.capture_edited_files",
+    label: "Capture edited files",
+    description: "Auto-add files written/edited during an in-progress issue as references",
+    default: false,
+  },
+  {
+    type: "bool",
+    key: "issues.require_file_change_notes",
+    label: "Require file change notes",
+    description: "Block issue close until each auto-captured file has a one-sentence change note",
+    default: false,
+  },
 ];
 
 // --- Accessors ---
