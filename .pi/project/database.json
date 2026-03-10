@@ -545,15 +545,22 @@
       "status": "in-progress",
       "linkedIssueIds": [],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "[auto] /tmp/pi-capture-test9.txt",
+          "addedAt": "2026-03-10T17:01:34.183Z"
+        }
+      ],
       "createdAt": "2026-03-10T16:38:35.830Z",
-      "updatedAt": "2026-03-10T16:45:08.901Z",
+      "updatedAt": "2026-03-10T16:46:24.765Z",
       "autoValidation": {
         "type": "human",
         "strategy": "User confirms: (1) files are auto-captured as references when config is on, (2) issue close is blocked when require_file_change_notes is on and notes are missing, (3) both default to off"
       },
       "epicId": "tedhxd22",
-      "startCommit": "9b2b4a408120ac0c62783d7a3067c28dd3951747"
+      "startCommit": "9b2b4a408120ac0c62783d7a3067c28dd3951747",
+      "closeReviewed": true
     }
   ],
   "categories": [
@@ -586,6 +593,8 @@
     "git.require_epic_branch": false,
     "git.merge_check_on_epic_close": false,
     "git.epics.auto_branch": false,
-    "git.epics.merge_check_on_close": false
+    "git.epics.merge_check_on_close": false,
+    "issues.capture_edited_files": true,
+    "issues.require_file_change_notes": true
   }
 }

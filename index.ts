@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { getMarkdownTheme } from "@mariozechner/pi-coding-agent";
 import { Markdown, Text, visibleWidth, truncateToWidth } from "@mariozechner/pi-tui";
-import { load, activeEpics, nextEpic } from "./store.js";
+import { load, save, activeEpics, nextEpic } from "./store.js";
 import { formatBrief, formatAssetsContext, statusBarText, focusWidgetData, renderFocusLine } from "./format.js";
 import { registerEpicTools } from "./epics.js";
 import { registerIssueTools } from "./issues.js";
