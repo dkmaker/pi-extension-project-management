@@ -429,17 +429,18 @@
       "type": "feature",
       "title": "Split git config section into epics/issues subgroups in /config widget",
       "description": "The `/config` TUI widget groups all `git.*` keys under a single \"git\" heading. The user wants visual separation between epic-related git settings and issue-related git settings.\n\n**Change:** Update the render grouping logic in `commands.ts` so that:\n- `git.enabled` stays under heading **`git`**\n- `git.epics.*` keys get a subheading **`git · epics`**\n- `git.issues.*` keys get a subheading **`git · issues`**\n\nThis requires using a deeper key prefix (up to 2 segments) for grouping when the second segment is \"epics\" or \"issues\".",
-      "status": "ready",
+      "status": "in-progress",
       "epicId": "mu7pvx9d",
       "linkedIssueIds": [],
       "questions": [],
       "research": [],
       "createdAt": "2026-03-10T16:28:20.135Z",
-      "updatedAt": "2026-03-10T16:28:27.498Z",
+      "updatedAt": "2026-03-10T16:28:56.037Z",
       "autoValidation": {
         "type": "human",
         "strategy": "User visually confirms the /config widget shows two separate git subgroups"
-      }
+      },
+      "startCommit": "6a6ec82ff42309e132234091db0af8adec38b887"
     }
   ],
   "categories": [

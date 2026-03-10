@@ -398,11 +398,14 @@ class ConfigWidget implements Component, Focusable {
     lines.push(truncateToWidth(t.fg("accent", title) + " ".repeat(pad), width));
     lines.push(t.fg("dim", "─".repeat(width)));
 
-    // Group by prefix
+    // Group by prefix (use 2 segments for git.epics.* and git.issues.*)
     let lastGroup = "";
     for (let i = 0; i < entries.length; i++) {
       const { entry, value } = entries[i];
-      const [group] = entry.key.split(".");
+      const parts = entry.key.split(".");
+      const group = (parts[0] === "git" && parts.length >= 3)
+        ? `${parts[0]} · ${parts[1]}`
+        : parts[0];
       if (group !== lastGroup) {
         if (i > 0) lines.push("");
         lines.push(t.fg("dim", ` ${group}`));
