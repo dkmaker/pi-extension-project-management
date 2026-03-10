@@ -3,3 +3,4 @@ node_modules/
 .pi/git/
 .pi/project/dashboard.lock
 .pi-home
+.pi-home-/

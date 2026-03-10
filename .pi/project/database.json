@@ -404,13 +404,14 @@
       "type": "idea",
       "title": "Split git config into git.epics.* and git.issues.* sections",
       "description": "Currently all git guards live under a flat `git.*` namespace, making it impossible to disable epic-level behaviour (branch creation, merge checks) without also disabling issue-level behaviour (clean worktree, commit tracking). This splits the registry into three sections: `git.enabled` (master switch), `git.epics.*` (branch auto-create, merge check on close), and `git.issues.*` (require clean worktree, require epic branch, require commit on close, require commit ID). Each section can be fully disabled independently while the master switch still kills everything at once.",
-      "status": "ready",
+      "status": "in-progress",
       "epicId": "mu7pvx9d",
       "linkedIssueIds": [],
       "questions": [],
       "research": [],
       "createdAt": "2026-03-10T16:21:49.969Z",
-      "updatedAt": "2026-03-10T16:22:37.431Z"
+      "updatedAt": "2026-03-10T16:24:26.659Z",
+      "startCommit": "ba1e6660cd908e380bd770edcb82f0539613857f"
     }
   ],
   "categories": [

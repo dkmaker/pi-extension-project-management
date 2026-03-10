@@ -61,7 +61,7 @@ export const CONFIG_REGISTRY: ConfigEntry[] = [
     default: true,
   },
 
-  // Git integration (master switch + individual guards — used by git module)
+  // Git integration — master switch
   {
     type: "bool",
     key: "git.enabled",
@@ -69,46 +69,50 @@ export const CONFIG_REGISTRY: ConfigEntry[] = [
     description: "Master switch — enables all git workflow guards",
     default: false,
   },
+
+  // Git — epic-level guards
   {
     type: "bool",
-    key: "git.epic_branch",
+    key: "git.epics.auto_branch",
     label: "Auto-create epic branch",
-    description: "Create a git branch when an epic goes in-progress",
+    description: "Create a git branch (epic/{id}-{slug}) when an epic goes in-progress",
     default: true,
   },
   {
     type: "bool",
-    key: "git.require_clean_worktree",
+    key: "git.epics.merge_check_on_close",
+    label: "Merge check on epic close",
+    description: "Warn if the epic branch is not merged into default branch when closing",
+    default: true,
+  },
+
+  // Git — issue-level guards
+  {
+    type: "bool",
+    key: "git.issues.require_clean_worktree",
     label: "Require clean worktree",
     description: "Block issue start if the git worktree is dirty",
     default: true,
   },
   {
     type: "bool",
-    key: "git.require_epic_branch",
+    key: "git.issues.require_epic_branch",
     label: "Require epic branch",
-    description: "Block issue start if the epic branch does not exist",
+    description: "Block issue start if the parent epic's branch does not exist",
     default: true,
   },
   {
     type: "bool",
-    key: "git.require_commit_on_close",
+    key: "git.issues.require_commit_on_close",
     label: "Require commit on close",
-    description: "Block issue close if no new commits exist since issue started",
+    description: "Block issue close if no new commits exist since the issue was started",
     default: true,
   },
   {
     type: "bool",
-    key: "git.require_commit_id_on_close",
+    key: "git.issues.require_commit_id_on_close",
     label: "Require commit ID on close",
     description: "Block issue_close unless a valid commit SHA is provided",
-    default: true,
-  },
-  {
-    type: "bool",
-    key: "git.merge_check_on_epic_close",
-    label: "Merge check on epic close",
-    description: "Warn if the epic branch is not merged when closing the epic",
     default: true,
   },
 ];

@@ -232,11 +232,11 @@ export function registerIssueTools(pi: ExtensionAPI) {
       // Git guards for starting an issue
       if (next === "in-progress" && getConfigValue<boolean>(r, "git.enabled") && isGitRepo()) {
         // Require clean worktree
-        if (getConfigValue<boolean>(r, "git.require_clean_worktree") && !isClean()) {
+        if (getConfigValue<boolean>(r, "git.issues.require_clean_worktree") && !isClean()) {
           return { content: [{ type: "text", text: `⛔ Git: Working tree is dirty. Commit or stash your changes before starting an issue.` }] };
         }
         // Require epic branch to exist
-        if (getConfigValue<boolean>(r, "git.require_epic_branch") && issue.epicId) {
+        if (getConfigValue<boolean>(r, "git.issues.require_epic_branch") && issue.epicId) {
           const epic = r.epics.find(e => e.id === issue.epicId);
           if (epic) {
             const expectedBranch = epicBranchName(epic.id, epic.title);
@@ -346,13 +346,13 @@ export function registerIssueTools(pi: ExtensionAPI) {
       // Step 2: git guards before closing
       if (issue.closeReviewed && getConfigValue<boolean>(r, "git.enabled") && isGitRepo() && params.close_reason !== "deferred" && params.close_reason !== "wont-fix") {
         // Require commits since issue started
-        if (getConfigValue<boolean>(r, "git.require_commit_on_close") && issue.startCommit) {
+        if (getConfigValue<boolean>(r, "git.issues.require_commit_on_close") && issue.startCommit) {
           if (!hasCommitsSince(issue.startCommit)) {
             return { content: [{ type: "text", text: `⛔ Git: No commits found since this issue was started. Commit your work before closing.` }] };
           }
         }
         // Require commit_id param
-        if (getConfigValue<boolean>(r, "git.require_commit_id_on_close")) {
+        if (getConfigValue<boolean>(r, "git.issues.require_commit_id_on_close")) {
           if (!params.commit_id) {
             return { content: [{ type: "text", text: `⛔ Git: A commit SHA is required to close this issue (\`commit_id\` param). Provide the commit that implements this work.` }] };
           }

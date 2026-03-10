@@ -285,13 +285,13 @@ Opens an interactive TUI widget to toggle and edit all config settings.
 | \`workflow.write_gate\` | bool | true | Block file writes when no issue is in-progress |
 | \`context.brief_verbosity\` | select | normal | LLM context verbosity at session start (minimal/normal/verbose) |
 | \`context.unassigned_bugs_in_steering\` | bool | true | Show unassigned bugs in per-turn steering context |
-| \`git.enabled\` | bool | false | Master switch for git workflow guards |
-| \`git.epic_branch\` | bool | true | Create git branch when epic goes in-progress |
-| \`git.require_clean_worktree\` | bool | true | Block issue start if worktree is dirty |
-| \`git.require_epic_branch\` | bool | true | Block issue start if epic branch doesn't exist |
-| \`git.require_commit_on_close\` | bool | true | Block issue close if no new commits since issue started |
-| \`git.require_commit_id_on_close\` | bool | true | Block issue_close unless a valid commit SHA is provided |
-| \`git.merge_check_on_epic_close\` | bool | true | Warn if epic branch not merged when closing epic |
+| \`git.enabled\` | bool | false | Master switch — disables all git guards when false |
+| \`git.epics.auto_branch\` | bool | true | Create git branch (epic/{id}-{slug}) when epic goes in-progress |
+| \`git.epics.merge_check_on_close\` | bool | true | Warn if epic branch not merged into default branch on close |
+| \`git.issues.require_clean_worktree\` | bool | true | Block issue start if worktree is dirty |
+| \`git.issues.require_epic_branch\` | bool | true | Block issue start if parent epic branch doesn't exist |
+| \`git.issues.require_commit_on_close\` | bool | true | Block issue close if no new commits since issue started |
+| \`git.issues.require_commit_id_on_close\` | bool | true | Block issue_close unless a valid commit SHA is provided |
 
 ### Widget controls
 - **↑↓** navigate, **Enter/Space** toggle bool or cycle select, **r** reset to default, **Ctrl+R** reset all, **Esc** close

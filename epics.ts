@@ -207,7 +207,7 @@ export function registerEpicTools(pi: ExtensionAPI) {
 
       // Git: auto-create epic branch when going in-progress
       let gitNote = "";
-      if (next === "in-progress" && getConfigValue<boolean>(r, "git.enabled") && getConfigValue<boolean>(r, "git.epic_branch")) {
+      if (next === "in-progress" && getConfigValue<boolean>(r, "git.enabled") && getConfigValue<boolean>(r, "git.epics.auto_branch")) {
         if (isGitRepo()) {
           const branchName = epicBranchName(epic.id, epic.title);
           if (branchExists(branchName)) {
@@ -304,7 +304,7 @@ export function registerEpicTools(pi: ExtensionAPI) {
         }
 
         // Git: merge check
-        if (getConfigValue<boolean>(r, "git.enabled") && getConfigValue<boolean>(r, "git.merge_check_on_epic_close")) {
+        if (getConfigValue<boolean>(r, "git.enabled") && getConfigValue<boolean>(r, "git.epics.merge_check_on_close")) {
           if (epic.gitBranch && isGitRepo()) {
             const target = defaultBranch();
             if (!isMergedInto(epic.gitBranch, target)) {
