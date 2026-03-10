@@ -22,14 +22,16 @@ function formatResearch(research: ResearchNote[]): string {
 
 export function formatIssue(issue: Issue): string {
   const icon = ISSUE_TYPE_ICON[issue.type] || "•";
-  const st = statusLabel(issue.status, ISSUE_STATUS_ICON);
+  const displayStatus = issue.status === "closed" && issue.closeReason === "deferred" ? "deferred" : issue.status;
+  const st = statusLabel(displayStatus, ISSUE_STATUS_ICON);
   const link = issue.epicId ? ` → epic:${issue.epicId}` : "";
   return `${icon} [${issue.id}] ${issue.title} (${issue.type}, ${st})${link}`;
 }
 
 export function formatIssueVerbose(issue: Issue, epics: Epic[], assets: Asset[] = [], allIssues: Issue[] = []): string {
   const icon = ISSUE_TYPE_ICON[issue.type] || "•";
-  const st = statusLabel(issue.status, ISSUE_STATUS_ICON);
+  const displayStatus = issue.status === "closed" && issue.closeReason === "deferred" ? "deferred" : issue.status;
+  const st = statusLabel(displayStatus, ISSUE_STATUS_ICON);
   let out = `### ${icon} [${issue.id}] ${issue.title}  (${issue.type}, ${st})`;
   out += `\n${issue.description}`;
   if (issue.epicId) {
@@ -61,7 +63,10 @@ export function formatIssueVerbose(issue: Issue, epics: Epic[], assets: Asset[] 
     }
   }
   out += formatResearch(issue.research);
-  if (issue.closeMessage) out += `\n\n**Close message:** ${issue.closeMessage}`;
+  if (issue.closeMessage) {
+    const reasonTag = issue.closeReason && issue.closeReason !== "done" ? ` (${issue.closeReason})` : "";
+    out += `\n\n**Close message${reasonTag}:** ${issue.closeMessage}`;
+  }
   if (issue.validations?.length) {
     out += `\n\n**Validated:** ✅ ${issue.validations[0].evidence}`;
   }
@@ -72,7 +77,8 @@ export function formatIssueVerbose(issue: Issue, epics: Epic[], assets: Asset[] 
 // --- Epics ---
 
 export function formatEpic(epic: Epic, verbose = false, issues: Issue[] = [], assets: Asset[] = []): string {
-  const st = statusLabel(epic.status, EPIC_STATUS_ICON);
+  const displayStatus = epic.status === "closed" && epic.closeReason === "deferred" ? "deferred" : epic.status;
+  const st = statusLabel(displayStatus, EPIC_STATUS_ICON);
   const todosDone = epic.todos.filter((t) => t.done).length;
   const todosTotal = epic.todos.length;
   let out = `### [${epic.id}] ${epic.title}  (priority: ${epic.priority}, ${st})`;
@@ -100,7 +106,10 @@ export function formatEpic(epic: Epic, verbose = false, issues: Issue[] = [], as
     } else if (linkedClosed.length) {
       out += `\n\n**Issues:** ${linkedClosed.length} closed`;
     }
-    if (epic.closeMessage) out += `\n\n**Close message:** ${epic.closeMessage}`;
+    if (epic.closeMessage) {
+      const reasonTag = epic.closeReason && epic.closeReason !== "done" ? ` (${epic.closeReason})` : "";
+      out += `\n\n**Close message${reasonTag}:** ${epic.closeMessage}`;
+    }
     if (epic.validations?.length) {
       out += `\n\n**Validations:**`;
       for (const v of epic.validations) out += `\n- ${v.met ? "✅" : "❌"} **${v.criterion}**: ${v.evidence}`;

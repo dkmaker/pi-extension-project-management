@@ -12,6 +12,7 @@ export const EPIC_STATUS_LABEL: Record<string, string> = {
   planned: "📋 planned",
   "in-progress": "🔧 in-progress",
   closed: "🏁 closed",
+  deferred: "📦 deferred",
 };
 
 export const ISSUE_TYPE_ICON: Record<string, string> = {
@@ -28,4 +29,5 @@ export const ISSUE_STATUS_LABEL: Record<string, string> = {
   ready: "✅ ready",
   "in-progress": "🔧 in-progress",
   closed: "🏁 closed",
+  deferred: "📦 deferred",
 };

@@ -28,7 +28,8 @@ Returns full epic details: description, body, todos, success criteria, research 
 Lists all non-closed epics sorted by priority. Shows brief format with status, issue counts, and todo progress.
 
 **Parameters:**
-- \`include_closed\`: Include closed epics (default: false)`,
+- \`include_closed\`: Include closed epics (default: false)
+- \`include_deferred\`: Show only deferred epics — closed with reason=deferred (default: false)`,
 
   epic_update: `## epic_update — Update epic fields
 Only provided fields are changed. Omitted fields are untouched.
@@ -50,18 +51,27 @@ Moves epic to next status: draft→planned→in-progress. Shows guidance on gaps
 - \`force\`: Force advance even if gaps exist (default: false)`,
 
   epic_close: `## epic_close — Close an epic (two-step)
-**Step 1:** Call with just \`id\` — returns checklist with success criteria, unfinished todos, open issues.
+**Step 1:** Call with just \`id\` (and optionally \`close_reason\`) — returns checklist with success criteria, unfinished todos, open issues.
 **Step 2:** Call with \`id\`, \`validations\` (one per criterion with evidence + met), and \`message\`.
 
 All criteria must be met. Validations array must match success_criteria count and order.
 
+**close_reason values:**
+- \`done\` (default): normal completion
+- \`deferred\`: park the epic for later — requires \`user_approval\` (user must explicitly approve, agent cannot defer autonomously). Auto-defers all linked open issues.
+- \`wont-fix\`: intentional decision not to do this work
+
+⚠️ **Deferred requires user approval** — always ask the user first, then pass their response as \`user_approval\`.
+
 **Parameters:**
 - \`id\` (required): Epic ID
 - \`message\`: Closing summary (step 2)
-- \`validations\`: Array of {evidence: string, met: boolean} — one per success criterion, in order`,
+- \`validations\`: Array of {evidence: string, met: boolean} — one per success criterion, in order
+- \`close_reason\`: "done" | "deferred" | "wont-fix" (default: done)
+- \`user_approval\`: Required when close_reason is "deferred" — paste the user's exact approval`,
 
   epic_reopen: `## epic_reopen — Reopen a closed epic
-Returns the epic to 'draft' status. Clears close message and close date.
+Returns the epic to 'draft' status. Clears close message and close date. If the epic was deferred, any issues that were auto-deferred by this epic are also reopened to 'draft'.
 
 **Parameters:**
 - \`id\` (required): Epic ID`,
@@ -109,6 +119,7 @@ Lists issues with optional filters. Excludes closed by default.
 
 **Parameters:**
 - \`include_closed\`: Include closed issues (default: false)
+- \`include_deferred\`: Show only deferred issues — closed with reason=deferred (default: false)
 - \`epic_id\`: Filter by linked epic
 - \`type\`: Filter by type (bug/feature/chore/spike/idea)
 - \`status\`: Filter by status (draft/researched/ready/in-progress/closed)`,
@@ -151,20 +162,28 @@ Add questions, answer them by index, or list all questions. Unanswered **require
 **Icons:** ❓ = unanswered, ✅ = answered, *(optional)* = non-blocking`,
 
   issue_close: `## issue_close — Close an issue (two-step)
-**Step 1:** Call with just \`id\` — returns checklist with requirement, research, and validation instructions.
+**Step 1:** Call with just \`id\` (and optionally \`close_reason\`) — returns checklist with requirement, research, and validation instructions.
 **Step 2:** Call with \`id\`, \`evidence\`, \`met: true\`, and \`message\`.
 
 For agent-validated issues: run validation, capture output as evidence.
 For human-validated issues: evidence must contain user confirmation (e.g. "user confirmed: works").
 
+**close_reason values:**
+- \`done\` (default): normal completion — requires evidence + met: true
+- \`deferred\`: park for later — evidence must contain user approval (e.g. "user approved: defer this"). Agent cannot defer without user consent.
+- \`wont-fix\`: intentional decision not to fix — evidence explains why
+
+⚠️ **Deferred requires user approval** — always ask the user first and include their response in evidence.
+
 **Parameters:**
 - \`id\` (required): Issue ID
 - \`message\`: Closing summary (step 2)
-- \`evidence\`: Proof that the requirement was fulfilled (step 2)
-- \`met\`: Whether the requirement was met (step 2)`,
+- \`evidence\`: Proof / reason (step 2)
+- \`met\`: Whether the requirement was met (step 2, required for done)
+- \`close_reason\`: "done" | "deferred" | "wont-fix" (default: done)`,
 
   issue_reopen: `## issue_reopen — Reopen a closed issue
-Returns the issue to 'draft' status.
+Returns the issue to 'draft' status. Clears close message, close date, and close reason.
 
 **Parameters:**
 - \`id\` (required): Issue ID`,

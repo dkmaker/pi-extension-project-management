@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 import type { Issue } from "./types.js";
-import { ISSUE_TRANSITIONS, ISSUE_NEXT } from "./types.js";
+import { ISSUE_TRANSITIONS, ISSUE_NEXT, type CloseReason } from "./types.js";
 import { load, save, genId, now } from "./store.js";
 import { formatIssue, formatIssueVerbose } from "./format.js";
 import { ISSUE_STATUS_LABEL, ISSUE_TYPE_ICON } from "./constants.js";
@@ -124,16 +124,23 @@ export function registerIssueTools(pi: ExtensionAPI) {
     description: "List issues (excludes closed by default). Use project_tool_docs('issue_list') for usage.",
     parameters: Type.Object({
       include_closed: Type.Optional(Type.Boolean({ description: "Include closed issues", default: false })),
+      include_deferred: Type.Optional(Type.Boolean({ description: "Show only deferred issues (closed with reason=deferred)", default: false })),
       epic_id: Type.Optional(Type.String({ description: "Filter by linked epic ID" })),
       type: Type.Optional(IssueTypeSchema),
       status: Type.Optional(Type.Union([Type.Literal("draft"), Type.Literal("researched"), Type.Literal("ready"), Type.Literal("in-progress"), Type.Literal("closed")], { description: "Filter by status" })),
     }),
     async execute(_id, params) {
       const r = load();
-      let issues = params.include_closed ? r.issues : r.issues.filter((i) => i.status !== "closed");
+      let issues: Issue[];
+      if (params.include_deferred) {
+        // Show only deferred items
+        issues = r.issues.filter((i) => i.status === "closed" && i.closeReason === "deferred");
+      } else {
+        issues = params.include_closed ? r.issues : r.issues.filter((i) => i.status !== "closed");
+      }
       if (params.epic_id) issues = issues.filter((i) => i.epicId === params.epic_id);
       if (params.type) issues = issues.filter((i) => i.type === params.type);
-      if (params.status) issues = issues.filter((i) => i.status === params.status);
+      if (params.status && !params.include_deferred) issues = issues.filter((i) => i.status === params.status);
 
       if (!issues.length) return { content: [{ type: "text", text: "No issues found." }] };
 
@@ -246,6 +253,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
       message: Type.Optional(Type.String({ description: "Closing summary (required for step 2)" })),
       evidence: Type.Optional(Type.String({ description: "Evidence/proof that the issue requirement was fulfilled" })),
       met: Type.Optional(Type.Boolean({ description: "Whether the requirement was met (required for step 2)" })),
+      close_reason: Type.Optional(Type.Union([Type.Literal("done"), Type.Literal("deferred"), Type.Literal("wont-fix")], { description: "Reason for closing (default: done). 'deferred' requires explicit user approval." })),
     }),
     async execute(_id, params) {
       const r = load();
@@ -259,6 +267,16 @@ export function registerIssueTools(pi: ExtensionAPI) {
 
       const icon = ISSUE_TYPE_ICON[issue.type];
 
+      const closeReason: CloseReason = params.close_reason || "done";
+
+      // Deferred requires human approval — enforce before even showing checklist
+      if (closeReason === "deferred") {
+        const hasUserApproval = /user\s*(approved|confirmed|said|ok|okay|lgtm|authorized|deferred|defer|:\s*(yes|ok|okay|lgtm|approved|defer))/i.test(params.evidence || "");
+        if (!hasUserApproval) {
+          return { content: [{ type: "text", text: `⛔ **Deferring requires explicit user approval.**\n\nAsk the user: *"Should I defer [${issue.id}] ${issue.title}?"* and include their confirmation in the \`evidence\` field.` }] };
+        }
+      }
+
       // Step 1: show checklist (persisted on issue, survives /reload)
       if (!issue.closeReviewed) {
         issue.closeReviewed = true;
@@ -266,6 +284,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
         save(r);
 
         let out = `# 🔍 Close Checklist for ${icon} [${issue.id}] ${issue.title}\n\n`;
+        if (closeReason !== "done") out += `> ⚠️ Closing with reason: **${closeReason}**\n\n`;
         out += `## Requirement\n${issue.description}\n\n`;
         if (issue.research.length) {
           out += `## Research\n`;
@@ -303,32 +322,37 @@ export function registerIssueTools(pi: ExtensionAPI) {
         ].filter(Boolean);
         return { content: [{ type: "text", text: `Step 2 requires: ${missing.join(", ")}.` }] };
       }
-      if (!params.met) {
+      if (!params.met && closeReason === "done") {
         return { content: [{ type: "text", text: `❌ Requirement not met: ${params.evidence}\n\nFix the issue, then try again.` }] };
       }
 
-      // Validation type enforcement
-      const vtype = issue.autoValidation?.type || (issue.autoValidation?.possible === false ? "human" : undefined);
-      const evidenceLower = params.evidence.toLowerCase();
-      const hasUserConfirmation = /user\s*(confirmed|validated|approved|override|verified|:\s*(confirmed|lgtm|works|yes|looks good))/i.test(params.evidence);
-
-      if (vtype === "human" && !hasUserConfirmation) {
-        return { content: [{ type: "text", text: `⛔ **Human validation required.** Ask the user to validate, then include their confirmation in the evidence.` }] };
+      // Validation type enforcement (only for "done" — deferred/wont-fix skip functional validation)
+      if (closeReason === "done") {
+        const vtype = issue.autoValidation?.type || (issue.autoValidation?.possible === false ? "human" : undefined);
+        const hasUserConfirmation = /user\s*(confirmed|validated|approved|override|verified|:\s*(confirmed|lgtm|works|yes|looks good))/i.test(params.evidence || "");
+        if (vtype === "human" && !hasUserConfirmation) {
+          return { content: [{ type: "text", text: `⛔ **Human validation required.** Ask the user to validate, then include their confirmation in the evidence.` }] };
+        }
       }
 
       issue.status = "closed";
       issue.closeMessage = params.message;
+      issue.closeReason = closeReason;
       issue.closeReviewed = undefined; // clean up
-      issue.validations = [{ criterion: issue.description, evidence: params.evidence, met: true }];
+      issue.validations = [{ criterion: issue.description, evidence: params.evidence || "", met: params.met ?? true }];
       issue.closedAt = now();
       issue.updatedAt = now();
 
       save(r);
 
+      const reasonLabel = closeReason === "deferred" ? "📦 Deferred" : closeReason === "wont-fix" ? "🚫 Won't Fix" : "🏁 Closed";
+      const validationLine = closeReason === "done"
+        ? `\n\n**Validated:** ✅ ${params.evidence}`
+        : `\n\n**Reason:** ${params.evidence || closeReason}`;
       return {
         content: [{
           type: "text",
-          text: `${icon} Closed **${issue.id}**: ${issue.title}\n\n> ${params.message}\n\n**Validated:** ✅ ${params.evidence}`,
+          text: `${icon} ${reasonLabel} **${issue.id}**: ${issue.title}\n\n> ${params.message}${validationLine}`,
         }],
       };
     },
@@ -347,6 +371,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
       issue.status = "draft";
       issue.closedAt = undefined;
       issue.closeMessage = undefined;
+      issue.closeReason = undefined;
       issue.closeReviewed = undefined;
       issue.updatedAt = now();
 

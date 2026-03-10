@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Type } from "@sinclair/typebox";
 import type { Epic } from "./types.js";
-import { EPIC_TRANSITIONS, EPIC_NEXT } from "./types.js";
+import { EPIC_TRANSITIONS, EPIC_NEXT, type CloseReason } from "./types.js";
 import { load, save, genId, now, activeEpics } from "./store.js";
 import { formatEpic, formatIssue } from "./format.js";
 import { EPIC_STATUS_LABEL } from "./constants.js";
@@ -121,10 +121,16 @@ export function registerEpicTools(pi: ExtensionAPI) {
     description: "List epics (excludes closed by default). Use project_tool_docs('epic_list') for usage.",
     parameters: Type.Object({
       include_closed: Type.Optional(Type.Boolean({ description: "Include closed epics", default: false })),
+      include_deferred: Type.Optional(Type.Boolean({ description: "Show only deferred epics (closed with reason=deferred)", default: false })),
     }),
     async execute(_id, params) {
       const r = load();
-      const epics = params.include_closed ? r.epics.sort((a, b) => a.priority - b.priority) : activeEpics(r);
+      let epics: Epic[];
+      if (params.include_deferred) {
+        epics = r.epics.filter((e) => e.status === "closed" && e.closeReason === "deferred").sort((a, b) => a.priority - b.priority);
+      } else {
+        epics = params.include_closed ? r.epics.sort((a, b) => a.priority - b.priority) : activeEpics(r);
+      }
       if (!epics.length) return { content: [{ type: "text", text: "No epics found." }] };
       const out = epics.map((e) => formatEpic(e, false, r.issues, r.assets)).join("\n\n");
       return { content: [{ type: "text", text: `# Epics (${epics.length})\n\n${out}` }] };
@@ -221,6 +227,8 @@ export function registerEpicTools(pi: ExtensionAPI) {
           { description: "One entry per success criterion, in order. Provide evidence for each." }
         )
       ),
+      close_reason: Type.Optional(Type.Union([Type.Literal("done"), Type.Literal("deferred"), Type.Literal("wont-fix")], { description: "Reason for closing (default: done). 'deferred' requires explicit user approval and auto-defers all linked open issues." })),
+      user_approval: Type.Optional(Type.String({ description: "Required when close_reason is 'deferred': paste the user's exact approval message." })),
     }),
     async execute(_id, params) {
       const r = load();
@@ -232,15 +240,27 @@ export function registerEpicTools(pi: ExtensionAPI) {
         return { content: [{ type: "text", text: `❌ Cannot close from **${epic.status}**. Allowed: ${allowed.join(", ")}` }] };
       }
 
+      const closeReason: CloseReason = params.close_reason || "done";
+
+      // Deferred requires explicit user approval — block before checklist
+      if (closeReason === "deferred") {
+        if (!params.user_approval || params.user_approval.trim().length < 3) {
+          return { content: [{ type: "text", text: `⛔ **Deferring an epic requires explicit user approval.**\n\nAsk the user: *"Should I defer epic [${epic.id}] ${epic.title}?"* and pass their exact response as \`user_approval\`.` }] };
+        }
+      }
+
       // Step 1: no validations — return checklist
       if (!params.validations) {
         const openLinked = r.issues.filter((i) => i.epicId === epic.id && i.status !== "closed");
         const unfinishedTodos = epic.todos.filter((t) => !t.done);
 
         let out = `# 🔍 Close Checklist for [${epic.id}] ${epic.title}\n\n`;
+        if (closeReason !== "done") out += `> ⚠️ Closing with reason: **${closeReason}**\n\n`;
         out += `Review and validate each item, then call \`epic_close\` again with:\n`;
         out += `- \`validations\`: one entry per success criterion (in order), each with \`evidence\` and \`met: true/false\`\n`;
         out += `- \`message\`: closing summary\n`;
+        if (closeReason !== "done") out += `- \`close_reason\`: "${closeReason}"\n`;
+        if (closeReason === "deferred") out += `- \`user_approval\`: user's approval message\n`;
 
         if (epic.successCriteria.length) {
           out += `\n## Success Criteria (${epic.successCriteria.length} — provide evidence for each)\n`;
@@ -298,10 +318,25 @@ export function registerEpicTools(pi: ExtensionAPI) {
 
       epic.status = "closed";
       epic.closeMessage = params.message;
+      epic.closeReason = closeReason;
       epic.validations = paired;
       epic.closedAt = now();
       epic.updatedAt = now();
       for (const t of epic.todos) t.done = true;
+
+      // Cascade deferred to all linked open issues
+      let cascadedCount = 0;
+      if (closeReason === "deferred" && openLinked.length) {
+        for (const issue of openLinked) {
+          issue.status = "closed";
+          issue.closeReason = "deferred";
+          issue.closeMessage = `Auto-deferred: parent epic [${epic.id}] ${epic.title} was deferred.`;
+          issue.closedAt = now();
+          issue.updatedAt = now();
+          issue.closeReviewed = undefined;
+        }
+        cascadedCount = openLinked.length;
+      }
 
       save(r);
 
@@ -310,15 +345,22 @@ export function registerEpicTools(pi: ExtensionAPI) {
         ? `\n\n---\n**Next up:** [${active[0].id}] ${active[0].title}`
         : "\n\n🎉 No more active epics!";
 
+      const reasonLabel = closeReason === "deferred" ? "📦 Deferred" : closeReason === "wont-fix" ? "🚫 Won't Fix" : "🏁 Closed";
+
       let warning = "";
-      if (openLinked.length) {
+      if (closeReason !== "deferred" && openLinked.length) {
         warning = `\n\n⚠️ **${openLinked.length} linked issue(s) still open** — unlink or close them.`;
+      } else if (cascadedCount > 0) {
+        warning = `\n\n📦 **${cascadedCount} linked issue(s) auto-deferred.**`;
       }
 
-      let evidence = "\n\n**Validated:**";
-      for (const v of paired) evidence += `\n- ✅ **${v.criterion}**: ${v.evidence}`;
+      let evidence = "";
+      if (paired.length) {
+        evidence = "\n\n**Validated:**";
+        for (const v of paired) evidence += `\n- ✅ **${v.criterion}**: ${v.evidence}`;
+      }
 
-      return { content: [{ type: "text", text: `🏁 Closed **${epic.id}**: ${epic.title}\n\n> ${params.message}${evidence}${warning}${next}` }] };
+      return { content: [{ type: "text", text: `${reasonLabel} **${epic.id}**: ${epic.title}\n\n> ${params.message}${evidence}${warning}${next}` }] };
     },
   });
 
@@ -332,13 +374,34 @@ export function registerEpicTools(pi: ExtensionAPI) {
       const epic = r.epics.find((e) => e.id === params.id);
       if (!epic) return { content: [{ type: "text", text: `Epic '${params.id}' not found.` }] };
 
+      const wasDeferred = epic.closeReason === "deferred";
       epic.status = "draft";
       epic.closedAt = undefined;
       epic.closeMessage = undefined;
+      epic.closeReason = undefined;
       epic.updatedAt = now();
 
+      // Reopen issues that were auto-deferred by this epic
+      let reopenedCount = 0;
+      if (wasDeferred) {
+        const autoDeferredIssues = r.issues.filter(
+          (i) => i.epicId === epic.id && i.status === "closed" && i.closeReason === "deferred" &&
+          i.closeMessage?.startsWith(`Auto-deferred: parent epic [${epic.id}]`)
+        );
+        for (const issue of autoDeferredIssues) {
+          issue.status = "draft";
+          issue.closedAt = undefined;
+          issue.closeMessage = undefined;
+          issue.closeReason = undefined;
+          issue.updatedAt = now();
+        }
+        reopenedCount = autoDeferredIssues.length;
+      }
+
       save(r);
-      return { content: [{ type: "text", text: `🔓 Reopened **${epic.id}**: ${epic.title} (📝 draft)` }] };
+
+      const cascadeNote = reopenedCount > 0 ? `\n📦 ${reopenedCount} auto-deferred issue(s) also reopened.` : "";
+      return { content: [{ type: "text", text: `🔓 Reopened **${epic.id}**: ${epic.title} (📝 draft)${cascadeNote}` }] };
     },
   });
 

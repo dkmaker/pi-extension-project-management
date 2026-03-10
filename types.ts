@@ -1,6 +1,7 @@
 export type IssueType = "bug" | "feature" | "chore" | "spike" | "idea";
 export type IssueStatus = "draft" | "researched" | "ready" | "in-progress" | "closed";
 export type EpicStatus = "draft" | "planned" | "in-progress" | "closed";
+export type CloseReason = "done" | "deferred" | "wont-fix";
 
 export interface ResearchNote {
   type: "example" | "reference" | "comment";
@@ -29,6 +30,7 @@ export interface Issue {
   autoValidation?: AutoValidation;
   closeReviewed?: boolean;
   closeMessage?: string;
+  closeReason?: CloseReason;
   validations?: Validation[];
   research: ResearchNote[];
   createdAt: string;
@@ -44,6 +46,7 @@ export interface Epic {
   priority: number;
   status: EpicStatus;
   closeMessage?: string;
+  closeReason?: CloseReason;
   validations?: Validation[];
   relevantFiles: { file: string; reason: string }[];
   todos: { text: string; done: boolean }[];

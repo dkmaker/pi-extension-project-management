@@ -109,8 +109,8 @@
     {
       "id": "fqdkjlyp",
       "type": "feature",
-      "title": "Add \"deferred\" status for issues and epics",
-      "description": "Sometimes issues/epics need to be parked — waiting on external input, deprioritized, or blocked. Currently they clutter the active view. Add a \"deferred\" status that hides items from default listings and agent context, showing only minimal info (ID + title) when explicitly requested.\n\n**Implementation:**\n- Add `deferred` as a valid status for issues and epics (parallel to the main flow, not sequential)\n- New `issue_defer` / `epic_defer` tools to park items (with optional reason)\n- New `issue_resume` / `epic_resume` tools to bring them back to their previous status\n- `issue_list` / `epic_list` exclude deferred by default (like closed), add `include_deferred` flag\n- `next_work` ignores deferred items\n\n**Files:** `types.ts`, `issues.ts`, `epics.ts`, `store.ts`, `tool-docs.ts`",
+      "title": "Add \"deferred\" close reason for issues and epics",
+      "description": "Park issues/epics as \"deferred\" rather than adding a new status. Uses a `closeReason` validated enum field on close. Deferred items are hidden from default listings but identifiable via `include_deferred` flag.\n\n**Rules:**\n- Deferring an issue or epic requires **human approval** — an agent cannot defer autonomously\n- Deferring an epic **automatically defers all linked open issues**\n- Deferred items are closed with `closeReason: \"deferred\"` (vs default `\"done\"`)\n- `issue_reopen` / `epic_reopen` brings deferred items back\n\n**Implementation:**\n- `types.ts` — add `closeReason: \"done\" | \"deferred\" | \"wont-fix\"` field to Issue and Epic\n- `issues.ts` / `epics.ts` — validate `closeReason` on close; epic defer cascades to linked open issues\n- `issue_list` / `epic_list` — exclude deferred by default (already excluded as closed), add `include_deferred` flag to surface them\n- `tool-docs.ts` — update `issue_close` / `epic_close` docs with `closeReason` field and human-approval note\n- `next_work` — no changes needed (deferred items are closed, already ignored)\n\n**Human approval enforcement:**\n- The `issue_close` and `epic_close` tools must document that `closeReason: \"deferred\"` requires explicit user confirmation before the agent may call it",
       "status": "in-progress",
       "linkedIssueIds": [],
       "questions": [],
@@ -122,7 +122,7 @@
         }
       ],
       "createdAt": "2026-03-10T11:12:59.063Z",
-      "updatedAt": "2026-03-10T11:50:45.547Z",
+      "updatedAt": "2026-03-10T12:50:34.336Z",
       "autoValidation": {
         "type": "agent",
         "strategy": "Defer an issue, verify it disappears from issue_list, verify it shows with include_deferred, resume it and verify it returns to previous status."
