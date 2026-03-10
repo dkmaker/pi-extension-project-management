@@ -404,14 +404,42 @@
       "type": "idea",
       "title": "Split git config into git.epics.* and git.issues.* sections",
       "description": "Currently all git guards live under a flat `git.*` namespace, making it impossible to disable epic-level behaviour (branch creation, merge checks) without also disabling issue-level behaviour (clean worktree, commit tracking). This splits the registry into three sections: `git.enabled` (master switch), `git.epics.*` (branch auto-create, merge check on close), and `git.issues.*` (require clean worktree, require epic branch, require commit on close, require commit ID). Each section can be fully disabled independently while the master switch still kills everything at once.",
-      "status": "in-progress",
+      "status": "closed",
       "epicId": "mu7pvx9d",
       "linkedIssueIds": [],
       "questions": [],
       "research": [],
       "createdAt": "2026-03-10T16:21:49.969Z",
-      "updatedAt": "2026-03-10T16:24:26.659Z",
-      "startCommit": "ba1e6660cd908e380bd770edcb82f0539613857f"
+      "updatedAt": "2026-03-10T16:25:41.014Z",
+      "startCommit": "ba1e6660cd908e380bd770edcb82f0539613857f",
+      "closeMessage": "Split git config into git.epics.* and git.issues.* namespaces — each section independently toggleable",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Currently all git guards live under a flat `git.*` namespace, making it impossible to disable epic-level behaviour (branch creation, merge checks) without also disabling issue-level behaviour (clean worktree, commit tracking). This splits the registry into three sections: `git.enabled` (master switch), `git.epics.*` (branch auto-create, merge check on close), and `git.issues.*` (require clean worktree, require epic branch, require commit on close, require commit ID). Each section can be fully disabled independently while the master switch still kills everything at once.",
+          "evidence": "config.ts registry updated with git.epics.* and git.issues.* keys. epics.ts and issues.ts updated to use new key names. tool-docs.ts updated. .gitignore fixed. Old flat git.* keys removed.",
+          "met": true
+        }
+      ],
+      "closeCommit": "832349155a44780b7284248f203ca33658f06e4b",
+      "closedAt": "2026-03-10T16:25:41.013Z"
+    },
+    {
+      "id": "dx9rzhsg",
+      "type": "feature",
+      "title": "Split git config section into epics/issues subgroups in /config widget",
+      "description": "The `/config` TUI widget groups all `git.*` keys under a single \"git\" heading. The user wants visual separation between epic-related git settings and issue-related git settings.\n\n**Change:** Update the render grouping logic in `commands.ts` so that:\n- `git.enabled` stays under heading **`git`**\n- `git.epics.*` keys get a subheading **`git · epics`**\n- `git.issues.*` keys get a subheading **`git · issues`**\n\nThis requires using a deeper key prefix (up to 2 segments) for grouping when the second segment is \"epics\" or \"issues\".",
+      "status": "ready",
+      "epicId": "mu7pvx9d",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-10T16:28:20.135Z",
+      "updatedAt": "2026-03-10T16:28:27.498Z",
+      "autoValidation": {
+        "type": "human",
+        "strategy": "User visually confirms the /config widget shows two separate git subgroups"
+      }
     }
   ],
   "categories": [
