@@ -94,18 +94,27 @@
       "type": "feature",
       "title": "Soft-block file writes when no issue is in-progress",
       "description": "Enforce proper issue workflow with a layered approach:\n\n1. **`before_agent_start`** — injects full workflow policy into system prompt describing the issue lifecycle (draft → researched → ready → in-progress → closed) and the rule that file writes are only allowed when an issue is in-progress.\n2. **`turn_start`** — injects a single status line like `📍 Current: [issue:abc] Title (in-progress)` or `⚠️ No issue in-progress` as a lightweight reminder each turn.\n3. **`tool_result`** on `write`/`edit`/`bash` (write patterns like `>`, `>>`, `tee`, `sed -i`, `mv`, `cp`) — appends a warning when no issue is in-progress. This is the actual soft gate.\n\n**File:** `index.ts`",
-      "status": "draft",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [],
       "createdAt": "2026-03-10T11:11:06.053Z",
-      "updatedAt": "2026-03-10T13:30:26.361Z",
+      "updatedAt": "2026-03-10T13:36:19.060Z",
       "autoValidation": {
         "type": "human",
         "strategy": "User confirms the warning appears on write/edit when no issue is in-progress, and that the turn_start reminder and initial policy injection work correctly."
       },
       "epicId": "4ede9rp0",
-      "closeReviewed": true
+      "closeMessage": "Implemented: before_agent_start always injects status + workflow policy; tool_result gate fires on write/edit and bash write patterns only; fixed tool name casing (lowercase).",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Enforce proper issue workflow with a layered approach:\n\n1. **`before_agent_start`** — injects full workflow policy into system prompt describing the issue lifecycle (draft → researched → ready → in-progress → closed) and the rule that file writes are only allowed when an issue is in-progress.\n2. **`turn_start`** — injects a single status line like `📍 Current: [issue:abc] Title (in-progress)` or `⚠️ No issue in-progress` as a lightweight reminder each turn.\n3. **`tool_result`** on `write`/`edit`/`bash` (write patterns like `>`, `>>`, `tee`, `sed -i`, `mv`, `cp`) — appends a warning when no issue is in-progress. This is the actual soft gate.\n\n**File:** `index.ts`",
+          "evidence": "User confirmed: \"Its perfect!\" — all three gate scenarios validated live.",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-10T13:36:19.060Z"
     },
     {
       "id": "fqdkjlyp",
