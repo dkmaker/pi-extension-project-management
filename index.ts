@@ -62,38 +62,47 @@ export default function (pi: ExtensionAPI) {
     issue_advance: "issue_advance",
   };
 
-  // Gate: append warning to work tool results when focus issue isn't in-progress
-  const WORK_TOOLS = new Set(["Bash", "Edit", "Write"]);
+  // Detect bash commands that perform file writes
+  const BASH_WRITE_PATTERN = /(?:^|\s|&&|\|)(?:>|>>|tee\s|sed\s+-i|mv\s|cp\s|install\s|chmod\s|mkdir\s|rm\s|touch\s|cat\s+.*>)/;
+
+  const FILE_WRITE_TOOLS = new Set(["Edit", "Write"]);
+
+  function isWriteOperation(toolName: string, input?: any): boolean {
+    if (FILE_WRITE_TOOLS.has(toolName)) return true;
+    if (toolName === "Bash") {
+      const cmd: string = input?.command || "";
+      return BASH_WRITE_PATTERN.test(cmd);
+    }
+    return false;
+  }
 
   pi.on("tool_result", async (event, ctx) => {
     if (PROJECT_TOOLS.has(event.toolName)) {
       refreshStatus(ctx);
     }
 
-    // Gate: warn on work tool results when focus issue isn't in-progress
-    if (WORK_TOOLS.has(event.toolName)) {
+    // Gate: warn on file-write operations when no issue is in-progress
+    if (isWriteOperation(event.toolName, event.input)) {
       try {
         const r = load();
         const inProgressIssue = r.issues.find(i => i.status === "in-progress");
         if (!inProgressIssue) {
           const openIssues = r.issues.filter(i => i.status !== "closed");
+          let hint = "";
           if (openIssues.length) {
             const active = r.epics.filter(e => e.status !== "closed").sort((a, b) => a.priority - b.priority);
             const focusEpic = active.find(e => e.status === "in-progress");
-            let focusIssue = focusEpic
+            const focusIssue = (focusEpic
               ? r.issues.find(i => i.epicId === focusEpic.id && i.status !== "closed")
-              : undefined;
-            if (!focusIssue) focusIssue = openIssues[0];
-
-            if (focusIssue && focusIssue.status !== "in-progress") {
-              return {
-                content: [
-                  ...(event.content || []),
-                  { type: "text", text: `\n\n⚠️ WORKFLOW GATE: Issue [${focusIssue.id}] "${focusIssue.title}" is in "${focusIssue.status}" status. You MUST advance it to in-progress with \`issue_advance\` before doing implementation work.` },
-                ],
-              };
-            }
+              : undefined) || openIssues[0];
+            hint = ` Next issue: [${focusIssue.id}] "${focusIssue.title}" (${focusIssue.status}) — advance it with \`issue_advance\` first.`;
           }
+          return {
+            content: [
+              ...(event.content || []),
+              { type: "text", text: `\n\n⚠️ WORKFLOW GATE: No issue is in-progress. File writes require an active issue.${hint}` },
+            ],
+          };
         }
       } catch {}
     }
@@ -156,56 +165,70 @@ export default function (pi: ExtensionAPI) {
     }
   });
 
-  // --- Per-turn steering: remind AI about active epic/issues ---
+  // --- Per-turn steering: workflow policy + status on every agent start ---
   pi.on("before_agent_start", async (_event, _ctx) => {
     try {
       const r = load();
-      const active = activeEpics(r);
-      const epic = nextEpic(active);
-      if (!epic || epic.status !== "in-progress") return;
-
-      const focus = resolveEpicFocus(epic, r.issues);
-      if (!focus) return;
-
-      const openCount = r.issues.filter(i => i.epicId === epic.id && i.status !== "closed").length;
-      const todosDone = epic.todos.filter(t => t.done).length;
       const lines: string[] = [];
-      lines.push(`[PROJECT] Epic: [${epic.id}] ${epic.title} (${openCount} open issues, todos: ${todosDone}/${epic.todos.length})`);
 
-      switch (focus.type) {
-        case "in-progress": {
-          const cur = focus.issue!;
-          const vtype = cur.autoValidation?.type;
-          let hint = "";
-          if (vtype === "agent") hint = ` — verify: ${cur.autoValidation!.strategy}`;
-          else if (vtype === "human") hint = ` — ⛔ requires user validation`;
-          lines.push(`→ IN PROGRESS: [${cur.id}] ${cur.title}${hint}`);
-          break;
+      // Always inject current issue status line
+      const inProgressIssue = r.issues.find(i => i.status === "in-progress");
+      if (inProgressIssue) {
+        lines.push(`📍 Current: [${inProgressIssue.id}] ${inProgressIssue.title} (in-progress)`);
+      } else {
+        const openIssues = r.issues.filter(i => i.status !== "closed");
+        if (openIssues.length) {
+          lines.push(`⚠️ No issue in-progress — advance one with \`issue_advance\` before doing any file changes.`);
         }
-        case "ready": {
-          const rq = (focus.issue!.questions || []).filter((q: any) => !q.answer && q.required !== false);
-          if (rq.length) {
-            lines.push(`→ NEXT: [${focus.issue!.id}] ${focus.issue!.title} — ⚠️ ${rq.length} required question(s) must be answered first (use \`issue_question\`)`);
-          } else {
-            lines.push(`→ NEXT: [${focus.issue!.id}] ${focus.issue!.title} — advance to in-progress first`);
-          }
-          break;
-        }
-        case "todo":
-          lines.push(`→ TODO: ${focus.todoText}`);
-          break;
-        case "researched":
-          lines.push(`→ ADVANCE: [${focus.issue!.id}] ${focus.issue!.title} — advance to ready`);
-          break;
-        case "draft":
-          lines.push(`→ RESEARCH: [${focus.issue!.id}] ${focus.issue!.title} — needs research`);
-          break;
-        case "close-epic":
-          lines.push(`→ All done — close epic with \`epic_close\``);
-          break;
       }
 
-      lines.push(`⚠️ REQUIRED: You MUST advance issues through the workflow (draft→researched→ready→in-progress) BEFORE starting implementation work. Do NOT write code, run commands, or make changes for an issue that is not in "in-progress" status. Advance it first using \`issue_advance\`.`);
+      // Always inject workflow policy
+      lines.push(`[WORKFLOW POLICY] Issue lifecycle: draft→researched→ready→in-progress→closed. You MUST NOT write files, edit code, or run write commands unless an issue is in "in-progress" status. Advance it first with \`issue_advance\`.`);
+
+      // Epic steering (only when epic is in-progress)
+      const active = activeEpics(r);
+      const epic = nextEpic(active);
+      if (epic && epic.status === "in-progress") {
+        const focus = resolveEpicFocus(epic, r.issues);
+        if (focus) {
+          const openCount = r.issues.filter(i => i.epicId === epic.id && i.status !== "closed").length;
+          const todosDone = epic.todos.filter(t => t.done).length;
+          lines.push(`[PROJECT] Epic: [${epic.id}] ${epic.title} (${openCount} open issues, todos: ${todosDone}/${epic.todos.length})`);
+
+          switch (focus.type) {
+            case "in-progress": {
+              const cur = focus.issue!;
+              const vtype = cur.autoValidation?.type;
+              let hint = "";
+              if (vtype === "agent") hint = ` — verify: ${cur.autoValidation!.strategy}`;
+              else if (vtype === "human") hint = ` — ⛔ requires user validation`;
+              lines.push(`→ IN PROGRESS: [${cur.id}] ${cur.title}${hint}`);
+              break;
+            }
+            case "ready": {
+              const rq = (focus.issue!.questions || []).filter((q: any) => !q.answer && q.required !== false);
+              if (rq.length) {
+                lines.push(`→ NEXT: [${focus.issue!.id}] ${focus.issue!.title} — ⚠️ ${rq.length} required question(s) must be answered first (use \`issue_question\`)`);
+              } else {
+                lines.push(`→ NEXT: [${focus.issue!.id}] ${focus.issue!.title} — advance to in-progress first`);
+              }
+              break;
+            }
+            case "todo":
+              lines.push(`→ TODO: ${focus.todoText}`);
+              break;
+            case "researched":
+              lines.push(`→ ADVANCE: [${focus.issue!.id}] ${focus.issue!.title} — advance to ready`);
+              break;
+            case "draft":
+              lines.push(`→ RESEARCH: [${focus.issue!.id}] ${focus.issue!.title} — needs research`);
+              break;
+            case "close-epic":
+              lines.push(`→ All done — close epic with \`epic_close\``);
+              break;
+          }
+        }
+      }
 
       const serverInfo = getServerInfo();
       if (serverInfo) {

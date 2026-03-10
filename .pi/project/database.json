@@ -94,12 +94,12 @@
       "type": "feature",
       "title": "Soft-block file writes when no issue is in-progress",
       "description": "Enforce proper issue workflow with a layered approach:\n\n1. **`before_agent_start`** — injects full workflow policy into system prompt describing the issue lifecycle (draft → researched → ready → in-progress → closed) and the rule that file writes are only allowed when an issue is in-progress.\n2. **`turn_start`** — injects a single status line like `📍 Current: [issue:abc] Title (in-progress)` or `⚠️ No issue in-progress` as a lightweight reminder each turn.\n3. **`tool_result`** on `write`/`edit`/`bash` (write patterns like `>`, `>>`, `tee`, `sed -i`, `mv`, `cp`) — appends a warning when no issue is in-progress. This is the actual soft gate.\n\n**File:** `index.ts`",
-      "status": "draft",
+      "status": "in-progress",
       "linkedIssueIds": [],
       "questions": [],
       "research": [],
       "createdAt": "2026-03-10T11:11:06.053Z",
-      "updatedAt": "2026-03-10T13:03:06.637Z",
+      "updatedAt": "2026-03-10T13:30:26.361Z",
       "autoValidation": {
         "type": "human",
         "strategy": "User confirms the warning appears on write/edit when no issue is in-progress, and that the turn_start reminder and initial policy injection work correctly."
@@ -170,6 +170,25 @@
       "closedAt": "2026-03-10T13:28:07.742Z"
     }
   ],
-  "categories": [],
-  "assets": []
+  "categories": [
+    {
+      "slug": "policies",
+      "description": "policies"
+    }
+  ],
+  "assets": [
+    {
+      "id": "gdrqy7v9",
+      "categorySlug": "policies",
+      "title": "Reload before testing",
+      "context": "Before running any tests on pi extension functionality after code changes",
+      "body": "After making code changes to the extension, always ask the user to reload pi before running any functional tests. The extension runs from TypeScript source directly and changes are not picked up until pi is reloaded.\n\n**Rule:** \"Please reload pi before I test this.\" — wait for confirmation before proceeding with tests.",
+      "project": true,
+      "sources": [],
+      "linkedEpicIds": [],
+      "linkedIssueIds": [],
+      "createdAt": "2026-03-10T13:28:33.474Z",
+      "updatedAt": "2026-03-10T13:28:33.474Z"
+    }
+  ]
 }
