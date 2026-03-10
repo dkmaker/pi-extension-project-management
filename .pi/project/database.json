@@ -108,7 +108,7 @@
       "description": "Adds automatic file-change tracking to in-progress issues, giving each issue a living record of what was touched. Optionally gates closure behind per-file change notes for full traceability.",
       "body": "## Goal\\nAutomatically track which files are created/written/edited during an in-progress issue and surface them as references on that issue. Optionally require a one-sentence change note per file before the issue can be closed.\\n\\n## Approach\\n1. Two new config flags (`issues.capture_edited_files`, `issues.require_file_change_notes`), both default `false`\\n2. Hook pi write/edit tool events in `index.ts` — when capture is enabled and an issue is in-progress, add a `reference` research note with a distinguishable `[auto]` prefix and the file path (deduplicated)\\n3. Close gate in issue close logic — when `require_file_change_notes` is enabled, scan auto-captured references and block if any lack a follow-up change note\\n\\n## Files Affected\\n- `config.ts` — new config entries\\n- `index.ts` — tool event hooks for write/edit\\n- `issues.ts` — close gate logic\\n- `commands.ts` — potentially surface auto-refs in issue display",
       "priority": 3,
-      "status": "in-progress",
+      "status": "closed",
       "relevantFiles": [
         {
           "file": "config.ts",
@@ -130,11 +130,11 @@
       "todos": [
         {
           "text": "Implement auto-capture of edited files as issue references (config-gated)",
-          "done": false
+          "done": true
         },
         {
           "text": "Implement require_file_change_notes close gate (config-gated)",
-          "done": false
+          "done": true
         }
       ],
       "successCriteria": [
@@ -151,7 +151,32 @@
         }
       ],
       "createdAt": "2026-03-10T16:44:11.755Z",
-      "updatedAt": "2026-03-10T16:44:53.800Z"
+      "updatedAt": "2026-03-10T17:02:59.420Z",
+      "closeMessage": "All file traceability features implemented and user-confirmed. Auto-capture and close gate both working correctly, gated behind config flags that default off.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Config flags exist, default to false, and appear in /config widget under 'issues' group",
+          "evidence": "Config flags issues.capture_edited_files and issues.require_file_change_notes added, both default false, visible in /config widget under 'issues' group.",
+          "met": true
+        },
+        {
+          "criterion": "When capture_edited_files is on and an issue is in-progress, every file passed to write/edit is added as a reference note (deduplicated)",
+          "evidence": "Confirmed via live test: write tool auto-adds [auto] file reference to in-progress issue, deduplicated on repeat writes.",
+          "met": true
+        },
+        {
+          "criterion": "When require_file_change_notes is on, issue close is blocked with a clear error listing files missing change notes",
+          "evidence": "Confirmed via live test: issue_close blocked with clear error listing files missing [change-note] comments.",
+          "met": true
+        },
+        {
+          "criterion": "When both flags are off (default), behaviour is identical to current — no references captured, no close gate",
+          "evidence": "Both flags default false; behaviour identical to pre-feature when both are off.",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-10T17:02:59.420Z"
     }
   ],
   "issues": [
@@ -542,7 +567,7 @@
       "type": "feature",
       "title": "Auto-capture edited files as issue references with optional close-time change notes",
       "description": "When working on an in-progress issue, there's no automatic record of which files were actually touched — that context lives only in git history. This feature adds two opt-in config switches: one that silently captures every file written/edited during an issue and records it as a reference on that issue, and a second that gates issue closure behind a one-sentence \"what changed\" note per captured file. Both are disabled by default.\n\n## Config entries (both default `false`)\n- `issues.capture_edited_files` — auto-add written/edited files as issue references when an issue is in-progress\n- `issues.require_file_change_notes` — block issue close until each captured file has a one-sentence change note\n\n## Implementation\n\n**`config.ts`**\n- Add two new bool `ConfigEntry` items under the `issues` prefix\n\n**`index.ts`**\n- Hook into pi's write/edit tool events; when `issues.capture_edited_files` is enabled and an issue is in-progress, call `issue_research` with `type: \"reference\"` recording the file path (deduplicate — skip if already captured)\n\n**`issues.ts` / close gate**\n- When `issues.require_file_change_notes` is enabled, scan auto-captured file references on the issue at close time; if any lack a change note, block closure with a clear error listing the missing files\n\n**Data model**\n- No schema changes needed — auto-captured files use the existing research notes structure with a distinguishable prefix (e.g. `[auto] path/to/file`) so the gate logic can identify them",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -550,17 +575,32 @@
           "type": "reference",
           "content": "[auto] /tmp/pi-capture-test9.txt",
           "addedAt": "2026-03-10T17:01:34.183Z"
+        },
+        {
+          "type": "comment",
+          "content": "[change-note] /tmp/pi-capture-test9.txt — temporary test file used to verify auto-capture and deduplication behaviour.",
+          "addedAt": "2026-03-10T17:02:06.047Z"
         }
       ],
       "createdAt": "2026-03-10T16:38:35.830Z",
-      "updatedAt": "2026-03-10T16:46:24.765Z",
+      "updatedAt": "2026-03-10T17:02:44.022Z",
       "autoValidation": {
         "type": "human",
         "strategy": "User confirms: (1) files are auto-captured as references when config is on, (2) issue close is blocked when require_file_change_notes is on and notes are missing, (3) both default to off"
       },
       "epicId": "tedhxd22",
       "startCommit": "9b2b4a408120ac0c62783d7a3067c28dd3951747",
-      "closeReviewed": true
+      "closeMessage": "Feature fully working. Auto-capture hooks write/edit tool events, deduplicates, persists references. Close gate enforces change notes per captured file. Fixed missing save import bug found via log file debugging.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "When working on an in-progress issue, there's no automatic record of which files were actually touched — that context lives only in git history. This feature adds two opt-in config switches: one that silently captures every file written/edited during an issue and records it as a reference on that issue, and a second that gates issue closure behind a one-sentence \"what changed\" note per captured file. Both are disabled by default.\n\n## Config entries (both default `false`)\n- `issues.capture_edited_files` — auto-add written/edited files as issue references when an issue is in-progress\n- `issues.require_file_change_notes` — block issue close until each captured file has a one-sentence change note\n\n## Implementation\n\n**`config.ts`**\n- Add two new bool `ConfigEntry` items under the `issues` prefix\n\n**`index.ts`**\n- Hook into pi's write/edit tool events; when `issues.capture_edited_files` is enabled and an issue is in-progress, call `issue_research` with `type: \"reference\"` recording the file path (deduplicate — skip if already captured)\n\n**`issues.ts` / close gate**\n- When `issues.require_file_change_notes` is enabled, scan auto-captured file references on the issue at close time; if any lack a change note, block closure with a clear error listing the missing files\n\n**Data model**\n- No schema changes needed — auto-captured files use the existing research notes structure with a distinguishable prefix (e.g. `[auto] path/to/file`) so the gate logic can identify them",
+          "evidence": "User confirmed. All three behaviours verified: auto-capture works, deduplication works, close gate blocks on missing change notes, both flags default off.",
+          "met": true
+        }
+      ],
+      "closeCommit": "89973ac",
+      "closedAt": "2026-03-10T17:02:44.022Z"
     }
   ],
   "categories": [
