@@ -601,6 +601,52 @@
       ],
       "closeCommit": "89973ac",
       "closedAt": "2026-03-10T17:02:44.022Z"
+    },
+    {
+      "id": "046bqkpk",
+      "type": "feature",
+      "title": "Onboarding Mode — bypass all validation & steering for brownfield import",
+      "description": "When onboarding existing/brownfield projects, users need to bulk-create epics, issues, set past dates, close items with backdated history, and skip all validation gates (two-step close, steering injection, write gates, git guards, gap checks). A single config toggle `onboarding.enabled` would disable **all** process enforcement project-wide, allowing free manipulation of state. This makes it practical to reconstruct project history from git logs, external docs, etc.\n\n**What it does NOT bypass:** structural invariants like \"only one issue in-progress at a time\" remain enforced.\n\n### Key changes:\n1. **`config.ts`** — Add `onboarding.enabled` bool config entry (default: `false`)\n2. **`issues.ts`** — Skip two-step close validation, skip human-validation enforcement, allow direct status setting, allow setting `closedAt`/`startedAt` dates\n3. **`epics.ts`** — Skip gap checks on advance (auto-force), skip two-step close validation, allow backdating\n4. **`index.ts`** — Skip steering injection and write-gate when onboarding mode is on\n5. **`types.ts`** — Add optional date override fields (`closedAt`, `startedAt`) to issue/epic schemas\n6. **Tool schemas** — Add optional `closed_at`/`started_at` params to close/advance tools (only accepted in onboarding mode)\n7. **Persistent onboarding widget** — When onboarding mode is active, display a visible banner/widget (similar to DEVMODE banner) throughout the entire session so it's always clear that onboarding mode is on and steering is disabled. This prevents confusion about why guards are missing.",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T10:18:57.885Z",
+      "updatedAt": "2026-03-11T10:18:57.885Z"
+    },
+    {
+      "id": "lhyb0lwt",
+      "type": "bug",
+      "title": "/idea, /feature, /bug commands don't display user input in chat history",
+      "description": "When using `/idea`, `/feature`, or `/bug`, the user's prompt text is sent via `sendMessage` with `display: false`, so nothing appears in the chat history. The user loses their own input from the visible conversation. The fix: echo a visible summary message in the chat (e.g. `\"New feature proposed:\\n> <user text>\"`) before/alongside the hidden steering message. Use appropriate emoji/label per command type (💡 idea proposed / ✨ feature proposed / 🐛 bug reported).\n\n**File:** `commands.ts` — the `display: false` in each `sendMessage` call (lines ~155, ~188, ~217)",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T10:22:33.148Z",
+      "updatedAt": "2026-03-11T10:22:33.148Z"
+    },
+    {
+      "id": "qgyglfrd",
+      "type": "bug",
+      "title": "run_pi_dev_mode.sh doesn't forward extra CLI arguments to pi",
+      "description": "The script ignores any arguments passed to it (e.g. `-c`). Need to append `\"$@\"` to the final `exec pi` call.",
+      "status": "ready",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "comment",
+          "content": "One-line fix: append `\"$@\"` to the `exec pi` line so all CLI args are forwarded.",
+          "addedAt": "2026-03-11T10:37:36.362Z"
+        }
+      ],
+      "createdAt": "2026-03-11T10:37:31.679Z",
+      "updatedAt": "2026-03-11T10:37:37.772Z",
+      "autoValidation": {
+        "type": "agent",
+        "strategy": "Read the script and confirm \"$@\" is passed through"
+      }
     }
   ],
   "categories": [
