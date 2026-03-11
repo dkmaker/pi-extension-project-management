@@ -1,8 +1,8 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { getMarkdownTheme } from "@mariozechner/pi-coding-agent";
 import { Markdown, Text, visibleWidth, truncateToWidth } from "@mariozechner/pi-tui";
-import { load, save, activeEpics, nextEpic } from "./store.js";
-import { formatBrief, formatAssetsContext, statusBarText, focusWidgetData, renderFocusLine } from "./format.js";
+import { load, save } from "./store.js";
+import { statusBarText, focusWidgetData, renderFocusLine } from "./format.js";
 import { registerEpicTools } from "./epics.js";
 import { registerIssueTools } from "./issues.js";
 import { registerNextWork } from "./next-work.js";
@@ -10,33 +10,57 @@ import { registerAssetTools } from "./assets.js";
 import { registerToolDocsTool } from "./tool-docs.js";
 import { registerDashboard } from "./dashboard.js";
 import { registerCommands } from "./commands.js";
-import { resolveEpicFocus } from "./priorities.js";
-import { isServerRunning, getServerInfo, initFromLock } from "./dashboard-server.js";
-import { getConfigValue } from "./config.js";
-
-const PROJECT_TOOLS = new Set([
-  "epic_add", "epic_show", "epic_list", "epic_update", "epic_advance",
-  "epic_close", "epic_reopen", "epic_todo", "epic_research",
-  "issue_add", "issue_show", "issue_list", "issue_update", "issue_advance",
-  "issue_close", "issue_reopen", "issue_research",
-  "issue_link", "issue_unlink", "issue_question",
-  "asset_add", "asset_show", "asset_list", "asset_update", "asset_link",
-  "asset_unlink", "asset_categories", "asset_source",
-  "next_work",
-  "project_tool_docs",
-]);
+import { getServerInfo, initFromLock } from "./dashboard-server.js";
+import { compose, type ContextState } from "./context-engine.js";
+import { registerAllRules } from "./context-rules.js";
+import { dispatch, type HookHelpers } from "./hook-registry.js";
+import { registerAllHooks } from "./hook-rules.js";
+import { enableDebug, isDebugEnabled, nextTurn } from "./debug-log.js";
+import { registerDebugTools } from "./debug-tools.js";
+import { registerDebugConfigEntries, getConfigValue } from "./config.js";
 
 export default function (pi: ExtensionAPI) {
+  // --- Register all context rules and hooks ---
+  registerAllRules();
+  registerAllHooks();
+
+  // --- ENV-gated debug mode ---
+  if (process.env.PI_PM_DEBUG) {
+    enableDebug();
+    registerDebugConfigEntries();
+    registerDebugTools(pi);
+
+    // Wrap sendMessage to show agent-only messages when debug.show_agent_context is enabled
+    const origSendMessage = pi.sendMessage.bind(pi);
+    pi.sendMessage = (msg: any, opts?: any) => {
+      origSendMessage(msg, opts);
+      // If this is an agent-only message, duplicate as visible debug panel
+      if (msg && msg.display === false) {
+        try {
+          const r = load();
+          if (getConfigValue<boolean>(r, "debug.show_agent_context")) {
+            origSendMessage(
+              { customType: "debug-mirror", content: `🔍 **Agent-only [${msg.customType || "unknown"}]:**\n\`\`\`\n${msg.content}\n\`\`\``, display: true },
+              { triggerTurn: false },
+            );
+          }
+        } catch {}
+      }
+    };
+  }
+
   // --- Status bar ---
-  function refreshStatus(ctx: any) {
+  function refreshStatus(ctx?: any) {
     try {
       const r = load();
-      ctx.ui.setStatus("project", statusBarText(r, ctx.ui.theme));
+      const uiCtx = ctx || lastCtx;
+      if (!uiCtx) return;
+      const debugBadge = isDebugEnabled() ? uiCtx.ui.theme.fg("warning", " 🔍 DEBUG") : "";
+      uiCtx.ui.setStatus("project", statusBarText(r, uiCtx.ui.theme) + debugBadge);
 
-      // Focus widget above editor (full-width, dynamically truncated)
       const data = focusWidgetData(r);
       if (data) {
-        ctx.ui.setWidget("project-focus", (_tui: any, theme: any) => {
+        uiCtx.ui.setWidget("project-focus", (_tui: any, theme: any) => {
           return {
             render(width: number): string[] {
               const line = renderFocusLine(data, theme, width);
@@ -48,116 +72,63 @@ export default function (pi: ExtensionAPI) {
           };
         });
       } else {
-        ctx.ui.setWidget("project-focus", undefined);
+        uiCtx.ui.setWidget("project-focus", undefined);
       }
     } catch {}
   }
 
-  // Map tool names to policy events
-  const TOOL_TO_EVENT: Record<string, string> = {
-    epic_add: "epic_create",
-    epic_close: "epic_close",
-    epic_advance: "epic_advance",
-    issue_add: "issue_create",
-    issue_close: "issue_close",
-    issue_advance: "issue_advance",
-  };
+  // Track last ctx for hooks that need UI access
+  let lastCtx: any;
 
-  // Detect bash commands that perform file writes
-  const BASH_WRITE_PATTERN = /(?:^|\s|&&|\|)(?:>|>>|tee\s|sed\s+-i|mv\s|cp\s|install\s|chmod\s|mkdir\s|rm\s|touch\s|cat\s+.*>)/;
-
-  const FILE_WRITE_TOOLS = new Set(["edit", "write"]);
-
-  function isWriteOperation(toolName: string, input?: any): boolean {
-    if (FILE_WRITE_TOOLS.has(toolName)) return true;
-    if (toolName === "bash") {
-      const cmd: string = input?.command || "";
-      return BASH_WRITE_PATTERN.test(cmd);
-    }
-    return false;
+  // Hook helpers — bridge between Hook Registry and pi API
+  function makeHelpers(): HookHelpers {
+    return {
+      sendMessage: (msg, opts) => pi.sendMessage(msg, opts),
+      save: (store) => save(store),
+      refreshStatus: () => refreshStatus(),
+    };
   }
 
+  // --- Tool result: delegate to Hook Registry ---
   pi.on("tool_result", async (event, ctx) => {
-    if (PROJECT_TOOLS.has(event.toolName)) {
-      refreshStatus(ctx);
-    }
+    lastCtx = ctx;
 
-    // Gate: warn on file-write operations when no issue is in-progress
-    if (isWriteOperation(event.toolName, event.input)) {
-      try {
-        const r = load();
-        const writeGateEnabled = getConfigValue<boolean>(r, "workflow.write_gate");
-        if (!writeGateEnabled) return undefined;
-        const inProgressIssue = r.issues.find(i => i.status === "in-progress");
-        if (!inProgressIssue) {
-          const openIssues = r.issues.filter(i => i.status !== "closed");
-          let hint = "";
-          if (openIssues.length) {
-            const active = r.epics.filter(e => e.status !== "closed").sort((a, b) => a.priority - b.priority);
-            const focusEpic = active.find(e => e.status === "in-progress");
-            const focusIssue = (focusEpic
-              ? r.issues.find(i => i.epicId === focusEpic.id && i.status !== "closed")
-              : undefined) || openIssues[0];
-            hint = ` Next issue: [${focusIssue.id}] "${focusIssue.title}" (${focusIssue.status}) — advance it with \`issue_advance\` first.`;
-          }
-          return {
-            content: [
-              ...(event.content || []),
-              { type: "text", text: `\n\n⚠️ WORKFLOW GATE: No issue is in-progress. File writes require an active issue.${hint}` },
-            ],
-          };
-        }
-      } catch {}
-    }
+    const r = load();
+    const result = dispatch("tool_result", {
+      store: r,
+      toolName: event.toolName,
+      toolInput: event.input,
+      toolContent: event.content,
+    }, makeHelpers());
 
-    // Auto-capture edited files as issue references
-    if (FILE_WRITE_TOOLS.has(event.toolName) && event.input?.path) {
+    // Debug: show hook activity as visible message
+    if (isDebugEnabled() && result.fired.length) {
       try {
-        const r = load();
-        if (getConfigValue<boolean>(r, "issues.capture_edited_files")) {
-          const inProgressIssue = r.issues.find(i => i.status === "in-progress");
-          if (inProgressIssue) {
-            const filePath: string = event.input.path;
-            const autoTag = `[auto] ${filePath}`;
-            const alreadyCaptured = inProgressIssue.research.some(
-              n => n.type === "reference" && n.content === autoTag
-            );
-            if (!alreadyCaptured) {
-              inProgressIssue.research.push({
-                type: "reference",
-                content: autoTag,
-                addedAt: new Date().toISOString(),
-              });
-              save(r);
-            }
-          }
-        }
-      } catch {}
-    }
-
-    // Check for policy triggers
-    const policyEvent = TOOL_TO_EVENT[event.toolName];
-    if (policyEvent) {
-      try {
-        const r = load();
-        const triggered = r.assets.filter(a => a.trigger?.event === policyEvent);
-        if (triggered.length) {
-          const directives = triggered.map(a => `**[Policy: ${a.title}]** ${a.body}`).join("\n\n");
+        const r2 = load();
+        if (getConfigValue<boolean>(r2, "debug.show_hook_activity")) {
+          const firedList = result.fired.map(f => `\`${f.id}\` (${f.kind})`).join(", ");
           pi.sendMessage(
-            {
-              customType: "policy-directive",
-              content: `## 📋 Triggered Policies\n\n${directives}`,
-              display: false,
-            },
+            { customType: "debug-hooks", content: `🔍 **Hooks fired:** ${firedList}`, display: true },
             { triggerTurn: false },
           );
         }
       } catch {}
     }
+
+    // If any result-modifier fired, augment the tool result
+    if (result.resultText) {
+      return {
+        content: [
+          ...(event.content || []),
+          { type: "text", text: `\n\n${result.resultText}` },
+        ],
+      };
+    }
   });
 
-  // --- Session start: brief status + asset context ---
+  // --- Session start: via Context Engine ---
   pi.on("session_start", async (_event, ctx) => {
+    lastCtx = ctx;
     refreshStatus(ctx);
 
     const alreadyDone = ctx.sessionManager.getEntries().some(
@@ -168,124 +139,74 @@ export default function (pi: ExtensionAPI) {
     const r = load();
     pi.appendEntry("project-init", { ts: Date.now() });
 
-    // Brief status (visible + LLM context)
-    let brief = (r.epics.length || r.issues.length || r.assets.length)
-      ? formatBrief(r)
-      : "# 📦 Project Status\n\n*No epics, issues, or assets yet.* Use `epic_add`, `issue_add`, or `asset_add` to get started.";
-
     const serverInfo = getServerInfo();
-    if (serverInfo) {
-      brief += `\n\n🌐 **Dashboard:** Live at ${serverInfo.url}`;
+    const state: ContextState = {
+      store: r,
+      event: "session_start",
+      extra: { serverInfo },
+    };
+
+    const dashboard = compose("user_display", state);
+    if (dashboard.text) {
+      const debugBanner = isDebugEnabled()
+        ? "\n\n> 🔍 **DEBUG MODE ACTIVE** — `PI_PM_DEBUG` is set. Debug tools (`debug_rules`, `debug_log`, `debug_clear`, `debug_context`) are available. All context/hook activity is being logged."
+        : "";
+      pi.sendMessage(
+        { customType: "project-dashboard", content: dashboard.text + debugBanner, display: true },
+        { triggerTurn: false },
+      );
     }
 
-    pi.sendMessage(
-      { customType: "project-dashboard", content: brief, display: true },
-      { triggerTurn: false }
-    );
-
-    // LLM context: project-level assets (brief hints for when to load)
-    const assetsContext = formatAssetsContext(r.assets);
-    if (assetsContext) {
+    const agentCtx = compose("agent_context", state);
+    if (agentCtx.text) {
       pi.sendMessage(
-        { customType: "project-assets", content: assetsContext, display: false },
-        { triggerTurn: false }
+        { customType: "project-assets", content: agentCtx.text, display: false },
+        { triggerTurn: false },
       );
     }
   });
 
-  // --- Per-turn steering: workflow policy + status on every agent start ---
+  // --- Per-turn steering: via Context Engine ---
   pi.on("before_agent_start", async (_event, _ctx) => {
+    if (isDebugEnabled()) nextTurn();
     try {
       const r = load();
-      const lines: string[] = [];
+      const serverInfo = getServerInfo();
+      const state: ContextState = {
+        store: r,
+        event: "before_agent_start",
+        extra: { serverInfo },
+      };
 
-      // Always inject current issue status line
-      const inProgressIssue = r.issues.find(i => i.status === "in-progress");
-      if (inProgressIssue) {
-        lines.push(`📍 Current: [${inProgressIssue.id}] ${inProgressIssue.title} (in-progress)`);
-      } else {
-        const openIssues = r.issues.filter(i => i.status !== "closed");
-        if (openIssues.length) {
-          lines.push(`⚠️ No issue in-progress — advance one with \`issue_advance\` before doing any file changes.`);
-        }
-      }
-
-      // Always inject workflow policy
-      lines.push(`[WORKFLOW POLICY] Issue lifecycle: draft→researched→ready→in-progress→closed. You MUST NOT write files, edit code, or run write commands unless an issue is in "in-progress" status. Advance it first with \`issue_advance\`.`);
-
-      // Epic steering (only when epic is in-progress)
-      const active = activeEpics(r);
-      const epic = nextEpic(active);
-      if (epic && epic.status === "in-progress") {
-        const focus = resolveEpicFocus(epic, r.issues);
-        if (focus) {
-          const openCount = r.issues.filter(i => i.epicId === epic.id && i.status !== "closed").length;
-          const todosDone = epic.todos.filter(t => t.done).length;
-          lines.push(`[PROJECT] Epic: [${epic.id}] ${epic.title} (${openCount} open issues, todos: ${todosDone}/${epic.todos.length})`);
-
-          switch (focus.type) {
-            case "in-progress": {
-              const cur = focus.issue!;
-              const vtype = cur.autoValidation?.type;
-              let hint = "";
-              if (vtype === "agent") hint = ` — verify: ${cur.autoValidation!.strategy}`;
-              else if (vtype === "human") hint = ` — ⛔ requires user validation`;
-              lines.push(`→ IN PROGRESS: [${cur.id}] ${cur.title}${hint}`);
-              break;
-            }
-            case "ready": {
-              const rq = (focus.issue!.questions || []).filter((q: any) => !q.answer && q.required !== false);
-              if (rq.length) {
-                lines.push(`→ NEXT: [${focus.issue!.id}] ${focus.issue!.title} — ⚠️ ${rq.length} required question(s) must be answered first (use \`issue_question\`)`);
-              } else {
-                lines.push(`→ NEXT: [${focus.issue!.id}] ${focus.issue!.title} — advance to in-progress first`);
-              }
-              break;
-            }
-            case "todo":
-              lines.push(`→ TODO: ${focus.todoText}`);
-              break;
-            case "researched":
-              lines.push(`→ ADVANCE: [${focus.issue!.id}] ${focus.issue!.title} — advance to ready`);
-              break;
-            case "draft":
-              lines.push(`→ RESEARCH: [${focus.issue!.id}] ${focus.issue!.title} — needs research`);
-              break;
-            case "close-epic":
-              lines.push(`→ All done — close epic with \`epic_close\``);
-              break;
+      const result = compose("agent_context", state);
+      if (result.text) {
+        // Debug: show which context rules fired
+        if (isDebugEnabled()) {
+          if (getConfigValue<boolean>(r, "debug.show_context_rules")) {
+            const firedList = result.fired.map(f => `\`${f.id}\``).join(", ");
+            const skippedList = result.skipped.map(s => `\`${s.id}\``).join(", ");
+            pi.sendMessage(
+              { customType: "debug-context-rules", content: `🔍 **Context rules fired:** ${firedList}\n**Skipped:** ${skippedList}`, display: true },
+              { triggerTurn: false },
+            );
+          }
+          // Debug: show agent-only context as visible
+          if (getConfigValue<boolean>(r, "debug.show_agent_context")) {
+            pi.sendMessage(
+              { customType: "debug-agent-context", content: `🔍 **Agent receives:**\n\`\`\`\n${result.text}\n\`\`\``, display: true },
+              { triggerTurn: false },
+            );
           }
         }
-      }
 
-      // Unassigned bugs — always listed (urgent regardless of epic), unless config disables it
-      const bugsInSteering = getConfigValue<boolean>(r, "context.unassigned_bugs_in_steering");
-      const unassignedBugs = r.issues.filter(i => !i.epicId && i.status !== "closed" && i.type === "bug");
-      if (bugsInSteering && unassignedBugs.length) {
-        lines.push(`[UNASSIGNED BUGS] ${unassignedBugs.length} bug(s) need attention: ${unassignedBugs.map(i => `[${i.id}] ${i.title} (${i.status})`).join(", ")}`);
+        return {
+          message: {
+            customType: "project-steering",
+            content: result.text,
+            display: false,
+          },
+        };
       }
-
-      // Other unassigned issues — count only, don't pollute context
-      const unassignedOther = r.issues.filter(i => !i.epicId && i.status !== "closed" && i.type !== "bug");
-      if (unassignedOther.length) {
-        const byType: Record<string, number> = {};
-        for (const i of unassignedOther) byType[i.type] = (byType[i.type] || 0) + 1;
-        const summary = Object.entries(byType).map(([t, c]) => `${c} ${t}(s)`).join(", ");
-        lines.push(`[UNASSIGNED] ${summary} in parking lot — assign to an epic before working on them (use \`issue_list\` with \`unassigned: true\`)`);
-      }
-
-      const serverInfo = getServerInfo();
-      if (serverInfo) {
-        lines.push(`[DASHBOARD] Live dashboard running at ${serverInfo.url}`);
-      }
-
-      return {
-        message: {
-          customType: "project-steering",
-          content: lines.join("\n"),
-          display: false,
-        },
-      };
     } catch {}
   });
 
@@ -296,7 +217,6 @@ export default function (pi: ExtensionAPI) {
       def.renderResult = (result: any, { expanded, isPartial }: any, theme: any) => {
         const text = result.content?.[0]?.text ?? "";
         if (!text) return new Text("", 0, 0);
-        // Short single-line results: plain text. Multi-line or markdown: render as markdown.
         const hasMarkdown = /[#*`>|]/.test(text) && (text.includes("\n") || text.includes("**"));
         if (!hasMarkdown) return new Text(text, 0, 0);
         return new Markdown(text, 0, 0, getMarkdownTheme());

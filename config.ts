@@ -133,6 +133,41 @@ export const CONFIG_REGISTRY: ConfigEntry[] = [
   },
 ];
 
+// --- Debug config entries (conditionally added when PI_PM_DEBUG is set) ---
+
+export function registerDebugConfigEntries(): void {
+  CONFIG_REGISTRY.push(
+    {
+      type: "bool",
+      key: "debug.show_agent_context",
+      label: "Show agent context",
+      description: "Display agent-only steering messages (display:false) as visible panels so users can see what the agent receives",
+      default: false,
+    },
+    {
+      type: "bool",
+      key: "debug.show_hook_activity",
+      label: "Show hook activity",
+      description: "Show which hooks fired/skipped after each tool call as a visible message",
+      default: false,
+    },
+    {
+      type: "bool",
+      key: "debug.show_context_rules",
+      label: "Show context rules",
+      description: "Show which context rules composed the current turn's steering as a visible message",
+      default: false,
+    },
+    {
+      type: "bool",
+      key: "debug.verbose_log",
+      label: "Verbose debug log",
+      description: "Include full output text in debug log entries (vs truncated to 500 chars)",
+      default: false,
+    },
+  );
+}
+
 // --- Accessors ---
 
 /** Get the full resolved config (DB values merged over defaults). */

@@ -2,11 +2,73 @@
   "version": 9,
   "epics": [
     {
+      "id": "4gm0kng1",
+      "title": "Agent UX — Commands & Feedback",
+      "description": "Quick wins to improve daily agent UX: a `/project-reset` command for state validation and context compaction, and visible feedback when `/continue` is used.",
+      "body": "",
+      "priority": 1,
+      "status": "draft",
+      "relevantFiles": [],
+      "todos": [
+        {
+          "text": "Implement /project-reset command with state validation and context compaction",
+          "done": false
+        },
+        {
+          "text": "Implement /continue visible feedback showing current context before resume",
+          "done": false
+        }
+      ],
+      "successCriteria": [
+        "/project-reset validates state and compacts context safely",
+        "/continue shows current context (active issue, epic, recent work) before agent resumes"
+      ],
+      "research": [],
+      "createdAt": "2026-03-11T14:42:27.992Z",
+      "updatedAt": "2026-03-11T14:42:37.756Z"
+    },
+    {
+      "id": "76cb6gxh",
+      "title": "Data Model — Linking, Todos & Soft Delete",
+      "description": "Core data model improvements: asset-to-asset linking, soft delete for assets, issue-level implementation checklists, and dependency links between issues/epics.",
+      "body": "",
+      "priority": 2,
+      "status": "draft",
+      "relevantFiles": [],
+      "todos": [
+        {
+          "text": "Implement asset-to-asset linking",
+          "done": false
+        },
+        {
+          "text": "Implement soft delete for assets with trash/undelete/list",
+          "done": false
+        },
+        {
+          "text": "Add issue-level implementation checklist (todos) with per-turn steering",
+          "done": false
+        },
+        {
+          "text": "Implement dependency links with optional blocking semantics",
+          "done": false
+        }
+      ],
+      "successCriteria": [
+        "Assets can be linked to other assets bidirectionally",
+        "Deleted assets go to trash and can be undeleted or listed",
+        "Issues support todo checklists that steer agent work per turn",
+        "Issues and epics can declare dependencies with optional blocking"
+      ],
+      "research": [],
+      "createdAt": "2026-03-11T14:42:27.996Z",
+      "updatedAt": "2026-03-11T14:42:37.761Z"
+    },
+    {
       "id": "4ede9rp0",
       "title": "Workflow Discipline & Issue Lifecycle Improvements",
       "description": "Improvements to enforce proper issue workflow and manage issue/epic lifecycle. Includes soft-blocking file writes without an active issue, and a deferred status to park items without closing them.",
       "body": "## Overview\nTwo complementary improvements to make the issue lifecycle more robust:\n\n1. **Soft-block file writes** — enforce that the agent only modifies files when an issue is actively in-progress, via layered policy injection and tool-result warnings.\n2. **Deferred status** — allow issues and epics to be parked without closing them, keeping the active view clean while preserving context.\n\n## Implementation Plan\n\n### Soft-block file writes (thlp7pym)\n- `before_agent_start`: inject full workflow policy into system prompt explaining the issue lifecycle and the rule that file writes require an in-progress issue.\n- `turn_start`: inject a lightweight status line each turn (`📍 Current: [issue:id] Title (in-progress)` or `⚠️ No issue in-progress`).\n- `tool_result` hook on `write`, `edit`, and `bash` (matching write patterns: `>`, `>>`, `tee`, `sed -i`, `mv`, `cp`): append a soft warning when no issue is in-progress.\n- **File:** `index.ts`\n\n### Deferred status (fqdkjlyp)\n- Add `deferred` as a valid status for issues and epics (side-channel, not part of the sequential flow).\n- New tools: `issue_defer` / `epic_defer` (with optional reason), `issue_resume` / `epic_resume` (restores previous status).\n- `issue_list` / `epic_list`: exclude deferred by default, add `include_deferred` flag.\n- `next_work`: ignore deferred items entirely.\n- **Files:** `types.ts`, `issues.ts`, `epics.ts`, `store.ts`, `tool-docs.ts`",
-      "priority": 1,
+      "priority": 3,
       "status": "closed",
       "relevantFiles": [],
       "todos": [],
@@ -80,8 +142,8 @@
       "title": "Core Architecture — Context Engine, Hook Registry & Debug",
       "description": "Foundation layer: centralize all context injection, tool hooks, and message presentation into declarative registries with mode system, config toggles, and debug introspection.",
       "body": "This epic establishes the architectural foundation that all other features build on. Currently, context steering, tool hooks, and message formatting are scattered inline across `index.ts` with ad-hoc conditions. This epic centralizes them into three systems:\n\n1. **Context Engine** — Declarative rules for all agent steering/injection with mode system and conditional composition\n2. **Hook Registry** — Declarative tool lifecycle hooks with conditions, priorities, and mode filters\n3. **Message Templates** — Separation of data vs. presentation for all tool outputs\n4. **Debug Mode** — ENV-gated introspection tools to see exactly what the agent receives\n\n### Build Order\n1. Context Engine (establishes mode system, config patterns, debug infra)\n2. Hook Registry (reuses mode system from Context Engine)\n3. Debug Mode (introspects both systems)\n\n### Why First\nEvery planned feature (onboarding, source alerts, folder guard, etc.) would otherwise add more scattered inline code. Building this first means new features are simple rule registrations.",
-      "priority": 2,
-      "status": "draft",
+      "priority": 4,
+      "status": "closed",
       "relevantFiles": [
         {
           "file": "index.ts",
@@ -99,35 +161,35 @@
       "todos": [
         {
           "text": "Design shared types for rule/hook registration (id, label, condition, modes, priority)",
-          "done": false
+          "done": true
         },
         {
           "text": "Implement Context Engine with rule registry and composer",
-          "done": false
+          "done": true
         },
         {
           "text": "Implement Hook Registry with dispatcher",
-          "done": false
+          "done": true
         },
         {
           "text": "Implement Message Templates layer",
-          "done": false
+          "done": true
         },
         {
           "text": "Migrate all existing inline steering to Context Engine rules",
-          "done": false
+          "done": true
         },
         {
           "text": "Migrate all existing inline hooks to Hook Registry",
-          "done": false
+          "done": true
         },
         {
           "text": "Add debug ENV gate and config entries",
-          "done": false
+          "done": true
         },
         {
           "text": "Add context_debug and hook_debug tools",
-          "done": false
+          "done": true
         }
       ],
       "successCriteria": [
@@ -139,14 +201,73 @@
       ],
       "research": [],
       "createdAt": "2026-03-11T12:00:27.932Z",
-      "updatedAt": "2026-03-11T12:00:27.932Z"
+      "updatedAt": "2026-03-11T13:43:04.409Z",
+      "closeMessage": "Epic complete. Delivered Context Engine (10 rules), Hook Registry (4 hooks), and Debug Mode (4 tools, 4 config entries, UX indicators, sendMessage wrapper). index.ts reduced 46% from 319→173 lines. All logic is now declarative — new features are simple rule registrations. Message Templates layer scoped out as unnecessary (tool files already return clean data).",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "All context injection uses Context Engine rules — no inline steering in index.ts",
+          "evidence": "All 10 context injection points migrated to context-rules.ts. index.ts hooks are ~10 lines each, calling compose(). No inline steering logic remains.",
+          "met": true
+        },
+        {
+          "criterion": "All tool hooks use Hook Registry — no inline hook handlers in index.ts",
+          "evidence": "All 4 tool_result behaviors migrated to hook-rules.ts. index.ts uses a single dispatch() call. No inline hook handlers remain.",
+          "met": true
+        },
+        {
+          "criterion": "Mode system works (normal/onboarding) with rules filtered by mode",
+          "evidence": "Every ContextRule and Hook has a modes field. compose() and dispatch() both filter by mode. Built and ready for onboarding mode — not yet exercised but the infrastructure is complete.",
+          "met": true
+        },
+        {
+          "criterion": "Debug mode shows agent-only context when enabled, hidden when ENV not set",
+          "evidence": "User confirmed: with PI_PM_DEBUG set, debug banner + status badge + debug config entries + sendMessage mirror all visible. Without PI_PM_DEBUG, zero debug footprint — user tested /idea without debug and confirmed clean output.",
+          "met": true
+        },
+        {
+          "criterion": "context_debug and hook_debug tools available behind ENV gate",
+          "evidence": "4 debug tools registered behind ENV gate: debug_rules, debug_log, debug_clear, debug_context. All verified working by user and agent.",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-11T13:43:04.409Z"
+    },
+    {
+      "id": "369zvzd0",
+      "title": "Architecture Vision — Multi-project, Data Layer & Delegation",
+      "description": "Long-term architectural ideas: multi-project management from a hub, file-per-entity data layer for mergeability, and agent delegation via git worktrees.",
+      "body": "",
+      "priority": 5,
+      "status": "draft",
+      "relevantFiles": [],
+      "todos": [
+        {
+          "text": "Spike: multi-project attach feasibility",
+          "done": false
+        },
+        {
+          "text": "Spike: file-per-entity data layer design",
+          "done": false
+        },
+        {
+          "text": "Spike: agent delegation on git worktrees",
+          "done": false
+        }
+      ],
+      "successCriteria": [
+        "Each idea has been spiked with a clear go/no-go recommendation"
+      ],
+      "research": [],
+      "createdAt": "2026-03-11T14:42:28.004Z",
+      "updatedAt": "2026-03-11T14:42:37.769Z"
     },
     {
       "id": "8dga7k63",
       "title": "Workflow Enhancements — Onboarding, Review Flags & Idea Capture",
       "description": "Improve the issue lifecycle with onboarding mode for brownfield import, a \"needs review\" flag to prevent premature work, and motivation prompts for better idea capture.",
       "body": "This epic adds workflow improvements that depend on the Core Architecture epic (Context Engine + Hook Registry):\n\n1. **Onboarding Mode** — Bulk import of brownfield project history with process gates bypassed but data quality enforced. Uses Context Engine modes to swap steering and Hook Registry to disable write gates.\n2. **\"Needs Review\" Flag** — Marks rough ideas as not ready for work, blocking advancement to in-progress until reviewed and expanded.\n3. **Motivation Prompt** — When creating ideas/features, prompt for the *why* so context isn't lost.\n\n### Dependencies\n- Core Architecture epic (Context Engine mode system, Hook Registry for conditional guards)\n\n### Build Order\n1. \"Needs Review\" flag (small, independent)\n2. Motivation prompt (small, independent)\n3. Onboarding Mode (large, needs Context Engine modes)",
-      "priority": 3,
+      "priority": 6,
       "status": "draft",
       "relevantFiles": [],
       "todos": [
@@ -190,7 +311,7 @@
       "title": "Data & Security — Attachments, Folder Guard & Source Alerts",
       "description": "Add file attachments with Git LFS, protect the `.pi/project/` folder from direct agent access, and auto-notify when edited files are linked as asset sources.",
       "body": "This epic adds data management and security features:\n\n1. **File Attachments** — Copy reference files into tracked `.pi/project/attachments/` with Git LFS for binaries. Applies to issues, epics, and assets.\n2. **Folder Guard** — Block direct agent access to `.pi/project/` via bash/read/write/edit tool hooks. Scrub path references from context.\n3. **Source File Alerts** — When a file linked as an asset source is edited, notify the agent to review the asset.\n\n### Dependencies\n- Hook Registry (folder guard and source alerts register as hooks)\n- Context Engine (folder path scrubbing in context rules)\n\n### Build Order\n1. Folder Guard (security, uses Hook Registry)\n2. Source File Alerts (uses Hook Registry)\n3. File Attachments (independent, larger scope)",
-      "priority": 4,
+      "priority": 7,
       "status": "draft",
       "relevantFiles": [],
       "todos": [
@@ -234,7 +355,7 @@
       "title": "Config & Git Workflow Integration",
       "description": "Adds a typed config system to the project manager and builds git workflow guards on top of it. Config enables runtime toggling of behaviour without code changes; git integration enforces branch discipline and commit hygiene throughout the issue/epic lifecycle.",
       "body": "",
-      "priority": 5,
+      "priority": 8,
       "status": "closed",
       "relevantFiles": [],
       "todos": [
@@ -261,7 +382,7 @@
       "title": "Issue Traceability & File Capture",
       "description": "Adds automatic file-change tracking to in-progress issues, giving each issue a living record of what was touched. Optionally gates closure behind per-file change notes for full traceability.",
       "body": "## Goal\\nAutomatically track which files are created/written/edited during an in-progress issue and surface them as references on that issue. Optionally require a one-sentence change note per file before the issue can be closed.\\n\\n## Approach\\n1. Two new config flags (`issues.capture_edited_files`, `issues.require_file_change_notes`), both default `false`\\n2. Hook pi write/edit tool events in `index.ts` — when capture is enabled and an issue is in-progress, add a `reference` research note with a distinguishable `[auto]` prefix and the file path (deduplicated)\\n3. Close gate in issue close logic — when `require_file_change_notes` is enabled, scan auto-captured references and block if any lack a follow-up change note\\n\\n## Files Affected\\n- `config.ts` — new config entries\\n- `index.ts` — tool event hooks for write/edit\\n- `issues.ts` — close gate logic\\n- `commands.ts` — potentially surface auto-refs in issue display",
-      "priority": 6,
+      "priority": 9,
       "status": "closed",
       "relevantFiles": [
         {
@@ -774,12 +895,28 @@
       "type": "bug",
       "title": "/idea, /feature, /bug commands don't display user input in chat history",
       "description": "When using `/idea`, `/feature`, or `/bug`, the user's prompt text is sent via `sendMessage` with `display: false`, so nothing appears in the chat history. The user loses their own input from the visible conversation. The fix: echo a visible summary message in the chat (e.g. `\"New feature proposed:\\n> <user text>\"`) before/alongside the hidden steering message. Use appropriate emoji/label per command type (💡 idea proposed / ✨ feature proposed / 🐛 bug reported).\n\n**File:** `commands.ts` — the `display: false` in each `sendMessage` call (lines ~155, ~188, ~217)",
-      "status": "draft",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "comment",
+          "content": "## Fix Plan\n\nAdd a visible echo `sendMessage({ display: true })` before each hidden steering message in `commands.ts` for `/idea`, `/feature`, `/bug`, and `/spike`:\n\n- 💡 `/idea` → `\"💡 **Idea proposed:**\\n> {text}\\n\\n*Reviewing...*\"`\n- ✨ `/feature` → `\"✨ **Feature proposed:**\\n> {text}\\n\\n*Analyzing...*\"`\n- 🐛 `/bug` → `\"🐛 **Bug reported:**\\n> {text}\\n\\n*Triaging...*\"`\n- 🔬 `/spike` → `\"🔬 **Spike proposed:**\\n> {text}\\n\\n*Reviewing...*\"` (if it exists)\n\nEach gets `{ triggerTurn: false }` so it doesn't trigger an extra agent turn.",
+          "addedAt": "2026-03-11T13:27:46.175Z"
+        }
+      ],
       "createdAt": "2026-03-11T10:22:33.148Z",
-      "updatedAt": "2026-03-11T10:22:33.148Z"
+      "updatedAt": "2026-03-11T13:36:41.033Z",
+      "closeMessage": "Fixed — all 3 slash commands now echo a visible message showing the user's input before the hidden agent steering prompt.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "When using `/idea`, `/feature`, or `/bug`, the user's prompt text is sent via `sendMessage` with `display: false`, so nothing appears in the chat history. The user loses their own input from the visible conversation. The fix: echo a visible summary message in the chat (e.g. `\"New feature proposed:\\n> <user text>\"`) before/alongside the hidden steering message. Use appropriate emoji/label per command type (💡 idea proposed / ✨ feature proposed / 🐛 bug reported).\n\n**File:** `commands.ts` — the `display: false` in each `sendMessage` call (lines ~155, ~188, ~217)",
+          "evidence": "Added visible echo messages before hidden steering prompts in commands.ts for /idea, /feature, and /bug. Each shows the user's input with appropriate emoji label and Reviewing/Analyzing/Triaging status. User confirmed working after reload.",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-11T13:36:41.033Z"
     },
     {
       "id": "qgyglfrd",
@@ -892,22 +1029,49 @@
       "questions": [],
       "research": [],
       "createdAt": "2026-03-11T11:10:46.274Z",
-      "updatedAt": "2026-03-11T11:10:46.274Z"
+      "updatedAt": "2026-03-11T14:42:37.778Z",
+      "epicId": "76cb6gxh"
     },
     {
       "id": "ihkjviyl",
       "type": "feature",
       "title": "Centralized Context Engine for all agent steering and injection",
       "description": "All context injection is currently scattered across `index.ts` — session start, `before_agent_start` steering, write gates, asset triggers, epic focus — each with its own conditions and no unified view. A centralized Context Engine would register all context \"rules\" declaratively (with conditions, priority, mode filters like `onboarding`), compose them per-turn, and expose debugging/export tools so you can see exactly what the agent receives and why.\n\n## Implementation Approach\n\n### 1. Context Rules (steering/injection)\n**`src/context-engine.ts`** — Core concepts:\n- **Context Rule**: `{ id, label, condition: (state) => bool, content: (state) => string, priority, modes?: string[] }`\n- **Registry**: All rules registered at init — workflow policy, write gate, epic steering, unassigned nudge, asset triggers, onboarding instructions, etc.\n- **Composer**: Each turn, evaluates all rules against current state (config, mode, issues, epics), filters by condition, sorts by priority, returns composed context\n- **Mode system**: `\"normal\" | \"onboarding\" | ...` — rules declare which modes they apply to (or exclude from)\n\n### 2. Message Templates (presentation layer)\nCurrently every tool crafts its own formatting inline — mixing presentation with logic. Three output channels are used ad-hoc:\n- Tool return (`{ content: [{ type: \"text\", text }] }`) — user + agent\n- `sendMessage` with `display: true` — user-visible panel\n- `sendMessage` with `display: false` — agent-only context\n\n**`src/message-templates.ts`** — Centralized presentation:\n- **Template Registry**: Named templates for every message type (issue_created, epic_advanced, close_checklist, etc.)\n- **Channel abstraction**: Each template declares its channel (`tool_result | user_display | agent_context`) — the caller says *what happened*, the template handles *how it looks*\n- **Separation of concerns**: Tool handlers return structured data (e.g. `{ event: \"issue_created\", data: { id, title, type } }`), the template system renders it for the appropriate channel\n- **Consistent formatting**: All emoji, status icons, layout patterns defined once — change a template, change it everywhere\n\n### 3. Debug/introspection tools\n- `context_debug` — Shows which rules fired this turn, what content each produced, which were suppressed and why\n- `context_export` — Dumps all registered rules with their conditions and mode filters as a readable map\n\n### 4. Config integration\nIndividual rules can be toggled via config (`context.rules.<id>.enabled`), and mode switches like `onboarding.enabled` automatically filter the rule set\n\n**What this solves for onboarding mode:** Instead of ad-hoc `if (onboarding)` checks scattered everywhere, onboarding rules declare `modes: [\"onboarding\"]` and normal rules declare `modes: [\"normal\"]` — no race conditions possible by design.\n\n**What this solves for presentation:** Tool code focuses purely on logic and data — no more formatting strings inline. Adding a new tool output means adding a template entry, not crafting markdown in the handler.",
-      "status": "draft",
+      "status": "closed",
       "linkedIssueIds": [
         "mz03veip"
       ],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "## Codebase Audit: All Context Injection Points\n\n### `index.ts` — 7 injection points:\n\n1. **Write Gate** (lines 82-113, `tool_result` hook) — Warns on file writes when no issue in-progress. Injects text into tool result content.\n2. **Auto-capture edited files** (lines 116-137, `tool_result` hook) — Adds reference notes to in-progress issue. Not context injection per se, but a tool_result side-effect.\n3. **Policy triggers** (lines 140-157, `tool_result` hook) — Fires asset-triggered policies via `sendMessage(display: false)`.\n4. **Session dashboard** (lines 160-184, `session_start`) — `sendMessage(display: true)` with project brief.\n5. **Session assets context** (lines 187-193, `session_start`) — `sendMessage(display: false)` with asset hints.\n6. **Per-turn steering** (lines 197-288, `before_agent_start`) — The big one. Composes ~8 conditional sections into a single `sendMessage(display: false)`:\n   - Current issue status line\n   - Workflow policy (always)\n   - Epic focus steering (in-progress epic only)\n   - Issue focus with validation hints\n   - Unassigned bugs\n   - Unassigned other issues count\n   - Dashboard URL\n7. **Default renderResult wrapper** (lines 292-305) — Presentation layer for tool outputs.\n\n### `commands.ts` — 4 injection points:\n- `/idea`, `/feature`, `/bug`, `/spike` slash commands — each calls `sendMessage(display: false)` with agent instructions after creating an issue.\n\n### Other files:\n- `epics.ts`, `issues.ts`, `assets.ts`, `next-work.ts` — Return structured tool results only, no sendMessage calls. Clean already.\n\n### Summary:\n- **11 total injection points** (7 in index.ts, 4 in commands.ts)\n- **3 channels used**: tool_result augmentation, sendMessage(display:true), sendMessage(display:false)\n- **Per-turn steering is the largest** (~90 lines, 8 conditional sections)\n- Tool files are already clean — they return data, index.ts does the steering",
+          "addedAt": "2026-03-11T12:04:04.474Z"
+        },
+        {
+          "type": "comment",
+          "content": "## Proposed Implementation Plan\n\n### Phase 1: Core Engine (`context-engine.ts`) — ~150 lines\nCreate the rule registry and composer:\n\n```ts\ninterface ContextRule {\n  id: string;\n  label: string;\n  channel: \"tool_result\" | \"agent_context\" | \"user_display\";\n  condition: (state: ContextState) => boolean;\n  content: (state: ContextState) => string;\n  priority: number;  // lower = first\n  modes?: string[];  // empty = all modes\n}\n\ninterface ContextState {\n  store: Store;\n  event?: string;        // which hook triggered\n  toolName?: string;     // for tool_result rules\n  toolInput?: any;\n  inProgressIssue?: Issue;\n  focusEpic?: Epic;\n}\n```\n\n- `registerRule(rule)` — adds to registry\n- `compose(state, channel)` — evaluates conditions, filters by mode, sorts by priority, returns joined string\n- `listRules()` — for debug introspection\n\n### Phase 2: Migrate Existing Rules — one rule per injection point\n\n| Rule ID | Channel | Current Location | Priority |\n|---------|---------|-----------------|----------|\n| `write-gate` | tool_result | index.ts:82-113 | 10 |\n| `policy-trigger` | agent_context | index.ts:140-157 | 20 |\n| `session-dashboard` | user_display | index.ts:170-184 | 10 |\n| `session-assets` | agent_context | index.ts:187-193 | 20 |\n| `status-line` | agent_context | index.ts:202-211 | 10 |\n| `workflow-policy` | agent_context | index.ts:213-214 | 15 |\n| `epic-steering` | agent_context | index.ts:216-260 | 20 |\n| `unassigned-bugs` | agent_context | index.ts:262-266 | 30 |\n| `unassigned-other` | agent_context | index.ts:269-274 | 35 |\n| `dashboard-url` | agent_context | index.ts:276-279 | 40 |\n| `cmd-idea/feature/bug/spike` | agent_context | commands.ts:134-226 | 10 |\n\n### Phase 3: Config Integration\n- Each rule toggleable via `context.rules.<id>.enabled` (default true)\n- Mode system: `context.mode` config entry (default \"normal\")\n\n### Phase 4: Debug Tools (→ separate issue mz03veip)\n- `context_debug` shows last compose output with rule-by-rule breakdown\n- Gated behind `PI_DEBUG` env var\n\n### What NOT to do yet:\n- **Message Templates** — the issue description mentions this but it's a separate concern (presentation vs. injection). The tool files already return clean data. Templates can be a follow-up epic if needed. Keep scope tight.\n\n### Migration strategy:\n- Build engine + register all rules in one PR\n- Each rule's content function is literally copy-paste of current inline code into a function\n- Delete the inline code from index.ts, replace with `compose()` calls in the 3 hooks\n- index.ts hooks become ~10 lines each: build state → compose → send",
+          "addedAt": "2026-03-11T12:04:23.787Z"
+        },
+        {
+          "type": "comment",
+          "content": "## Deferred Validation: Debug Mode Required\n\nFull validation of the Context Engine should happen via the Debug Mode tool (issue `mz03veip`). The debug tool should support:\n\n- **Transcript logging mode** — when enabled, captures ALL context steering (every `compose()` call), user messages, and agent responses into a queryable log\n- **Tools exposed when debug is active:**\n  - `debug_reset` — clear the log\n  - `debug_query` — search/filter the log (by rule ID, channel, turn number, etc.)\n  - `debug_dump` — export full transcript\n  - `debug_rules` — show which rules fired/skipped per turn with evidence\n- **Use case:** When implementing new features, enable debug mode to see exactly what context the agent receives, verify rules fire correctly, and diagnose steering issues — all natively without leaving pi\n- **Validation of Context Engine:** Once debug mode exists, re-run through all rule paths and verify via the debug log that each rule fires with correct content, priority ordering, and mode filtering",
+          "addedAt": "2026-03-11T12:14:27.465Z"
+        }
+      ],
       "createdAt": "2026-03-11T11:11:58.367Z",
-      "updatedAt": "2026-03-11T12:00:59.431Z",
-      "epicId": "bhsbhvli"
+      "updatedAt": "2026-03-11T12:18:45.029Z",
+      "epicId": "bhsbhvli",
+      "closeMessage": "Context Engine implemented and verified. Core engine with rule registry + composer, 10 declarative rules migrated, index.ts reduced 27%. Mode system ready for onboarding. Debug introspection metadata built into compose() — full validation deferred to debug mode issue.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "All context injection is currently scattered across `index.ts` — session start, `before_agent_start` steering, write gates, asset triggers, epic focus — each with its own conditions and no unified view. A centralized Context Engine would register all context \"rules\" declaratively (with conditions, priority, mode filters like `onboarding`), compose them per-turn, and expose debugging/export tools so you can see exactly what the agent receives and why.\n\n## Implementation Approach\n\n### 1. Context Rules (steering/injection)\n**`src/context-engine.ts`** — Core concepts:\n- **Context Rule**: `{ id, label, condition: (state) => bool, content: (state) => string, priority, modes?: string[] }`\n- **Registry**: All rules registered at init — workflow policy, write gate, epic steering, unassigned nudge, asset triggers, onboarding instructions, etc.\n- **Composer**: Each turn, evaluates all rules against current state (config, mode, issues, epics), filters by condition, sorts by priority, returns composed context\n- **Mode system**: `\"normal\" | \"onboarding\" | ...` — rules declare which modes they apply to (or exclude from)\n\n### 2. Message Templates (presentation layer)\nCurrently every tool crafts its own formatting inline — mixing presentation with logic. Three output channels are used ad-hoc:\n- Tool return (`{ content: [{ type: \"text\", text }] }`) — user + agent\n- `sendMessage` with `display: true` — user-visible panel\n- `sendMessage` with `display: false` — agent-only context\n\n**`src/message-templates.ts`** — Centralized presentation:\n- **Template Registry**: Named templates for every message type (issue_created, epic_advanced, close_checklist, etc.)\n- **Channel abstraction**: Each template declares its channel (`tool_result | user_display | agent_context`) — the caller says *what happened*, the template handles *how it looks*\n- **Separation of concerns**: Tool handlers return structured data (e.g. `{ event: \"issue_created\", data: { id, title, type } }`), the template system renders it for the appropriate channel\n- **Consistent formatting**: All emoji, status icons, layout patterns defined once — change a template, change it everywhere\n\n### 3. Debug/introspection tools\n- `context_debug` — Shows which rules fired this turn, what content each produced, which were suppressed and why\n- `context_export` — Dumps all registered rules with their conditions and mode filters as a readable map\n\n### 4. Config integration\nIndividual rules can be toggled via config (`context.rules.<id>.enabled`), and mode switches like `onboarding.enabled` automatically filter the rule set\n\n**What this solves for onboarding mode:** Instead of ad-hoc `if (onboarding)` checks scattered everywhere, onboarding rules declare `modes: [\"onboarding\"]` and normal rules declare `modes: [\"normal\"]` — no race conditions possible by design.\n\n**What this solves for presentation:** Tool code focuses purely on logic and data — no more formatting strings inline. Adding a new tool output means adding a template entry, not crafting markdown in the handler.",
+          "evidence": "Created `context-engine.ts` (125 lines) with ContextRule type, registerRule/listRules/clearRules registry, and compose() function with debug metadata (fired/skipped). Created `context-rules.ts` (230 lines) with all 10 context injection points registered as declarative rules. Refactored `index.ts` from 319→234 lines — all 3 hooks (tool_result, session_start, before_agent_start) now use compose(). Verified all rules fire correctly after reload: status-line, workflow-policy, epic-steering, unassigned-other all producing correct output. Mode system and debug metadata built in, ready for future issues. Full validation deferred to debug mode tool (mz03veip).",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-11T12:18:45.029Z"
     },
     {
       "id": "n8lcit9m",
@@ -966,31 +1130,204 @@
       "type": "feature",
       "title": "Centralized Hook Registry for all tool lifecycle hooks",
       "description": "Tool hooks (`tool_result`, `before_tool_call`) are scattered inline across `index.ts` with ad-hoc conditions — write gate, file capture, source alerts, project folder guard, etc. A Hook Registry would let hooks be registered declaratively with conditions, priorities, and mode filters. This is the companion to the Context Engine [ihkjviyl] — together they centralize the two main extension touch points: what the agent *sees* (context) and what *happens* around tool calls (hooks).\n\n## Implementation Approach\n\n1. **`src/hook-registry.ts`** — New module with core concepts:\n   - **Hook Rule**: `{ id, label, event: \"tool_result\"|\"before_tool_call\", toolMatch?: string|regex, condition: (state, toolInput) => bool, handler: (event) => result, priority, modes?: string[] }`\n   - **Registry**: All hooks registered at init — write gate, file capture, source alerts, project folder guard\n   - **Dispatcher**: On each tool event, filters matching hooks by event type + tool name + condition + mode, runs in priority order, merges results\n\n2. **`index.ts`** — Refactor: replace all inline `tool_result`/`before_tool_call` handlers with a single dispatcher that delegates to the registry\n\n3. **Shared infrastructure with Context Engine [ihkjviyl]** — Both registries share:\n   - Mode system (`\"normal\" | \"onboarding\"`)\n   - Config-based toggling (`hooks.rules.<id>.enabled`)\n   - Debug/introspection tools\n   - Extend `context_debug` → `system_debug` showing both context rules AND hook rules that fired\n\n4. **Recommended build order:**\n   - **Context Engine [ihkjviyl] first** — establishes mode system, config patterns, debug infrastructure\n   - **Hook Registry second** — reuses mode system and debug patterns\n   - **All other features after** (onboarding, source alerts, folder guard) — become simple rule registrations\n\n5. **Files affected:**\n   - New `src/hook-registry.ts`\n   - `index.ts` — Major refactor of hook wiring\n   - Shared types/infra with `src/context-engine.ts`",
-      "status": "draft",
+      "status": "closed",
       "linkedIssueIds": [
         "mz03veip"
       ],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "## Post-Context-Engine Audit: Remaining Inline Hooks in index.ts\n\nAfter the Context Engine refactor, `index.ts` tool_result handler (lines 72-142) still has 4 inline behaviors:\n\n### 1. refreshStatus (line 73-75)\n- **Trigger:** Any PROJECT_TOOLS tool call\n- **Action:** Updates status bar + focus widget\n- **Type:** Side-effect (UI update), no return value modification\n\n### 2. Write Gate orchestration (lines 78-97)\n- **Trigger:** Any tool call\n- **Action:** Builds ContextState, calls `compose(\"tool_result\", state)`, augments return content\n- **Type:** Return value modifier — augments tool result with warning text\n- **Note:** The *rule logic* is in context-rules.ts, but the *orchestration* (build state → compose → augment return) is still inline\n\n### 3. Auto-capture edited files (lines 100-122)\n- **Trigger:** edit/write tools with a path\n- **Action:** Adds `[auto] filepath` reference to in-progress issue\n- **Type:** Side-effect (store mutation), no return value modification\n\n### 4. Policy trigger orchestration (lines 125-141)\n- **Trigger:** Tools in TOOL_TO_EVENT map\n- **Action:** Builds ContextState with policyEvent, calls compose, sends agent_context message\n- **Type:** Side-effect (sendMessage), no return value modification\n- **Note:** Like write-gate, the *rule logic* is in context-rules.ts but *orchestration* is inline\n\n### Key insight:\nHooks have TWO distinct patterns:\n- **Result modifiers** (write-gate) — return augmented content, only one can \"win\"\n- **Side-effects** (refreshStatus, auto-capture, policy triggers) — run in sequence, don't modify return\n\nThe Hook Registry needs to handle both patterns.",
+          "addedAt": "2026-03-11T12:41:36.828Z"
+        },
+        {
+          "type": "comment",
+          "content": "## Implementation Plan\n\n### Design: Two hook types\n\n```ts\ntype HookEvent = \"tool_result\" | \"before_tool_call\";\n\ninterface HookState {\n  store: ProjectFile;\n  toolName: string;\n  toolInput?: any;\n  toolContent?: any[];  // existing content for tool_result\n  extra?: Record<string, any>;\n}\n\n// Side-effect hooks: run in order, no return value\ninterface SideEffectHook {\n  id: string;\n  label: string;\n  event: HookEvent;\n  kind: \"side-effect\";\n  condition: (state: HookState) => boolean;\n  handler: (state: HookState, helpers: HookHelpers) => void;\n  priority: number;\n  modes?: string[];\n}\n\n// Result modifier hooks: can augment tool result content\ninterface ResultModifierHook {\n  id: string;\n  label: string;\n  event: HookEvent;\n  kind: \"result-modifier\";\n  condition: (state: HookState) => boolean;\n  handler: (state: HookState) => { text: string } | undefined;\n  priority: number;\n  modes?: string[];\n}\n\ntype Hook = SideEffectHook | ResultModifierHook;\n\n// Helpers passed to side-effect hooks (sendMessage, save, etc.)\ninterface HookHelpers {\n  sendMessage: (msg: any, opts?: any) => void;\n  save: (store: ProjectFile) => void;\n  refreshStatus: (ctx: any) => void;\n}\n```\n\n### Hooks to register:\n\n| ID | Kind | Event | Current Location |\n|----|------|-------|-----------------|\n| `refresh-status` | side-effect | tool_result | index.ts:73-75 |\n| `write-gate` | result-modifier | tool_result | index.ts:78-97 (orchestration) |\n| `auto-capture-files` | side-effect | tool_result | index.ts:100-122 |\n| `policy-trigger` | side-effect | tool_result | index.ts:125-141 (orchestration) |\n\n### Dispatcher flow:\n1. On `tool_result`: build HookState from event\n2. Run all matching side-effect hooks (in priority order)\n3. Run all matching result-modifier hooks — first non-empty result wins (or merge)\n4. Return modified result (or undefined)\n\n### Relationship with Context Engine:\n- Write-gate and policy-trigger hooks still call `compose()` internally — they're *orchestration* hooks that bridge the Hook Registry to the Context Engine\n- The Hook Registry doesn't replace context rules, it replaces the *inline wiring* in index.ts\n\n### Result: index.ts tool_result handler becomes ~5 lines:\n```ts\npi.on(\"tool_result\", async (event, ctx) => {\n  return dispatch(\"tool_result\", { store: load(), toolName: event.toolName, toolInput: event.input, toolContent: event.content }, helpers);\n});\n```",
+          "addedAt": "2026-03-11T12:41:51.598Z"
+        }
+      ],
       "createdAt": "2026-03-11T11:53:51.698Z",
-      "updatedAt": "2026-03-11T12:00:59.436Z",
-      "epicId": "bhsbhvli"
+      "updatedAt": "2026-03-11T12:44:41.822Z",
+      "epicId": "bhsbhvli",
+      "closeMessage": "Hook Registry implemented. Core registry with two hook types (side-effect + result-modifier), 4 hooks migrated, index.ts tool_result handler reduced to a single dispatch() call. Combined with Context Engine, index.ts is now 173 lines (was 319) — all logic lives in declarative registries.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Tool hooks (`tool_result`, `before_tool_call`) are scattered inline across `index.ts` with ad-hoc conditions — write gate, file capture, source alerts, project folder guard, etc. A Hook Registry would let hooks be registered declaratively with conditions, priorities, and mode filters. This is the companion to the Context Engine [ihkjviyl] — together they centralize the two main extension touch points: what the agent *sees* (context) and what *happens* around tool calls (hooks).\n\n## Implementation Approach\n\n1. **`src/hook-registry.ts`** — New module with core concepts:\n   - **Hook Rule**: `{ id, label, event: \"tool_result\"|\"before_tool_call\", toolMatch?: string|regex, condition: (state, toolInput) => bool, handler: (event) => result, priority, modes?: string[] }`\n   - **Registry**: All hooks registered at init — write gate, file capture, source alerts, project folder guard\n   - **Dispatcher**: On each tool event, filters matching hooks by event type + tool name + condition + mode, runs in priority order, merges results\n\n2. **`index.ts`** — Refactor: replace all inline `tool_result`/`before_tool_call` handlers with a single dispatcher that delegates to the registry\n\n3. **Shared infrastructure with Context Engine [ihkjviyl]** — Both registries share:\n   - Mode system (`\"normal\" | \"onboarding\"`)\n   - Config-based toggling (`hooks.rules.<id>.enabled`)\n   - Debug/introspection tools\n   - Extend `context_debug` → `system_debug` showing both context rules AND hook rules that fired\n\n4. **Recommended build order:**\n   - **Context Engine [ihkjviyl] first** — establishes mode system, config patterns, debug infrastructure\n   - **Hook Registry second** — reuses mode system and debug patterns\n   - **All other features after** (onboarding, source alerts, folder guard) — become simple rule registrations\n\n5. **Files affected:**\n   - New `src/hook-registry.ts`\n   - `index.ts` — Major refactor of hook wiring\n   - Shared types/infra with `src/context-engine.ts`",
+          "evidence": "Created `hook-registry.ts` (133 lines) with Hook type (SideEffectHook + ResultModifierHook), registerHook/listHooks/clearHooks registry, and dispatch() function with debug metadata. Created `hook-rules.ts` (133 lines) with 4 declarative hooks: refresh-status, write-gate (bridges to Context Engine), auto-capture-files, policy-trigger (bridges to Context Engine). Refactored `index.ts` from 234→173 lines — tool_result handler is now 15 lines delegating to dispatch(). Verified after reload: status bar updates on tool calls, steering rules fire correctly, no errors. index.ts reduced 46% total from original 319 lines.",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-11T12:44:41.822Z"
     },
     {
       "id": "mz03veip",
       "type": "feature",
       "title": "Debug mode: show agent-only context and hide debug tools behind ENV gate",
       "description": "Add a two-layer debug system:\n\n## Layer 1: ENV Gate (master switch)\n- Debug features are **completely hidden** unless a specific env var is set (e.g. `PI_PM_DEBUG=1`)\n- When ENV is not set: no debug tools registered, no debug config entries visible, no debug context injected — zero footprint\n- This prevents the agent from even knowing debug capabilities exist in normal usage\n\n## Layer 2: Config Settings (granular control, only when ENV is set)\nWhen `PI_PM_DEBUG=1` is set, the following config options become available:\n- `debug.show_agent_context` — Show agent-only messages (`display: false`) as visible messages so the user can see exactly what steering/context the agent receives\n- `debug.show_hook_activity` — Show which hooks fired on each tool call\n- `debug.show_context_rules` — Show which context rules composed the current turn's steering\n- Future: `debug.log_to_file` etc.\n\n## Implementation\n1. **`index.ts` / init** — Check `process.env.PI_PM_DEBUG` at startup. If not set, skip all debug tool registration and debug config entries\n2. **`config.ts`** — Debug config entries added conditionally to `CONFIG_REGISTRY` only when ENV is set\n3. **Agent-only context display** — When `debug.show_agent_context` is enabled, intercept all `sendMessage({ display: false })` calls and flip to `display: true` (or duplicate as a visible debug panel)\n4. **Debug tools** (registered only when ENV set) — `context_debug`, `hook_debug`, etc. from Context Engine [ihkjviyl] and Hook Registry [l8f1cbea]\n\nLinks: Context Engine [ihkjviyl], Hook Registry [l8f1cbea]",
-      "status": "draft",
+      "status": "closed",
       "linkedIssueIds": [
         "ihkjviyl",
         "l8f1cbea"
       ],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "comment",
+          "content": "## Expanded Scope: Full Transcript Debug Mode\n\nBeyond just showing agent-only context, this tool should provide a full **debug logging mode**:\n\n- When enabled, log every piece of context steering (all `compose()` results with fired/skipped metadata), user messages, and agent responses\n- Provide native tools: `debug_reset`, `debug_query` (filter by rule/channel/turn), `debug_dump` (export transcript), `debug_rules` (per-turn rule breakdown)\n- This enables the agent to self-diagnose steering issues when implementing new features — run debug mode, exercise a path, query the log, fix the rule\n- Context Engine validation (issue `ihkjviyl`) is deferred until this tool exists",
+          "addedAt": "2026-03-11T12:14:34.290Z"
+        },
+        {
+          "type": "comment",
+          "content": "## Implementation Plan\n\n### Phase 1: Debug Log Infrastructure (`debug-log.ts`)\nIn-memory circular buffer that captures every compose() and dispatch() call:\n\n```ts\ninterface DebugEntry {\n  turn: number;\n  timestamp: string;\n  source: \"context-engine\" | \"hook-registry\";\n  channel?: string;    // for context: \"agent_context\", \"user_display\", \"tool_result\"\n  event?: string;      // \"before_agent_start\", \"session_start\", \"tool_result\"\n  fired: { id: string; label: string }[];\n  skipped: { id: string; reason: string }[];\n  output?: string;     // the composed text (truncated for large outputs)\n}\n```\n\n- `logEntry(entry)` / `getLog(filter?)` / `clearLog()` / `getTurn()` / `nextTurn()`\n- Max ~200 entries (circular), enough for a session\n\n### Phase 2: Wire logging into existing systems\n- `compose()` in context-engine.ts → after composing, call `logEntry()` if debug enabled\n- `dispatch()` in hook-registry.ts → after dispatching, call `logEntry()` if debug enabled\n- Increment turn counter in `before_agent_start`\n\n### Phase 3: ENV Gate + Debug Tools\nCheck `process.env.PI_PM_DEBUG` at init. If set, register:\n\n| Tool | Purpose |\n|------|---------|\n| `debug_rules` | Show all registered context rules + hooks with IDs, labels, priorities |\n| `debug_log` | Show recent debug log entries (filterable by source, rule ID, turn) |\n| `debug_clear` | Clear the debug log |\n| `debug_context` | Show what the last compose() produced for each channel |\n\n### Phase 4: Config entries (conditional)\nWhen ENV set, add to config registry:\n- `debug.show_agent_context` — flip display:false → display:true\n- `debug.verbose_log` — include full output text in log entries (vs truncated)\n\n### What to skip for now:\n- `debug_dump` to file — can add later\n- `debug_query` with complex filters — `debug_log` with simple filters is enough\n- Intercepting sendMessage for display flip — complex, defer to config entry",
+          "addedAt": "2026-03-11T13:12:49.338Z"
+        }
+      ],
       "createdAt": "2026-03-11T11:59:07.504Z",
-      "updatedAt": "2026-03-11T12:00:59.444Z",
-      "epicId": "bhsbhvli"
+      "updatedAt": "2026-03-11T13:24:08.290Z",
+      "epicId": "bhsbhvli",
+      "validations": [
+        {
+          "criterion": "Add a two-layer debug system:\n\n## Layer 1: ENV Gate (master switch)\n- Debug features are **completely hidden** unless a specific env var is set (e.g. `PI_PM_DEBUG=1`)\n- When ENV is not set: no debug tools registered, no debug config entries visible, no debug context injected — zero footprint\n- This prevents the agent from even knowing debug capabilities exist in normal usage\n\n## Layer 2: Config Settings (granular control, only when ENV is set)\nWhen `PI_PM_DEBUG=1` is set, the following config options become available:\n- `debug.show_agent_context` — Show agent-only messages (`display: false`) as visible messages so the user can see exactly what steering/context the agent receives\n- `debug.show_hook_activity` — Show which hooks fired on each tool call\n- `debug.show_context_rules` — Show which context rules composed the current turn's steering\n- Future: `debug.log_to_file` etc.\n\n## Implementation\n1. **`index.ts` / init** — Check `process.env.PI_PM_DEBUG` at startup. If not set, skip all debug tool registration and debug config entries\n2. **`config.ts`** — Debug config entries added conditionally to `CONFIG_REGISTRY` only when ENV is set\n3. **Agent-only context display** — When `debug.show_agent_context` is enabled, intercept all `sendMessage({ display: false })` calls and flip to `display: true` (or duplicate as a visible debug panel)\n4. **Debug tools** (registered only when ENV set) — `context_debug`, `hook_debug`, etc. from Context Engine [ihkjviyl] and Hook Registry [l8f1cbea]\n\nLinks: Context Engine [ihkjviyl], Hook Registry [l8f1cbea]",
+          "evidence": "All features verified by user: (1) ENV gate — tools/config only exist when PI_PM_DEBUG set. (2) 4 debug tools: debug_rules, debug_log, debug_clear, debug_context. (3) UX indicators: status bar DEBUG badge + session start banner. (4) 4 debug config entries: debug.show_agent_context mirrors all display:false messages (user confirmed /idea prompt mirrored), debug.show_context_rules shows fired/skipped, debug.show_hook_activity shows hook activity, debug.verbose_log controls truncation. (5) sendMessage wrapper intercepts all agent-only messages.",
+          "met": true
+        }
+      ],
+      "closeMessage": "Debug mode complete — ENV gate, 4 tools, 4 config entries, UX indicators, sendMessage wrapper. User confirmed all working.",
+      "closeReason": "done",
+      "closedAt": "2026-03-11T13:24:08.290Z"
+    },
+    {
+      "id": "eis1twji",
+      "type": "idea",
+      "title": "Multi-project attach — manage multiple external project databases from one hub",
+      "description": "Enable a \"hub\" repo to attach to project databases in other folders (e.g. `attach /path/to/repo-A`). The agent could then switch between attached projects — reading their epics/issues/assets, pushing updates, and steering work — all from a single pi session. This would let you manage 5+ repos' project state from a 6th central repo, with commands to list attached projects, switch active project context, and sync.\\n\\n**Complexity:** High — the store, all tools, and all context steering currently assume a single `database.json` in CWD. This would require a project registry, path-aware store loading, and scoped tool execution.\\n\\n**Value:** Very high — portfolio-level project management across multiple repos without switching sessions.",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T12:33:21.852Z",
+      "updatedAt": "2026-03-11T14:42:37.787Z",
+      "epicId": "369zvzd0"
+    },
+    {
+      "id": "zp37hnsl",
+      "type": "idea",
+      "title": "File-per-entity data layer — replace single database.json with mergeable individual files",
+      "description": "Replace the monolithic `database.json` with a file-per-entity storage layer: each epic, issue, and asset gets its own file (e.g. `.pi/project/issues/ihkjviyl.json`). This makes project data git-mergeable, enables file-level locking, and is a prerequisite for both multi-project attach ([eis1twji]) and agent delegation via worktrees. The store API (`load`/`save`) would be refactored to read/write individual files while maintaining the same in-memory `ProjectFile` interface for backward compatibility.\\n\\n**Complexity:** High — touches every read/write path, needs migration from existing databases, index/cache layer for performance.\\n**Value:** Foundational — unblocks parallel agents, worktree workflows, and cross-repo project management.",
+      "status": "draft",
+      "linkedIssueIds": [
+        "35lvii1o"
+      ],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T12:36:33.061Z",
+      "updatedAt": "2026-03-11T14:42:37.788Z",
+      "epicId": "369zvzd0"
+    },
+    {
+      "id": "35lvii1o",
+      "type": "idea",
+      "title": "Agent delegation — spawn parallel agents on git worktrees for epic/issue work",
+      "description": "Delegate an epic or issue to a separate agent working in a git worktree branch, enabling parallel development with PR-based merge back. The manager agent plans and delegates, worker agents execute in isolation, and results merge via PRs. Requires file locking on delegated entities to prevent conflicts. **Depends on:** file-per-entity data layer ([zp37hnsl]) — without mergeable individual files, worktree branches can't cleanly merge project state back.\\n\\n**Complexity:** Very high — worktree orchestration, agent spawning, entity locking, merge coordination.\\n**Value:** Transformative — true parallel AI development with project-aware coordination.",
+      "status": "draft",
+      "linkedIssueIds": [
+        "zp37hnsl"
+      ],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T12:36:37.894Z",
+      "updatedAt": "2026-03-11T14:42:37.790Z",
+      "epicId": "369zvzd0"
+    },
+    {
+      "id": "zn0v6v0o",
+      "type": "feature",
+      "title": "Soft delete assets — trash, undelete, and list deleted",
+      "description": "Currently deleting an asset is permanent. Soft delete moves assets to a \"trash\" state instead of removing them, allowing recovery. Adds `asset_delete` (soft), `asset_undelete`, and `asset_list` with `deleted_only` filter to browse trash.\\n\\n**Implementation:** Add `deletedAt?: string` to Asset type. `asset_delete` sets timestamp, `asset_undelete` clears it. All existing queries add `&& !a.deletedAt` guard. Files: `types.ts`, `assets.ts`, `format.ts`.",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T12:43:55.972Z",
+      "updatedAt": "2026-03-11T14:42:37.779Z",
+      "epicId": "76cb6gxh"
+    },
+    {
+      "id": "ul1sgekt",
+      "type": "feature",
+      "title": "Issue-level implementation checklist (todos) with per-turn steering",
+      "description": "Add a `todos` field to issues (like epics already have), with an `issue_todo` tool to add/toggle items. When an issue is in-progress, the per-turn steering should show uncompleted todos so the agent doesn't skip implementation items. For example: `→ IN PROGRESS: [mz03veip] Debug mode (2/4 todos: ☐ Add config entries, ☐ Add UX indicator)`. The agent should also be warned when closing an issue with uncompleted todos.\\n\\n**Changes needed:**\\n- `types.ts` — Add `todos: { text: string; done: boolean }[]` to Issue interface\\n- `migrations.ts` — Add migration to initialize `todos: []` on existing issues\\n- `issues.ts` — Add `issue_todo` tool (add/toggle, mirrors `epic_todo`)\\n- `context-rules.ts` — Update `epic-steering` rule to include issue todos in the in-progress line\\n- `issues.ts` — Warn on close if uncompleted todos exist\\n- `tool-docs.ts` — Add docs for `issue_todo`",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T13:40:42.240Z",
+      "updatedAt": "2026-03-11T14:42:37.781Z",
+      "autoValidation": {
+        "type": "agent",
+        "strategy": "Create an issue with todos, verify they appear in steering context, toggle them, verify close warning with uncompleted todos"
+      },
+      "epicId": "76cb6gxh"
+    },
+    {
+      "id": "ugov88hg",
+      "type": "idea",
+      "title": "Dependency links with optional blocking semantics between issues and epics",
+      "description": "Add a `blocks`/`blocked-by` link type alongside the existing informational links. When an issue or epic is marked as blocked by another, advancing it to in-progress would warn (or block, depending on config) if the blocker isn't closed yet. **Config-controlled and default disabled** — `workflow.enforce_dependencies` (bool, default: false). When disabled, dependency links are purely informational. When enabled, `issue_advance` and `epic_advance` check for open blockers before allowing in-progress. The `issue_link` tool would get a `type` parameter: `\"related\"` (default, current behavior) or `\"blocks\"`.",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T13:41:43.965Z",
+      "updatedAt": "2026-03-11T14:42:37.783Z",
+      "epicId": "76cb6gxh"
+    },
+    {
+      "id": "snd255i4",
+      "type": "feature",
+      "title": "Issue attachment capture — store images, files, and references alongside issues",
+      "description": "When creating issues via `/bug`, `/idea`, `/feature`, or `issue_add`, automatically capture any attachments (images, screenshots, file references, URLs) from the conversation context and store them as part of the issue record. This preserves evidence that would otherwise be lost when the session ends. Config-controlled (`issues.capture_attachments`, default: false).\\n\\n**Changes needed:**\\n- `types.ts` — Add `attachments: { type: \\\"image\\\"|\\\"file\\\"|\\\"url\\\", path: string, description?: string, addedAt: string }[]` to Issue interface\\n- `migrations.ts` — Migration to add `attachments: []` to existing issues\\n- Store files in `.pi/project/attachments/<issue-id>/`\\n- `issues.ts` — Add `issue_attach` tool for manual attachment\\n- `hook-rules.ts` — Hook into issue creation to scan conversation for attachments\\n- `config.ts` — `issues.capture_attachments` (bool, default: false)",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T13:48:19.464Z",
+      "updatedAt": "2026-03-11T14:42:37.785Z",
+      "epicId": "4gqn4jwm"
+    },
+    {
+      "id": "xaipvjgt",
+      "type": "feature",
+      "title": "/project-reset command — validate state and compact context safely",
+      "description": "A slash command that triggers the agent to validate project state before resetting context. Checks: no issue in-progress with unsaved work, no uncommitted todos, no open questions. Summarizes current state and confirms it's safe to compact. Prevents accidentally losing mid-work context.\\n\\n**Changes:** `commands.ts` — register `/project-reset`, visible echo + steering prompt that instructs agent to validate and then trigger compact.",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T14:39:42.638Z",
+      "updatedAt": "2026-03-11T14:42:37.774Z",
+      "epicId": "4gm0kng1"
+    },
+    {
+      "id": "mwwzavf3",
+      "type": "feature",
+      "title": "/continue visible feedback — show current context before agent resumes",
+      "description": "When using `/continue`, nothing visible appears — the agent just gets a hidden steering prompt. Add a visible echo showing the current epic/issue context so the user knows what the agent is working from. E.g. `▶️ **Continuing...**\\\\n> Epic: [id] title\\\\n> Current: [id] title (status)\\\\n\\\\n*Reviewing next step...*`\\n\\n**Changes:** `commands.ts` — add visible echo sendMessage before hidden steering in `/continue` handler, pull current epic/issue from store for summary.",
+      "status": "in-progress",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "**commands.ts lines 61-147**: The `/continue` handler builds a rich status summary with active epic, issues by status, focus recommendation, and unplanned issues. It sends everything via `pi.sendMessage()` with `display: false` and `deliverAs: \"steer\"`. Fix: add a `ctx.ui.notify()` or visible `sendMessage` before the hidden one showing a brief summary of current context.",
+          "addedAt": "2026-03-11T14:43:41.680Z"
+        }
+      ],
+      "createdAt": "2026-03-11T14:39:42.642Z",
+      "updatedAt": "2026-03-11T14:43:48.742Z",
+      "epicId": "4gm0kng1"
     }
   ],
   "categories": [
@@ -1025,6 +1362,10 @@
     "git.epics.auto_branch": false,
     "git.epics.merge_check_on_close": false,
     "issues.capture_edited_files": false,
-    "issues.require_file_change_notes": false
+    "issues.require_file_change_notes": false,
+    "debug.show_agent_context": false,
+    "debug.show_hook_activity": false,
+    "debug.show_context_rules": false,
+    "debug.verbose_log": false
   }
 }

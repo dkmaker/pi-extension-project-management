@@ -131,6 +131,25 @@ export function registerCommands(pi: ExtensionAPI) {
 
       lines.push(`\n---\n**Your task:** Based on the above, propose the single most impactful next step. Be specific — name the issue/todo, what to do, and what the first action is. If the user gave direction, prioritize that.`);
 
+      // Visible feedback so user sees current context
+      const visibleLines: string[] = ["▶️ **Continuing...**"];
+      if (epic) {
+        visibleLines.push(`> Epic: [${epic.id}] ${epic.title} (${epic.status})`);
+        const focus = resolveEpicFocus(epic, r.issues);
+        if (focus?.issue) {
+          visibleLines.push(`> Current: [${focus.issue.id}] ${focus.issue.title} (${focus.type})`);
+        } else if (focus?.type === "todo") {
+          visibleLines.push(`> Next todo: ${focus.todoText}`);
+        } else if (focus?.type === "close-epic") {
+          visibleLines.push(`> All issues done — ready to close epic`);
+        }
+      } else {
+        visibleLines.push("> No active epic");
+      }
+      if (userHint) visibleLines.push(`> Direction: ${userHint}`);
+      visibleLines.push("\n*Reviewing next step...*");
+      ctx.ui.notify(visibleLines.join("\n"), "info");
+
       pi.sendMessage(
         {
           customType: "continue-prompt",
@@ -151,6 +170,10 @@ export function registerCommands(pi: ExtensionAPI) {
         return;
       }
 
+      pi.sendMessage(
+        { customType: "idea", content: `💡 **Idea proposed:**\n> ${text}\n\n*Reviewing...*`, display: true },
+        { triggerTurn: false },
+      );
       pi.sendMessage(
         {
           customType: "idea-prompt",
@@ -181,6 +204,10 @@ export function registerCommands(pi: ExtensionAPI) {
       }
 
       pi.sendMessage(
+        { customType: "feature", content: `✨ **Feature proposed:**\n> ${text}\n\n*Analyzing...*`, display: true },
+        { triggerTurn: false },
+      );
+      pi.sendMessage(
         {
           customType: "feature-request",
           content: [
@@ -209,6 +236,10 @@ export function registerCommands(pi: ExtensionAPI) {
         return;
       }
 
+      pi.sendMessage(
+        { customType: "bug", content: `🐛 **Bug reported:**\n> ${text}\n\n*Triaging...*`, display: true },
+        { triggerTurn: false },
+      );
       pi.sendMessage(
         {
           customType: "bug-triage",
