@@ -212,11 +212,14 @@ Adds an example, reference, or comment.
 - \`content\` (required): Markdown content`,
 
   issue_link: `## issue_link — Link two issues
-Creates a bidirectional link between two issues.
+Creates a bidirectional link between two issues. Supports dependency links.
 
 **Parameters:**
 - \`id\` (required): Issue ID
-- \`target_id\` (required): Target issue ID`,
+- \`target_id\` (required): Target issue ID
+- \`type\`: Link type — "related" (default, bidirectional info link) or "blocks" (id blocks target_id, creates blocked-by on target)
+
+When \`workflow.enforce_dependencies\` is enabled, blocked issues cannot advance to in-progress until blockers are closed.`,
 
   issue_unlink: `## issue_unlink — Unlink two issues
 Removes a bidirectional link.

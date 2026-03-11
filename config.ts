@@ -131,6 +131,15 @@ export const CONFIG_REGISTRY: ConfigEntry[] = [
     description: "Block issue close until each auto-captured file has a one-sentence change note",
     default: false,
   },
+
+  // Dependencies
+  {
+    type: "bool",
+    key: "workflow.enforce_dependencies",
+    label: "Enforce dependencies",
+    description: "Block advancing to in-progress when blocked-by issues are still open (default: off, purely informational)",
+    default: false,
+  },
 ];
 
 // --- Debug config entries (conditionally added when PI_PM_DEBUG is set) ---

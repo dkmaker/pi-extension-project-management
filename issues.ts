@@ -78,6 +78,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
         questions: [],
         research: [],
         todos: [],
+        dependencies: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -218,6 +219,18 @@ export function registerIssueTools(pi: ExtensionAPI) {
             return `  ${idx}. ❓ ${q.text}`;
           }).join("\n");
           return { content: [{ type: "text", text: `⚠️ Cannot start — ${unansweredRequired.length} unanswered required question(s):\n\n${list}\n\nUse \`issue_question\` to answer them first.` }] };
+        }
+      }
+
+      // Gate: dependency blocking
+      if (next === "in-progress" && getConfigValue<boolean>(r, "workflow.enforce_dependencies")) {
+        const blockers = (issue.dependencies || [])
+          .filter(d => d.type === "blocked-by")
+          .map(d => ({ dep: d, issue: r.issues.find(i => i.id === d.issueId) }))
+          .filter(b => b.issue && b.issue.status !== "closed");
+        if (blockers.length) {
+          const list = blockers.map(b => `  - [${b.issue!.id}] ${b.issue!.title} (${b.issue!.status})`).join("\n");
+          return { content: [{ type: "text", text: `🚧 Cannot start — blocked by ${blockers.length} open issue(s):\n\n${list}\n\nClose them first or disable \`workflow.enforce_dependencies\`.` }] };
         }
       }
 
@@ -497,6 +510,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
     parameters: Type.Object({
       id: Type.String({ description: "Issue ID" }),
       target_id: Type.String({ description: "Target issue ID to link to" }),
+      type: Type.Optional(Type.Union([Type.Literal("related"), Type.Literal("blocks")], { description: "Link type: 'related' (default) or 'blocks' (id blocks target_id)" })),
     }),
     async execute(_id, params) {
       const r = load();
@@ -506,6 +520,26 @@ export function registerIssueTools(pi: ExtensionAPI) {
       if (!target) return { content: [{ type: "text", text: `Issue '${params.target_id}' not found.` }] };
       if (params.id === params.target_id) return { content: [{ type: "text", text: `Cannot link an issue to itself.` }] };
 
+      const linkType = params.type || "related";
+
+      if (linkType === "blocks") {
+        // Add dependency: issue blocks target (target is blocked-by issue)
+        if (!issue.dependencies) issue.dependencies = [];
+        if (!target.dependencies) target.dependencies = [];
+        if (issue.dependencies.some(d => d.issueId === params.target_id && d.type === "blocks")) {
+          return { content: [{ type: "text", text: `Dependency already exists.` }] };
+        }
+        issue.dependencies.push({ issueId: params.target_id, type: "blocks" });
+        target.dependencies.push({ issueId: params.id, type: "blocked-by" });
+        issue.updatedAt = now();
+        target.updatedAt = now();
+        save(r);
+        const iIcon = ISSUE_TYPE_ICON[issue.type];
+        const tIcon = ISSUE_TYPE_ICON[target.type];
+        return { content: [{ type: "text", text: `🚧 ${iIcon} [${issue.id}] ${issue.title} **blocks** ${tIcon} [${target.id}] ${target.title}` }] };
+      }
+
+      // Default: related link
       if (!issue.linkedIssueIds) issue.linkedIssueIds = [];
       if (!target.linkedIssueIds) target.linkedIssueIds = [];
 

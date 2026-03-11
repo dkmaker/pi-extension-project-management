@@ -62,6 +62,16 @@ export function formatIssueVerbose(issue: Issue, epics: Epic[], assets: Asset[] 
       if (q.answer) out += `\n  **A:** ${q.answer}`;
     }
   }
+  if (issue.dependencies?.length) {
+    out += `\n\n**Dependencies:**`;
+    for (const d of issue.dependencies) {
+      const dep = allIssues.find(i => i.id === d.issueId);
+      const dIcon = dep ? (ISSUE_TYPE_ICON[dep.type] || "•") : "•";
+      const label = d.type === "blocks" ? "blocks" : "blocked by";
+      const status = dep ? ` (${dep.status})` : "";
+      out += `\n- 🚧 ${label} ${dIcon} [${d.issueId}] ${dep?.title || "unknown"}${status}`;
+    }
+  }
   if (issue.todos?.length) {
     const done = issue.todos.filter(t => t.done).length;
     out += `\n\n**Todos** (${done}/${issue.todos.length}):`;

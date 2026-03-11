@@ -100,6 +100,15 @@ const migrations: Record<number, Migration> = {
     data.version = 11;
     return data;
   },
+
+  // v11 → v12: add dependencies to issues
+  11: (data) => {
+    for (const issue of data.issues || []) {
+      if (!issue.dependencies) issue.dependencies = [];
+    }
+    data.version = 12;
+    return data;
+  },
 };
 
 /**

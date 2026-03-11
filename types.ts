@@ -26,6 +26,7 @@ export interface Issue {
   status: IssueStatus;
   epicId?: string;
   linkedIssueIds: string[];
+  dependencies: { issueId: string; type: "blocks" | "blocked-by" }[];
   questions: { text: string; answer?: string; required?: boolean }[];
   autoValidation?: AutoValidation;
   closeReviewed?: boolean;
@@ -91,7 +92,7 @@ export interface Asset {
   updatedAt: string;
 }
 
-export const CURRENT_VERSION = 11;
+export const CURRENT_VERSION = 12;
 
 export interface Validation {
   criterion: string;

@@ -1308,7 +1308,7 @@
       "type": "feature",
       "title": "Issue-level implementation checklist (todos) with per-turn steering",
       "description": "Add a `todos` field to issues (like epics already have), with an `issue_todo` tool to add/toggle items. When an issue is in-progress, the per-turn steering should show uncompleted todos so the agent doesn't skip implementation items. For example: `→ IN PROGRESS: [mz03veip] Debug mode (2/4 todos: ☐ Add config entries, ☐ Add UX indicator)`. The agent should also be warned when closing an issue with uncompleted todos.\\n\\n**Changes needed:**\\n- `types.ts` — Add `todos: { text: string; done: boolean }[]` to Issue interface\\n- `migrations.ts` — Add migration to initialize `todos: []` on existing issues\\n- `issues.ts` — Add `issue_todo` tool (add/toggle, mirrors `epic_todo`)\\n- `context-rules.ts` — Update `epic-steering` rule to include issue todos in the in-progress line\\n- `issues.ts` — Warn on close if uncompleted todos exist\\n- `tool-docs.ts` — Add docs for `issue_todo`",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -1319,24 +1319,41 @@
         }
       ],
       "createdAt": "2026-03-11T13:40:42.240Z",
-      "updatedAt": "2026-03-11T14:53:55.352Z",
+      "updatedAt": "2026-03-11T14:56:09.084Z",
       "autoValidation": {
         "type": "agent",
         "strategy": "Create an issue with todos, verify they appear in steering context, toggle them, verify close warning with uncompleted todos"
       },
-      "epicId": "76cb6gxh"
+      "epicId": "76cb6gxh",
+      "closeMessage": "Implemented issue-level todos with full lifecycle: add/toggle via issue_todo, per-turn steering shows pending items, close checklist warns about incomplete todos.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Add a `todos` field to issues (like epics already have), with an `issue_todo` tool to add/toggle items. When an issue is in-progress, the per-turn steering should show uncompleted todos so the agent doesn't skip implementation items. For example: `→ IN PROGRESS: [mz03veip] Debug mode (2/4 todos: ☐ Add config entries, ☐ Add UX indicator)`. The agent should also be warned when closing an issue with uncompleted todos.\\n\\n**Changes needed:**\\n- `types.ts` — Add `todos: { text: string; done: boolean }[]` to Issue interface\\n- `migrations.ts` — Add migration to initialize `todos: []` on existing issues\\n- `issues.ts` — Add `issue_todo` tool (add/toggle, mirrors `epic_todo`)\\n- `context-rules.ts` — Update `epic-steering` rule to include issue todos in the in-progress line\\n- `issues.ts` — Warn on close if uncompleted todos exist\\n- `tool-docs.ts` — Add docs for `issue_todo`",
+          "evidence": "All 6 required changes verified: 1) types.ts has todos on Issue, 2) migration v10→v11 backfills, 3) issue_todo tool registered, 4) context-rules shows pending todos in steering, 5) close checklist warns on incomplete todos, 6) tool-docs updated. Runtime validation not possible (extension loads at pi startup) but code review confirms all paths.",
+          "met": true
+        }
+      ],
+      "closeCommit": "fe28e0d",
+      "closedAt": "2026-03-11T14:56:09.084Z"
     },
     {
       "id": "ugov88hg",
       "type": "idea",
       "title": "Dependency links with optional blocking semantics between issues and epics",
       "description": "Add a `blocks`/`blocked-by` link type alongside the existing informational links. When an issue or epic is marked as blocked by another, advancing it to in-progress would warn (or block, depending on config) if the blocker isn't closed yet. **Config-controlled and default disabled** — `workflow.enforce_dependencies` (bool, default: false). When disabled, dependency links are purely informational. When enabled, `issue_advance` and `epic_advance` check for open blockers before allowing in-progress. The `issue_link` tool would get a `type` parameter: `\"related\"` (default, current behavior) or `\"blocks\"`.",
-      "status": "draft",
+      "status": "in-progress",
       "linkedIssueIds": [],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "**Implementation plan:**\n1. `types.ts` — Change `linkedIssueIds: string[]` to `linkedIssues: { id: string; type: \"related\" | \"blocks\" | \"blocked-by\" }[]` on Issue. Keep `linkedIssueIds` as compat alias or migrate.\n2. `config.ts` — Add `workflow.enforce_dependencies` (default: false)\n3. `issues.ts` `issue_link` — Add `type` param (default: \"related\"). When type=\"blocks\", add \"blocks\" on source, \"blocked-by\" on target.\n4. `issues.ts` `issue_advance` — When enforce_dependencies is on and advancing to in-progress, check for open \"blocked-by\" links.\n5. `format.ts` — Show link type in verbose display\n6. `migrations.ts` — Migrate `linkedIssueIds` → `linkedIssues` with type \"related\"\n7. `tool-docs.ts` — Update issue_link docs\n\nActually, simpler approach: keep `linkedIssueIds` for backward compat, add a parallel `dependencies: { issueId: string; type: \"blocks\" | \"blocked-by\" }[]` field. This avoids breaking the existing link model.",
+          "addedAt": "2026-03-11T14:56:24.022Z"
+        }
+      ],
       "createdAt": "2026-03-11T13:41:43.965Z",
-      "updatedAt": "2026-03-11T14:42:37.783Z",
+      "updatedAt": "2026-03-11T14:56:33.271Z",
       "epicId": "76cb6gxh"
     },
     {
