@@ -1089,12 +1089,18 @@
       "type": "idea",
       "title": "Prompt for motivation/context when creating ideas and features",
       "description": "When using `/idea` or `/feature`, the creation flow should ask the user \"What problem or situation prompted this?\" before finalizing. The answer gets stored as a `motivation` or `context` field on the issue, ensuring the *why* is captured alongside the *what*. This doesn't apply to `/bug` since bugs already have concrete reproduction context.",
-      "status": "draft",
+      "status": "in-progress",
       "linkedIssueIds": [],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "**Implementation:** Add to the `/idea` and `/feature` steering prompts an instruction to ask \"What problem or situation prompted this?\" and include the answer in the issue description. This is a steering-only change — no new fields needed, just enrich the description with motivation context. Files: `commands.ts` lines 226-290.",
+          "addedAt": "2026-03-11T15:02:10.965Z"
+        }
+      ],
       "createdAt": "2026-03-11T10:58:01.734Z",
-      "updatedAt": "2026-03-11T12:00:59.454Z",
+      "updatedAt": "2026-03-11T15:02:17.266Z",
       "epicId": "8dga7k63",
       "todos": [],
       "dependencies": []
@@ -1209,7 +1215,7 @@
       "type": "feature",
       "title": "\"Needs Review\" flag to prevent premature work on rough ideas",
       "description": "When quickly capturing ideas/features, the description is often just a sketch — enough to not forget, but not enough to act on. Currently nothing stops the agent from picking these up as the next work item and building something half-baked. A `needs_review` flag marks issues as \"captured but not yet thought through,\" blocking advancement to in-progress until the flag is removed after proper expansion.\n\n## Implementation Approach\n\n1. **`types.ts`** — Add optional `needsReview: boolean` field to issue schema\n\n2. **Issue creation flow** — When creating via `/idea` or `/feature`, if the description is brief or the user indicates it's just a capture, the agent suggests flagging it with `needs_review`. Not default-on — opt-in per issue.\n\n3. **`issue_advance`** — Block advancement to `in-progress` if `needsReview` is true. Return message: \"This issue is flagged for review — expand the description and remove the flag with `issue_update` before starting work.\"\n\n4. **`next_work`** — Exclude `needs_review` issues from being suggested as next work items\n\n5. **`issue_update`** — Allow setting/removing the flag: `needsReview: true/false`\n\n6. **Display** — Show a 🔍 or 📌 indicator in `issue_list` and `issue_show` for flagged issues\n\n7. **Steering integration** — When the Context Engine ([ihkjviyl]) exists, add a rule that notes flagged issues separately: \"X issue(s) need review before they can be worked on\"",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -1220,10 +1226,21 @@
         }
       ],
       "createdAt": "2026-03-11T11:28:31.435Z",
-      "updatedAt": "2026-03-11T15:00:32.129Z",
+      "updatedAt": "2026-03-11T15:01:53.039Z",
       "epicId": "8dga7k63",
       "todos": [],
-      "dependencies": []
+      "dependencies": [],
+      "closeMessage": "Implemented needs-review flag: blocks advancement, excluded from suggestions, visible in listings, settable via issue_update.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "When quickly capturing ideas/features, the description is often just a sketch — enough to not forget, but not enough to act on. Currently nothing stops the agent from picking these up as the next work item and building something half-baked. A `needs_review` flag marks issues as \"captured but not yet thought through,\" blocking advancement to in-progress until the flag is removed after proper expansion.\n\n## Implementation Approach\n\n1. **`types.ts`** — Add optional `needsReview: boolean` field to issue schema\n\n2. **Issue creation flow** — When creating via `/idea` or `/feature`, if the description is brief or the user indicates it's just a capture, the agent suggests flagging it with `needs_review`. Not default-on — opt-in per issue.\n\n3. **`issue_advance`** — Block advancement to `in-progress` if `needsReview` is true. Return message: \"This issue is flagged for review — expand the description and remove the flag with `issue_update` before starting work.\"\n\n4. **`next_work`** — Exclude `needs_review` issues from being suggested as next work items\n\n5. **`issue_update`** — Allow setting/removing the flag: `needsReview: true/false`\n\n6. **Display** — Show a 🔍 or 📌 indicator in `issue_list` and `issue_show` for flagged issues\n\n7. **Steering integration** — When the Context Engine ([ihkjviyl]) exists, add a rule that notes flagged issues separately: \"X issue(s) need review before they can be worked on\"",
+          "evidence": "All 6 implementation items: 1) needsReview? on Issue type, 2) issue_advance blocks in-progress, 3) resolveEpicFocus (used by next_work) excludes flagged issues, 4) issue_update supports needsReview param, 5) formatIssue shows 📌, 6) formatIssueVerbose shows \"📌 needs review\". Item 7 (steering integration) deferred — Context Engine already exists but this is informational only.",
+          "met": true
+        }
+      ],
+      "closeCommit": "f68b856",
+      "closedAt": "2026-03-11T15:01:53.039Z"
     },
     {
       "id": "s9h4fcsw",
