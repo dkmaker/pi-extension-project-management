@@ -55,4 +55,4 @@ if [ -f "$CONFIG" ]; then
   done < <(jq -r '.prompts[]? // empty' "$CONFIG")
 fi
 
-exec pi "${ARGS[@]}"
+exec pi "${ARGS[@]}" "$@"
