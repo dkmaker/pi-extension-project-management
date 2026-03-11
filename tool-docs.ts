@@ -228,10 +228,11 @@ Returns full asset body, sources, and linked epics/issues.
 - \`id\` (required): Asset ID`,
 
   asset_list: `## asset_list — List assets
-Lists all assets grouped by category.
+Lists all assets grouped by category. Excludes soft-deleted assets by default.
 
 **Parameters:**
-- \`category\`: Filter by category slug`,
+- \`category\`: Filter by category slug
+- \`include_deleted\`: Include soft-deleted assets (default: false)`,
 
   asset_update: `## asset_update — Update asset fields
 Only provided fields are changed.
@@ -258,6 +259,18 @@ Only provided fields are changed.
 
   asset_categories: `## asset_categories — List asset categories
 Returns all categories with asset counts. No parameters.`,
+
+  asset_delete: `## asset_delete — Soft-delete an asset
+Moves an asset to trash (sets deletedAt). Asset is hidden from listings and context but can be restored.
+
+**Parameters:**
+- \`id\` (required): Asset ID`,
+
+  asset_undelete: `## asset_undelete — Restore a soft-deleted asset
+Restores an asset from trash (clears deletedAt).
+
+**Parameters:**
+- \`id\` (required): Asset ID`,
 
   asset_source: `## asset_source — Add a source to an asset
 Attach a file or URL reference to an asset.

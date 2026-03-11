@@ -85,6 +85,7 @@ export interface Asset {
   linkedEpicIds: string[];
   linkedIssueIds: string[];
   linkedAssetIds: string[];
+  deletedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

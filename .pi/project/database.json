@@ -1039,7 +1039,7 @@
       "type": "feature",
       "title": "Asset-to-asset linking",
       "description": "Allow assets to link to other assets (bidirectional), enabling hierarchical knowledge structures — e.g. a slim overview asset linking to detailed sub-assets. Extend `asset_link`/`asset_unlink` with an `asset_id` param, add `linkedAssetIds` to the asset schema, and display linked assets in `asset_show`.",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -1050,8 +1050,19 @@
         }
       ],
       "createdAt": "2026-03-11T11:10:46.274Z",
-      "updatedAt": "2026-03-11T14:49:45.100Z",
-      "epicId": "76cb6gxh"
+      "updatedAt": "2026-03-11T14:51:44.900Z",
+      "epicId": "76cb6gxh",
+      "closeMessage": "Implemented bidirectional asset-to-asset linking across types, tools, format, migration, and docs.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Allow assets to link to other assets (bidirectional), enabling hierarchical knowledge structures — e.g. a slim overview asset linking to detailed sub-assets. Extend `asset_link`/`asset_unlink` with an `asset_id` param, add `linkedAssetIds` to the asset schema, and display linked assets in `asset_show`.",
+          "evidence": "All 7 implementation items done: linkedAssetIds on Asset type, creation defaults, bidirectional link/unlink in asset_link/asset_unlink with asset_id param, display in formatAsset/asset_show, migration v9→v10, and updated tool-docs.",
+          "met": true
+        }
+      ],
+      "closeCommit": "10cffd5",
+      "closedAt": "2026-03-11T14:51:44.900Z"
     },
     {
       "id": "ihkjviyl",
@@ -1267,12 +1278,18 @@
       "type": "feature",
       "title": "Soft delete assets — trash, undelete, and list deleted",
       "description": "Currently deleting an asset is permanent. Soft delete moves assets to a \"trash\" state instead of removing them, allowing recovery. Adds `asset_delete` (soft), `asset_undelete`, and `asset_list` with `deleted_only` filter to browse trash.\\n\\n**Implementation:** Add `deletedAt?: string` to Asset type. `asset_delete` sets timestamp, `asset_undelete` clears it. All existing queries add `&& !a.deletedAt` guard. Files: `types.ts`, `assets.ts`, `format.ts`.",
-      "status": "draft",
+      "status": "in-progress",
       "linkedIssueIds": [],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "**Implementation plan:**\n1. `types.ts` — Add `deletedAt?: string` to Asset interface\n2. `assets.ts` — Add `asset_delete` tool (sets deletedAt), `asset_undelete` tool (clears it)\n3. `assets.ts` — Filter out deleted assets in `asset_list`, `asset_show` (show warning if viewing deleted), context injection, and tool-doc search\n4. `assets.ts` — Add `include_deleted` param to `asset_list` to browse trash\n5. `format.ts` — Show 🗑️ indicator on deleted assets\n6. `tool-docs.ts` — Document new tools\n7. No migration needed — `deletedAt` is optional, absent = not deleted",
+          "addedAt": "2026-03-11T14:51:55.773Z"
+        }
+      ],
       "createdAt": "2026-03-11T12:43:55.972Z",
-      "updatedAt": "2026-03-11T14:42:37.779Z",
+      "updatedAt": "2026-03-11T14:52:04.939Z",
       "epicId": "76cb6gxh"
     },
     {

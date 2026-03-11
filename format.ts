@@ -148,8 +148,8 @@ export function formatDashboard(r: ProjectFile): string {
     closed: issues.filter((i) => i.status === "closed"),
   };
 
-  const assets = r.assets || [];
-  const projectAssets = assets.filter((a) => a.project);
+  const assets = (r.assets || []).filter((a: any) => !a.deletedAt);
+  const projectAssets = assets.filter((a: any) => a.project);
 
   let out = `# 📦 Project Status\n\n`;
   out += `**Epics:** ${eByS.draft.length} draft · ${eByS.planned.length} planned · ${eByS["in-progress"].length} active · ${eByS.closed.length} closed\n`;
@@ -441,7 +441,8 @@ export function renderFocusLine(data: FocusWidgetData, theme: any, width: number
 export function formatAsset(asset: Asset, verbose = false, epics: Epic[] = [], issues: Issue[] = [], assets: Asset[] = []): string {
   const flag = asset.project ? " 🌐" : "";
   const trigger = asset.trigger ? ` ⚡${asset.trigger.event}` : "";
-  let out = `### 📎 [${asset.categorySlug}/${asset.id}] ${asset.title}${flag}${trigger}`;
+  const deleted = asset.deletedAt ? " 🗑️" : "";
+  let out = `### 📎 [${asset.categorySlug}/${asset.id}] ${asset.title}${flag}${trigger}${deleted}`;
   out += `\n*${asset.context}*`;
   if (verbose) {
     if (asset.body) out += `\n\n${asset.body}`;
@@ -479,7 +480,7 @@ export function formatAsset(asset: Asset, verbose = false, epics: Epic[] = [], i
 }
 
 export function formatAssetsContext(assets: Asset[]): string {
-  const projectAssets = assets.filter((a) => a.project);
+  const projectAssets = assets.filter((a) => a.project && !a.deletedAt);
   if (!projectAssets.length) return "";
 
   let out = "# 📎 Project Assets\n\n";

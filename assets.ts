@@ -77,10 +77,12 @@ export function registerAssetTools(pi: ExtensionAPI) {
     description: "List assets by category. Use project_tool_docs('asset_list') for usage.",
     parameters: Type.Object({
       category: Type.Optional(Type.String({ description: "Filter by category slug" })),
+      include_deleted: Type.Optional(Type.Boolean({ description: "Include soft-deleted assets (default: false)" })),
     }),
     async execute(_id, params) {
       const r = load();
       let assets = r.assets;
+      if (!params.include_deleted) assets = assets.filter((a) => !a.deletedAt);
       if (params.category) assets = assets.filter((a) => a.categorySlug === params.category);
 
       if (!assets.length) return { content: [{ type: "text", text: "No assets found." }] };
@@ -261,7 +263,7 @@ export function registerAssetTools(pi: ExtensionAPI) {
       if (!r.categories.length) return { content: [{ type: "text", text: "No categories yet. They are auto-created when you add an asset." }] };
       let out = "# 📁 Asset Categories\n";
       for (const c of r.categories) {
-        const count = r.assets.filter((a) => a.categorySlug === c.slug).length;
+        const count = r.assets.filter((a) => a.categorySlug === c.slug && !a.deletedAt).length;
         out += `\n- **${c.slug}** — ${c.description} (${count} assets)`;
       }
       return { content: [{ type: "text", text: out }] };
@@ -289,6 +291,46 @@ export function registerAssetTools(pi: ExtensionAPI) {
 
       const icon = params.type === "file" ? "📄" : "🔗";
       return { content: [{ type: "text", text: `${icon} Added source to **${asset.title}**: ${params.path}` }] };
+    },
+  });
+
+  pi.registerTool({
+    name: "asset_delete",
+    label: "Asset: Delete (soft)",
+    description: "Soft-delete an asset (moves to trash). Use asset_undelete to restore.",
+    parameters: Type.Object({
+      id: Type.String({ description: "Asset ID" }),
+    }),
+    async execute(_id, params) {
+      const r = load();
+      const asset = r.assets.find((a) => a.id === params.id);
+      if (!asset) return { content: [{ type: "text", text: `Asset '${params.id}' not found.` }] };
+      if (asset.deletedAt) return { content: [{ type: "text", text: `Asset '${params.id}' is already deleted.` }] };
+
+      asset.deletedAt = now();
+      asset.updatedAt = now();
+      save(r);
+      return { content: [{ type: "text", text: `🗑️ Soft-deleted **${asset.title}**. Use \`asset_undelete\` to restore.` }] };
+    },
+  });
+
+  pi.registerTool({
+    name: "asset_undelete",
+    label: "Asset: Undelete",
+    description: "Restore a soft-deleted asset from trash.",
+    parameters: Type.Object({
+      id: Type.String({ description: "Asset ID" }),
+    }),
+    async execute(_id, params) {
+      const r = load();
+      const asset = r.assets.find((a) => a.id === params.id);
+      if (!asset) return { content: [{ type: "text", text: `Asset '${params.id}' not found.` }] };
+      if (!asset.deletedAt) return { content: [{ type: "text", text: `Asset '${params.id}' is not deleted.` }] };
+
+      delete asset.deletedAt;
+      asset.updatedAt = now();
+      save(r);
+      return { content: [{ type: "text", text: `♻️ Restored **${asset.title}** from trash.` }] };
     },
   });
 }
