@@ -152,7 +152,7 @@ export function registerCommands(pi: ExtensionAPI) {
 
       pi.sendMessage(
         {
-          customType: "continue-prompt",
+          customType: "continue-requested",
           content: lines.join("\n"),
           display: false,
         },
@@ -232,7 +232,7 @@ export function registerCommands(pi: ExtensionAPI) {
       bannerLines.push(``, nextUpText, ``, `---`, blockers.length ? `` : `*Run \`/new\` to start fresh, then \`/continue\` to resume.*`);
 
       pi.sendMessage(
-        { customType: "context-reset-banner", content: bannerLines.join("\n"), display: true },
+        { customType: "context-reset-requested", content: bannerLines.join("\n"), display: true },
         { triggerTurn: false },
       );
 
@@ -250,7 +250,7 @@ export function registerCommands(pi: ExtensionAPI) {
 
       pi.sendMessage(
         {
-          customType: "project-reset-prompt",
+          customType: "context-reset-requested",
           content: steerLines.join("\n"),
           display: false,
         },
@@ -274,7 +274,7 @@ export function registerCommands(pi: ExtensionAPI) {
       );
       pi.sendMessage(
         {
-          customType: "idea-prompt",
+          customType: "idea-proposed",
           content: [
             `## 💡 New Idea Proposal\n`,
             `The user has a quick idea:`,
@@ -308,7 +308,7 @@ export function registerCommands(pi: ExtensionAPI) {
       );
       pi.sendMessage(
         {
-          customType: "feature-request",
+          customType: "feature-proposed",
           content: [
             `## ✨ Feature Request\n`,
             `The user wants a feature:`,
@@ -342,7 +342,7 @@ export function registerCommands(pi: ExtensionAPI) {
       );
       pi.sendMessage(
         {
-          customType: "bug-triage",
+          customType: "bug-reported",
           content: [
             `## 🐛 Bug Triage Request\n`,
             `The user is reporting a bug:`,

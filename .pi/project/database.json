@@ -1649,7 +1649,7 @@
       "type": "bug",
       "title": "/project-clean-context needs a visible banner showing current context and reset readiness",
       "description": "When running `/project-clean-context`, the `ctx.ui.notify()` output is too subtle — there's no clear visual evidence on screen that the command ran. Need a persistent, prominent banner (like DEVMODE uses) that shows current context state: open epics/issues, blockers, what's next up, and reset readiness. The user should immediately see this without reading agent output.\n\n**Changes:** `commands.ts` — replace or supplement `ctx.ui.notify()` with a visible `pi.sendMessage()` with `display: true` showing a formatted banner with context summary.",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -1662,10 +1662,45 @@
       "todos": [],
       "dependencies": [],
       "createdAt": "2026-03-11T15:11:41.878Z",
-      "updatedAt": "2026-03-11T15:11:56.620Z",
+      "updatedAt": "2026-03-11T15:12:32.488Z",
       "autoValidation": {
         "type": "agent",
         "strategy": "Verify commands.ts sends a display:true message with context summary in /project-clean-context handler"
+      },
+      "closeMessage": "Replaced subtle notify with prominent display:true banner showing full context state, blockers, next-up, and reset instructions.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "When running `/project-clean-context`, the `ctx.ui.notify()` output is too subtle — there's no clear visual evidence on screen that the command ran. Need a persistent, prominent banner (like DEVMODE uses) that shows current context state: open epics/issues, blockers, what's next up, and reset readiness. The user should immediately see this without reading agent output.\n\n**Changes:** `commands.ts` — replace or supplement `ctx.ui.notify()` with a visible `pi.sendMessage()` with `display: true` showing a formatted banner with context summary.",
+          "evidence": "Line 235: `pi.sendMessage({ customType: \"context-reset-banner\", content: bannerLines.join(\"\\n\"), display: true }, { triggerTurn: false })`. Banner includes table with epics/issues count, blocker status, next-up info, and reset instructions. No more ctx.ui.notify for the main output.",
+          "met": true
+        }
+      ],
+      "closeCommit": "ee93914",
+      "closedAt": "2026-03-11T15:12:32.488Z"
+    },
+    {
+      "id": "uu3udoge",
+      "type": "bug",
+      "title": "Rename internal customType identifiers to be user-facing and action-based",
+      "description": "The `customType` strings in `sendMessage` calls should be user-facing and action-based, not internal dev names. E.g. `context-reset-banner` → `context-reset-requested`. Audit all customType values in commands.ts and make them consistently action-based.\\n\\n**Changes:** `commands.ts` — rename all `customType` values to action-based naming.",
+      "status": "in-progress",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "Current customType values in commands.ts: `context-reset-banner`, `project-reset-prompt`, `continue-prompt`, `idea`, `idea-prompt`, `feature`, `feature-request`. Should be action-based: e.g. `context-reset-requested`, `continue-requested`, `idea-proposed`, `feature-proposed`.",
+          "addedAt": "2026-03-11T15:14:04.923Z"
+        }
+      ],
+      "todos": [],
+      "dependencies": [],
+      "createdAt": "2026-03-11T15:14:00.456Z",
+      "updatedAt": "2026-03-11T15:14:17.877Z",
+      "autoValidation": {
+        "type": "agent",
+        "strategy": "grep customType in commands.ts — all should be action-based names (no -banner, -prompt suffixes)"
       }
     }
   ],
