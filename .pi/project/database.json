@@ -76,11 +76,165 @@
       "closedAt": "2026-03-10T13:41:45.140Z"
     },
     {
+      "id": "bhsbhvli",
+      "title": "Core Architecture — Context Engine, Hook Registry & Debug",
+      "description": "Foundation layer: centralize all context injection, tool hooks, and message presentation into declarative registries with mode system, config toggles, and debug introspection.",
+      "body": "This epic establishes the architectural foundation that all other features build on. Currently, context steering, tool hooks, and message formatting are scattered inline across `index.ts` with ad-hoc conditions. This epic centralizes them into three systems:\n\n1. **Context Engine** — Declarative rules for all agent steering/injection with mode system and conditional composition\n2. **Hook Registry** — Declarative tool lifecycle hooks with conditions, priorities, and mode filters\n3. **Message Templates** — Separation of data vs. presentation for all tool outputs\n4. **Debug Mode** — ENV-gated introspection tools to see exactly what the agent receives\n\n### Build Order\n1. Context Engine (establishes mode system, config patterns, debug infra)\n2. Hook Registry (reuses mode system from Context Engine)\n3. Debug Mode (introspects both systems)\n\n### Why First\nEvery planned feature (onboarding, source alerts, folder guard, etc.) would otherwise add more scattered inline code. Building this first means new features are simple rule registrations.",
+      "priority": 2,
+      "status": "draft",
+      "relevantFiles": [
+        {
+          "file": "index.ts",
+          "reason": "Contains all current inline steering, hooks, and message formatting to be refactored"
+        },
+        {
+          "file": "config.ts",
+          "reason": "Config registry for new debug and rule toggle entries"
+        },
+        {
+          "file": "format.ts",
+          "reason": "Existing formatting helpers — may merge into message templates"
+        }
+      ],
+      "todos": [
+        {
+          "text": "Design shared types for rule/hook registration (id, label, condition, modes, priority)",
+          "done": false
+        },
+        {
+          "text": "Implement Context Engine with rule registry and composer",
+          "done": false
+        },
+        {
+          "text": "Implement Hook Registry with dispatcher",
+          "done": false
+        },
+        {
+          "text": "Implement Message Templates layer",
+          "done": false
+        },
+        {
+          "text": "Migrate all existing inline steering to Context Engine rules",
+          "done": false
+        },
+        {
+          "text": "Migrate all existing inline hooks to Hook Registry",
+          "done": false
+        },
+        {
+          "text": "Add debug ENV gate and config entries",
+          "done": false
+        },
+        {
+          "text": "Add context_debug and hook_debug tools",
+          "done": false
+        }
+      ],
+      "successCriteria": [
+        "All context injection uses Context Engine rules — no inline steering in index.ts",
+        "All tool hooks use Hook Registry — no inline hook handlers in index.ts",
+        "Mode system works (normal/onboarding) with rules filtered by mode",
+        "Debug mode shows agent-only context when enabled, hidden when ENV not set",
+        "context_debug and hook_debug tools available behind ENV gate"
+      ],
+      "research": [],
+      "createdAt": "2026-03-11T12:00:27.932Z",
+      "updatedAt": "2026-03-11T12:00:27.932Z"
+    },
+    {
+      "id": "8dga7k63",
+      "title": "Workflow Enhancements — Onboarding, Review Flags & Idea Capture",
+      "description": "Improve the issue lifecycle with onboarding mode for brownfield import, a \"needs review\" flag to prevent premature work, and motivation prompts for better idea capture.",
+      "body": "This epic adds workflow improvements that depend on the Core Architecture epic (Context Engine + Hook Registry):\n\n1. **Onboarding Mode** — Bulk import of brownfield project history with process gates bypassed but data quality enforced. Uses Context Engine modes to swap steering and Hook Registry to disable write gates.\n2. **\"Needs Review\" Flag** — Marks rough ideas as not ready for work, blocking advancement to in-progress until reviewed and expanded.\n3. **Motivation Prompt** — When creating ideas/features, prompt for the *why* so context isn't lost.\n\n### Dependencies\n- Core Architecture epic (Context Engine mode system, Hook Registry for conditional guards)\n\n### Build Order\n1. \"Needs Review\" flag (small, independent)\n2. Motivation prompt (small, independent)\n3. Onboarding Mode (large, needs Context Engine modes)",
+      "priority": 3,
+      "status": "draft",
+      "relevantFiles": [],
+      "todos": [
+        {
+          "text": "Implement needs_review flag on issues",
+          "done": false
+        },
+        {
+          "text": "Add motivation prompt to /idea and /feature flows",
+          "done": false
+        },
+        {
+          "text": "Implement onboarding config toggle and persistent banner",
+          "done": false
+        },
+        {
+          "text": "Replace normal steering with onboarding steering via Context Engine",
+          "done": false
+        },
+        {
+          "text": "Allow fast-track advancement in onboarding mode",
+          "done": false
+        },
+        {
+          "text": "Disable write gate and git guards in onboarding via Hook Registry",
+          "done": false
+        }
+      ],
+      "successCriteria": [
+        "Onboarding mode allows creating and closing issues/epics with compressed workflow",
+        "Onboarding mode enforces close metadata while skipping process gates",
+        "Needs Review flag blocks advancement and next_work suggestions",
+        "Ideas and features prompt for motivation/context during creation"
+      ],
+      "research": [],
+      "createdAt": "2026-03-11T12:00:42.484Z",
+      "updatedAt": "2026-03-11T12:00:42.484Z"
+    },
+    {
+      "id": "4gqn4jwm",
+      "title": "Data & Security — Attachments, Folder Guard & Source Alerts",
+      "description": "Add file attachments with Git LFS, protect the `.pi/project/` folder from direct agent access, and auto-notify when edited files are linked as asset sources.",
+      "body": "This epic adds data management and security features:\n\n1. **File Attachments** — Copy reference files into tracked `.pi/project/attachments/` with Git LFS for binaries. Applies to issues, epics, and assets.\n2. **Folder Guard** — Block direct agent access to `.pi/project/` via bash/read/write/edit tool hooks. Scrub path references from context.\n3. **Source File Alerts** — When a file linked as an asset source is edited, notify the agent to review the asset.\n\n### Dependencies\n- Hook Registry (folder guard and source alerts register as hooks)\n- Context Engine (folder path scrubbing in context rules)\n\n### Build Order\n1. Folder Guard (security, uses Hook Registry)\n2. Source File Alerts (uses Hook Registry)\n3. File Attachments (independent, larger scope)",
+      "priority": 4,
+      "status": "draft",
+      "relevantFiles": [],
+      "todos": [
+        {
+          "text": "Implement folder guard hook for bash/read/write/edit",
+          "done": false
+        },
+        {
+          "text": "Audit and scrub .pi/project/ path references from context",
+          "done": false
+        },
+        {
+          "text": "Implement source file change detection hook",
+          "done": false
+        },
+        {
+          "text": "Implement attachment system with copy and metadata",
+          "done": false
+        },
+        {
+          "text": "Add Git LFS auto-configuration for binary attachments",
+          "done": false
+        },
+        {
+          "text": "Add attach tools for issues, epics, and assets",
+          "done": false
+        }
+      ],
+      "successCriteria": [
+        "File attachments work for issues, epics, and assets with Git LFS for binaries",
+        ".pi/project/ folder is blocked from direct agent access via all tool types",
+        "Agent is notified when editing files linked as asset sources",
+        "All features configurable and default-enabled"
+      ],
+      "research": [],
+      "createdAt": "2026-03-11T12:00:52.672Z",
+      "updatedAt": "2026-03-11T12:00:52.672Z"
+    },
+    {
       "id": "mu7pvx9d",
       "title": "Config & Git Workflow Integration",
       "description": "Adds a typed config system to the project manager and builds git workflow guards on top of it. Config enables runtime toggling of behaviour without code changes; git integration enforces branch discipline and commit hygiene throughout the issue/epic lifecycle.",
       "body": "",
-      "priority": 2,
+      "priority": 5,
       "status": "closed",
       "relevantFiles": [],
       "todos": [
@@ -107,7 +261,7 @@
       "title": "Issue Traceability & File Capture",
       "description": "Adds automatic file-change tracking to in-progress issues, giving each issue a living record of what was touched. Optionally gates closure behind per-file change notes for full traceability.",
       "body": "## Goal\\nAutomatically track which files are created/written/edited during an in-progress issue and surface them as references on that issue. Optionally require a one-sentence change note per file before the issue can be closed.\\n\\n## Approach\\n1. Two new config flags (`issues.capture_edited_files`, `issues.require_file_change_notes`), both default `false`\\n2. Hook pi write/edit tool events in `index.ts` — when capture is enabled and an issue is in-progress, add a `reference` research note with a distinguishable `[auto]` prefix and the file path (deduplicated)\\n3. Close gate in issue close logic — when `require_file_change_notes` is enabled, scan auto-captured references and block if any lack a follow-up change note\\n\\n## Files Affected\\n- `config.ts` — new config entries\\n- `index.ts` — tool event hooks for write/edit\\n- `issues.ts` — close gate logic\\n- `commands.ts` — potentially surface auto-refs in issue display",
-      "priority": 3,
+      "priority": 6,
       "status": "closed",
       "relevantFiles": [
         {
@@ -606,13 +760,14 @@
       "id": "046bqkpk",
       "type": "feature",
       "title": "Onboarding Mode — bypass all validation & steering for brownfield import",
-      "description": "When onboarding existing/brownfield projects, users need to bulk-create epics, issues, set past dates, close items with backdated history, and skip all validation gates (two-step close, steering injection, write gates, git guards, gap checks). A single config toggle `onboarding.enabled` would disable **all** process enforcement project-wide, allowing free manipulation of state. This makes it practical to reconstruct project history from git logs, external docs, etc.\n\n**What it does NOT bypass:** structural invariants like \"only one issue in-progress at a time\" remain enforced.\n\n### Key changes:\n1. **`config.ts`** — Add `onboarding.enabled` bool config entry (default: `false`)\n2. **`issues.ts`** — Skip two-step close validation, skip human-validation enforcement, allow direct status setting, allow setting `closedAt`/`startedAt` dates\n3. **`epics.ts`** — Skip gap checks on advance (auto-force), skip two-step close validation, allow backdating\n4. **`index.ts`** — Skip steering injection and write-gate when onboarding mode is on\n5. **`types.ts`** — Add optional date override fields (`closedAt`, `startedAt`) to issue/epic schemas\n6. **Tool schemas** — Add optional `closed_at`/`started_at` params to close/advance tools (only accepted in onboarding mode)\n7. **Persistent onboarding widget** — When onboarding mode is active, display a visible banner/widget (similar to DEVMODE banner) throughout the entire session so it's always clear that onboarding mode is on and steering is disabled. This prevents confusion about why guards are missing.",
+      "description": "When onboarding existing/brownfield projects, users need to bulk-create epics, issues, set past dates, close items with backdated history, and skip all validation gates. A single config toggle `onboarding.enabled` would disable all process enforcement project-wide.\n\n## Core Principle: Skip the Process, Not the Data Quality\n\nIn onboarding mode, issues/epics can be **created directly as closed** (skipping draft→researched→ready→in-progress progression), BUT:\n\n- **Data consistency is still enforced** — you cannot close an issue without valid close data (evidence, message, met flag). The same fields required for a normal close are still required.\n- **Missing steps are reported, not blocked** — if research is missing, if there are no todos, etc., the system returns an informational message to the agent noting what was skipped (the same things `advance` would normally enforce), but does NOT block the operation.\n- This means onboarding can never produce \"broken\" records — every closed issue has proper close metadata — but the journey to get there is compressed.\n\n## Onboarding-Mode Agent Steering\n\nWhen onboarding mode is active, the extension must **inject its own steering context** that tells the agent:\n- What onboarding mode means and what patterns to follow (e.g. bulk import, accept backdated data, skip validation)\n- What workflow to use for efficient brownfield import (e.g. create epic → batch-create issues → close them with dates)\n- That skipped steps will be noted but not blocked\n\n## Race Condition: Conflicting Context Injection\n\nThe following context is injected on **every turn** via `before_agent_start` and must be **suppressed or replaced** in onboarding mode to avoid contradictions:\n\n1. **Workflow policy** — \"You MUST NOT write files unless an issue is in-progress\" → contradicts onboarding freedom\n2. **\"No issue in-progress\" warning** — steering to advance an issue first → irrelevant during bulk import\n3. **Epic steering** (focus/next issue hints) → may conflict with bulk import flow\n4. **Unassigned issues nudge** → noise during onboarding when everything starts unassigned\n\nAdditionally, the **write gate** (`tool_result` hook) blocks file writes when no issue is in-progress — must also be disabled.\n\nAsset trigger events (on create/close/advance) may inject policies that conflict with onboarding patterns — these should be evaluated and conditionally suppressed.\n\n## Key Changes\n1. **`config.ts`** — Add `onboarding.enabled` bool config entry (default: `false`)\n2. **`index.ts`** — When onboarding mode is on: replace all per-turn steering with onboarding-specific instructions, disable write gate, suppress conflicting asset triggers\n3. **`issues.ts` / `epics.ts`** — Allow `issue_add` / `epic_add` with a `status: \"closed\"` param (onboarding only). Validate close metadata is present. Return informational messages listing skipped steps (no research, no todos, etc.) but don't block.\n4. **`types.ts`** — Add optional date override fields (`closedAt`, `startedAt`) to issue/epic schemas\n5. **Tool schemas** — Add optional `closed_at`/`started_at`/`status` params (only accepted in onboarding mode)\n6. **Persistent onboarding banner** — Always-visible widget (like DEVMODE) so it's clear guards are disabled\n\n## What It Does NOT Bypass\n- **Close validation data** — evidence, message, met flag still required\n- **Structural invariants** — \"only one issue in-progress at a time\" still enforced",
       "status": "draft",
       "linkedIssueIds": [],
       "questions": [],
       "research": [],
       "createdAt": "2026-03-11T10:18:57.885Z",
-      "updatedAt": "2026-03-11T10:18:57.885Z"
+      "updatedAt": "2026-03-11T12:00:59.448Z",
+      "epicId": "8dga7k63"
     },
     {
       "id": "lhyb0lwt",
@@ -675,7 +830,7 @@
       "type": "chore",
       "title": "Always copy auth.json from source PI folder on dev mode startup",
       "description": "Currently auth.json is only copied if it doesn't exist in the dev home. It should be copied on every startup to stay in sync.",
-      "status": "ready",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -683,14 +838,159 @@
           "type": "comment",
           "content": "Remove the `[ ! -f ... ]` guard on auth.json copy so it always syncs from `$HOME/.pi/agent/auth.json`.",
           "addedAt": "2026-03-11T10:38:30.862Z"
+        },
+        {
+          "type": "reference",
+          "content": "[auto] ./run_pi_dev_mode.sh",
+          "addedAt": "2026-03-11T10:38:51.616Z"
+        },
+        {
+          "type": "comment",
+          "content": "[change-note] ./run_pi_dev_mode.sh — Removed `[ ! -f ]` guard so auth.json is always copied from source on startup.",
+          "addedAt": "2026-03-11T10:38:59.428Z"
         }
       ],
       "createdAt": "2026-03-11T10:38:27.389Z",
-      "updatedAt": "2026-03-11T10:38:34.966Z",
+      "updatedAt": "2026-03-11T10:39:11.481Z",
       "autoValidation": {
         "type": "agent",
         "strategy": "Read run_pi_dev_mode.sh and confirm auth.json copy has no conditional check"
-      }
+      },
+      "startCommit": "64378366cf68fd6ee3f40989b5244b3d632231ab",
+      "closeMessage": "Removed conditional guard so auth.json is always synced from source pi folder.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Currently auth.json is only copied if it doesn't exist in the dev home. It should be copied on every startup to stay in sync.",
+          "evidence": "grep confirms: `if [ -f \"$HOME/.pi/agent/auth.json\" ]; then` — no destination existence check. Auth.json is unconditionally copied every startup.",
+          "met": true
+        }
+      ],
+      "closeCommit": "1d5619b",
+      "closedAt": "2026-03-11T10:39:11.481Z"
+    },
+    {
+      "id": "ophprqee",
+      "type": "idea",
+      "title": "Prompt for motivation/context when creating ideas and features",
+      "description": "When using `/idea` or `/feature`, the creation flow should ask the user \"What problem or situation prompted this?\" before finalizing. The answer gets stored as a `motivation` or `context` field on the issue, ensuring the *why* is captured alongside the *what*. This doesn't apply to `/bug` since bugs already have concrete reproduction context.",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T10:58:01.734Z",
+      "updatedAt": "2026-03-11T12:00:59.454Z",
+      "epicId": "8dga7k63"
+    },
+    {
+      "id": "bghqgdld",
+      "type": "feature",
+      "title": "Asset-to-asset linking",
+      "description": "Allow assets to link to other assets (bidirectional), enabling hierarchical knowledge structures — e.g. a slim overview asset linking to detailed sub-assets. Extend `asset_link`/`asset_unlink` with an `asset_id` param, add `linkedAssetIds` to the asset schema, and display linked assets in `asset_show`.",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T11:10:46.274Z",
+      "updatedAt": "2026-03-11T11:10:46.274Z"
+    },
+    {
+      "id": "ihkjviyl",
+      "type": "feature",
+      "title": "Centralized Context Engine for all agent steering and injection",
+      "description": "All context injection is currently scattered across `index.ts` — session start, `before_agent_start` steering, write gates, asset triggers, epic focus — each with its own conditions and no unified view. A centralized Context Engine would register all context \"rules\" declaratively (with conditions, priority, mode filters like `onboarding`), compose them per-turn, and expose debugging/export tools so you can see exactly what the agent receives and why.\n\n## Implementation Approach\n\n### 1. Context Rules (steering/injection)\n**`src/context-engine.ts`** — Core concepts:\n- **Context Rule**: `{ id, label, condition: (state) => bool, content: (state) => string, priority, modes?: string[] }`\n- **Registry**: All rules registered at init — workflow policy, write gate, epic steering, unassigned nudge, asset triggers, onboarding instructions, etc.\n- **Composer**: Each turn, evaluates all rules against current state (config, mode, issues, epics), filters by condition, sorts by priority, returns composed context\n- **Mode system**: `\"normal\" | \"onboarding\" | ...` — rules declare which modes they apply to (or exclude from)\n\n### 2. Message Templates (presentation layer)\nCurrently every tool crafts its own formatting inline — mixing presentation with logic. Three output channels are used ad-hoc:\n- Tool return (`{ content: [{ type: \"text\", text }] }`) — user + agent\n- `sendMessage` with `display: true` — user-visible panel\n- `sendMessage` with `display: false` — agent-only context\n\n**`src/message-templates.ts`** — Centralized presentation:\n- **Template Registry**: Named templates for every message type (issue_created, epic_advanced, close_checklist, etc.)\n- **Channel abstraction**: Each template declares its channel (`tool_result | user_display | agent_context`) — the caller says *what happened*, the template handles *how it looks*\n- **Separation of concerns**: Tool handlers return structured data (e.g. `{ event: \"issue_created\", data: { id, title, type } }`), the template system renders it for the appropriate channel\n- **Consistent formatting**: All emoji, status icons, layout patterns defined once — change a template, change it everywhere\n\n### 3. Debug/introspection tools\n- `context_debug` — Shows which rules fired this turn, what content each produced, which were suppressed and why\n- `context_export` — Dumps all registered rules with their conditions and mode filters as a readable map\n\n### 4. Config integration\nIndividual rules can be toggled via config (`context.rules.<id>.enabled`), and mode switches like `onboarding.enabled` automatically filter the rule set\n\n**What this solves for onboarding mode:** Instead of ad-hoc `if (onboarding)` checks scattered everywhere, onboarding rules declare `modes: [\"onboarding\"]` and normal rules declare `modes: [\"normal\"]` — no race conditions possible by design.\n\n**What this solves for presentation:** Tool code focuses purely on logic and data — no more formatting strings inline. Adding a new tool output means adding a template entry, not crafting markdown in the handler.",
+      "status": "draft",
+      "linkedIssueIds": [
+        "mz03veip"
+      ],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T11:11:58.367Z",
+      "updatedAt": "2026-03-11T12:00:59.431Z",
+      "epicId": "bhsbhvli"
+    },
+    {
+      "id": "n8lcit9m",
+      "type": "feature",
+      "title": "File attachments for issues, epics, and assets with Git LFS support",
+      "description": "Issues, epics, and assets often need reference material (images, design files, PDFs, source files) but currently have no way to attach them. This feature adds an attachment system that copies files into a tracked `.pi/project/attachments/<entity-id>/` folder, automatically configures Git LFS for binary files, and links them to the entity's metadata. Attachments are reference-only — they inform work but aren't the deliverable.\n\n## Implementation Approach\n\n1. **`src/attachments.ts`** — New module handling:\n   - Copy file into `.pi/project/attachments/<entity-type>/<entity-id>/`\n   - Detect binary vs text (by extension or content sniffing)\n   - Auto-add `.gitattributes` LFS tracking patterns for binary types (images, PDFs, etc.)\n   - Store attachment metadata: `{ filename, originalPath, mimeType, size, addedAt, description? }`\n\n2. **Schema/types changes** — Add `attachments: Attachment[]` to issue, epic, and asset types\n\n3. **New tools:**\n   - `issue_attach` / `epic_attach` / `asset_attach` — `{ id, path, description? }` — copies file, updates metadata\n   - `issue_attachments` / `epic_attachments` / `asset_attachments` — List attachments (or a single generic `attachments_list` tool)\n\n4. **Git LFS setup:**\n   - On first binary attachment, check if `.gitattributes` has LFS patterns; add if missing\n   - Track common binary extensions: `*.png, *.jpg, *.gif, *.webp, *.pdf, *.psd, *.ai, *.sketch, *.fig, *.zip`\n   - Warn if `git lfs` isn't installed\n\n5. **Existing `asset_source`** — Complementary: `asset_source` = \"look at this external thing\", `asset_attach` = \"here's a copy tracked in the repo\"",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T11:22:01.930Z",
+      "updatedAt": "2026-03-11T12:00:59.456Z",
+      "epicId": "4gqn4jwm"
+    },
+    {
+      "id": "lo9188ld",
+      "type": "feature",
+      "title": "Guard .pi/project/ folder from direct agent access via tool hooks",
+      "description": "The agent can currently read/write `.pi/project/` files directly via bash, read, write, and edit tools — bypassing the project management tools entirely. This risks corrupted state, and any file paths in injected context could lead the agent to `cat` the database instead of using proper tools. This feature blocks direct access and scrubs references from all context injection.\n\n## Implementation Approach\n\n1. **Tool hooks in `index.ts`** — Intercept `bash`, `read`, `write`, `edit` tool calls. If the input path or command references `.pi/project/` (or configurable path), reject with an error message explaining to use project management tools instead. Patterns to catch:\n   - `read` / `write` / `edit` with `path` containing `.pi/project/`\n   - `bash` commands containing `cat`, `ls`, `grep`, `sed`, etc. targeting `.pi/project/`\n\n2. **Context scrubbing** — Audit all context injection points (easier once Context Engine [ihkjviyl] exists) to ensure no raw `.pi/project/` paths are exposed to the agent. Replace internal path references with tool names (e.g. \"use `issue_show`\" instead of showing the DB path).\n\n3. **Config** — `security.protect_project_folder` (default: `true`) — can be disabled if users want raw access\n\n4. **Files affected:**\n   - `index.ts` — Add tool hooks for interception\n   - All formatting/context code — Audit for path leaks\n   - `src/config.ts` — New config entry",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T11:24:45.576Z",
+      "updatedAt": "2026-03-11T12:00:59.458Z",
+      "epicId": "4gqn4jwm"
+    },
+    {
+      "id": "uhji2hhd",
+      "type": "feature",
+      "title": "\"Needs Review\" flag to prevent premature work on rough ideas",
+      "description": "When quickly capturing ideas/features, the description is often just a sketch — enough to not forget, but not enough to act on. Currently nothing stops the agent from picking these up as the next work item and building something half-baked. A `needs_review` flag marks issues as \"captured but not yet thought through,\" blocking advancement to in-progress until the flag is removed after proper expansion.\n\n## Implementation Approach\n\n1. **`types.ts`** — Add optional `needsReview: boolean` field to issue schema\n\n2. **Issue creation flow** — When creating via `/idea` or `/feature`, if the description is brief or the user indicates it's just a capture, the agent suggests flagging it with `needs_review`. Not default-on — opt-in per issue.\n\n3. **`issue_advance`** — Block advancement to `in-progress` if `needsReview` is true. Return message: \"This issue is flagged for review — expand the description and remove the flag with `issue_update` before starting work.\"\n\n4. **`next_work`** — Exclude `needs_review` issues from being suggested as next work items\n\n5. **`issue_update`** — Allow setting/removing the flag: `needsReview: true/false`\n\n6. **Display** — Show a 🔍 or 📌 indicator in `issue_list` and `issue_show` for flagged issues\n\n7. **Steering integration** — When the Context Engine ([ihkjviyl]) exists, add a rule that notes flagged issues separately: \"X issue(s) need review before they can be worked on\"",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T11:28:31.435Z",
+      "updatedAt": "2026-03-11T12:00:59.452Z",
+      "epicId": "8dga7k63"
+    },
+    {
+      "id": "s9h4fcsw",
+      "type": "feature",
+      "title": "Auto-notify agent when edited files are linked as sources in assets",
+      "description": "When the agent writes or edits a file that's referenced as a `file` source on any asset, it currently gets no notification — so assets can silently go stale. This feature hooks into file-write tool results and cross-references the path against all asset sources, prompting the agent to review and update the linked asset if the change affects its content.\n\n## Implementation Approach\n\n1. **`index.ts` `tool_result` hook** — After `write`, `edit` (and optionally `bash` with file-write patterns), extract the file path and check it against all `asset.sources` where `type === \"file\"`. If matched, append a message: \"⚠️ This file is linked as a source on asset [id] *title* — review if this change affects the asset content.\"\n\n2. **Config** — `workflow.source_file_change_alerts` (default: `true`) — can be disabled\n\n3. **Scope for future** — Could extend to epic/issue `relevant_files` too, not just asset sources — but start with assets since those are the curated knowledge base most likely to go stale.\n\n4. **Files affected:**\n   - `index.ts` — Extend existing `tool_result` hook\n   - `config.ts` — New config entry",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T11:49:01.729Z",
+      "updatedAt": "2026-03-11T12:00:59.459Z",
+      "epicId": "4gqn4jwm"
+    },
+    {
+      "id": "l8f1cbea",
+      "type": "feature",
+      "title": "Centralized Hook Registry for all tool lifecycle hooks",
+      "description": "Tool hooks (`tool_result`, `before_tool_call`) are scattered inline across `index.ts` with ad-hoc conditions — write gate, file capture, source alerts, project folder guard, etc. A Hook Registry would let hooks be registered declaratively with conditions, priorities, and mode filters. This is the companion to the Context Engine [ihkjviyl] — together they centralize the two main extension touch points: what the agent *sees* (context) and what *happens* around tool calls (hooks).\n\n## Implementation Approach\n\n1. **`src/hook-registry.ts`** — New module with core concepts:\n   - **Hook Rule**: `{ id, label, event: \"tool_result\"|\"before_tool_call\", toolMatch?: string|regex, condition: (state, toolInput) => bool, handler: (event) => result, priority, modes?: string[] }`\n   - **Registry**: All hooks registered at init — write gate, file capture, source alerts, project folder guard\n   - **Dispatcher**: On each tool event, filters matching hooks by event type + tool name + condition + mode, runs in priority order, merges results\n\n2. **`index.ts`** — Refactor: replace all inline `tool_result`/`before_tool_call` handlers with a single dispatcher that delegates to the registry\n\n3. **Shared infrastructure with Context Engine [ihkjviyl]** — Both registries share:\n   - Mode system (`\"normal\" | \"onboarding\"`)\n   - Config-based toggling (`hooks.rules.<id>.enabled`)\n   - Debug/introspection tools\n   - Extend `context_debug` → `system_debug` showing both context rules AND hook rules that fired\n\n4. **Recommended build order:**\n   - **Context Engine [ihkjviyl] first** — establishes mode system, config patterns, debug infrastructure\n   - **Hook Registry second** — reuses mode system and debug patterns\n   - **All other features after** (onboarding, source alerts, folder guard) — become simple rule registrations\n\n5. **Files affected:**\n   - New `src/hook-registry.ts`\n   - `index.ts` — Major refactor of hook wiring\n   - Shared types/infra with `src/context-engine.ts`",
+      "status": "draft",
+      "linkedIssueIds": [
+        "mz03veip"
+      ],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T11:53:51.698Z",
+      "updatedAt": "2026-03-11T12:00:59.436Z",
+      "epicId": "bhsbhvli"
+    },
+    {
+      "id": "mz03veip",
+      "type": "feature",
+      "title": "Debug mode: show agent-only context and hide debug tools behind ENV gate",
+      "description": "Add a two-layer debug system:\n\n## Layer 1: ENV Gate (master switch)\n- Debug features are **completely hidden** unless a specific env var is set (e.g. `PI_PM_DEBUG=1`)\n- When ENV is not set: no debug tools registered, no debug config entries visible, no debug context injected — zero footprint\n- This prevents the agent from even knowing debug capabilities exist in normal usage\n\n## Layer 2: Config Settings (granular control, only when ENV is set)\nWhen `PI_PM_DEBUG=1` is set, the following config options become available:\n- `debug.show_agent_context` — Show agent-only messages (`display: false`) as visible messages so the user can see exactly what steering/context the agent receives\n- `debug.show_hook_activity` — Show which hooks fired on each tool call\n- `debug.show_context_rules` — Show which context rules composed the current turn's steering\n- Future: `debug.log_to_file` etc.\n\n## Implementation\n1. **`index.ts` / init** — Check `process.env.PI_PM_DEBUG` at startup. If not set, skip all debug tool registration and debug config entries\n2. **`config.ts`** — Debug config entries added conditionally to `CONFIG_REGISTRY` only when ENV is set\n3. **Agent-only context display** — When `debug.show_agent_context` is enabled, intercept all `sendMessage({ display: false })` calls and flip to `display: true` (or duplicate as a visible debug panel)\n4. **Debug tools** (registered only when ENV set) — `context_debug`, `hook_debug`, etc. from Context Engine [ihkjviyl] and Hook Registry [l8f1cbea]\n\nLinks: Context Engine [ihkjviyl], Hook Registry [l8f1cbea]",
+      "status": "draft",
+      "linkedIssueIds": [
+        "ihkjviyl",
+        "l8f1cbea"
+      ],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T11:59:07.504Z",
+      "updatedAt": "2026-03-11T12:00:59.444Z",
+      "epicId": "bhsbhvli"
     }
   ],
   "categories": [
@@ -715,16 +1015,16 @@
     }
   ],
   "config": {
-    "workflow.write_gate": true,
+    "workflow.write_gate": false,
     "context.brief_verbosity": "normal",
     "context.unassigned_bugs_in_steering": false,
-    "git.enabled": true,
+    "git.enabled": false,
     "git.epic_branch": false,
     "git.require_epic_branch": false,
     "git.merge_check_on_epic_close": false,
     "git.epics.auto_branch": false,
     "git.epics.merge_check_on_close": false,
-    "issues.capture_edited_files": true,
-    "issues.require_file_change_notes": true
+    "issues.capture_edited_files": false,
+    "issues.require_file_change_notes": false
   }
 }
