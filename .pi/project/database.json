@@ -1089,7 +1089,7 @@
       "type": "idea",
       "title": "Prompt for motivation/context when creating ideas and features",
       "description": "When using `/idea` or `/feature`, the creation flow should ask the user \"What problem or situation prompted this?\" before finalizing. The answer gets stored as a `motivation` or `context` field on the issue, ensuring the *why* is captured alongside the *what*. This doesn't apply to `/bug` since bugs already have concrete reproduction context.",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -1100,10 +1100,21 @@
         }
       ],
       "createdAt": "2026-03-11T10:58:01.734Z",
-      "updatedAt": "2026-03-11T15:02:17.266Z",
+      "updatedAt": "2026-03-11T15:02:42.587Z",
       "epicId": "8dga7k63",
       "todos": [],
-      "dependencies": []
+      "dependencies": [],
+      "closeMessage": "Added motivation prompt to /idea and /feature flows. The why is now captured alongside the what in issue descriptions.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "When using `/idea` or `/feature`, the creation flow should ask the user \"What problem or situation prompted this?\" before finalizing. The answer gets stored as a `motivation` or `context` field on the issue, ensuring the *why* is captured alongside the *what*. This doesn't apply to `/bug` since bugs already have concrete reproduction context.",
+          "evidence": "Both /idea and /feature steering prompts updated to include step asking \"What problem or situation prompted this?\" with instruction to include the motivation in the issue description. /bug intentionally excluded as specified.",
+          "met": true
+        }
+      ],
+      "closeCommit": "7da2409",
+      "closedAt": "2026-03-11T15:02:42.587Z"
     },
     {
       "id": "bghqgdld",
@@ -1567,13 +1578,19 @@
       "type": "feature",
       "title": "Gated research mode — require verified sources before advancing issues",
       "description": "When enabled (`research.gated: true`, default: **off**), issues cannot advance past `researched` without linked research notes, asset references, or explicit justification. Enforces a \"don't trust pre-trained content\" policy — the agent must ground work in web searches, codebase exploration, or internal references. Bypass allowed with written justification recorded as a research comment.\n\n**Changes:**\n- `config.ts` — Add `research.gated` boolean config (default: `false`)\n- `issues.ts` — Block `researched → ready` advancement when gated and no research/assets linked, unless justification provided\n- `context-rules.ts` — Inject steering rule when gated: \"Do not rely on pre-trained knowledge. Verify via web search, codebase, assets, or docs. Cite sources as research notes.\"\n- `tool-docs.ts` — Update `issue_advance` docs to mention justification bypass",
-      "status": "draft",
+      "status": "in-progress",
       "epicId": "8dga7k63",
       "linkedIssueIds": [],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "**Key code locations:**\n- `config.ts` CONFIG_REGISTRY — add `research.gated` bool (default: false)\n- `issues.ts` issue_advance — add gate when advancing researched→ready: check issue.research.length > 0\n- `issues.ts` issue_advance params — add optional `justification` string param for bypass\n- `context-rules.ts` — add new rule when gated mode on\n- `tool-docs.ts` issue_advance — mention justification",
+          "addedAt": "2026-03-11T15:02:54.126Z"
+        }
+      ],
       "createdAt": "2026-03-11T14:49:01.613Z",
-      "updatedAt": "2026-03-11T14:49:01.613Z",
+      "updatedAt": "2026-03-11T15:03:00.460Z",
       "autoValidation": {
         "type": "agent",
         "strategy": "Enable gated mode in config, create a draft issue with no research, attempt to advance past researched — should block. Add justification — should allow bypass with recorded comment."

@@ -137,12 +137,14 @@ Only provided fields are changed.
 Moves issue to next status: draft→researched→ready→in-progress. Only one issue can be in-progress at a time. For closing, use \`issue_close\`.
 
 **Gates:**
-- **ready → in-progress**: Blocked if any required questions are unanswered. Use \`issue_question\` to resolve them first.
+- **researched → ready**: When \`research.gated\` is enabled, blocked if no research notes exist. Provide \`justification\` param to bypass (recorded as research comment).
+- **ready → in-progress**: Blocked if any required questions are unanswered. Blocked if \`needsReview\` is set. Blocked if \`workflow.enforce_dependencies\` is on and blockers are open.
 - **in-progress**: Only one issue can be in-progress at a time.
 
 **Parameters:**
 - \`id\` (required): Issue ID
-- \`close_message\`: Required when closing`,
+- \`close_message\`: Required when closing
+- \`justification\`: Bypass gated research requirement (recorded as research comment)`,
 
   issue_question: `## issue_question — Manage questions on an issue
 Add questions, answer them by index, or list all questions. Unanswered **required** questions block advancement to in-progress.

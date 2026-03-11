@@ -114,6 +114,16 @@ export function registerAllRules(): void {
   });
 
   registerRule({
+    id: "gated-research",
+    label: "Gated research mode steering",
+    channel: "agent_context",
+    priority: 16,
+    condition: (s) => s.event === "before_agent_start" && getConfigValue<boolean>(s.store, "research.gated"),
+    content: () =>
+      `[GATED RESEARCH] Do NOT rely on pre-trained knowledge for implementation decisions. Always verify via web search, codebase reading, asset references, or internal documentation. Cite sources as \`issue_research\` notes before advancing issues.`,
+  });
+
+  registerRule({
     id: "epic-steering",
     label: "Per-turn epic focus steering",
     channel: "agent_context",

@@ -199,6 +199,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
     parameters: Type.Object({
       id: Type.String({ description: "Issue ID" }),
       close_message: Type.Optional(Type.String({ description: "Required when advancing to closed" })),
+      justification: Type.Optional(Type.String({ description: "Justification for bypassing gated research requirement" })),
     }),
     async execute(_id, params) {
       const r = load();
@@ -210,6 +211,18 @@ export function registerIssueTools(pi: ExtensionAPI) {
 
       if (next === "closed") {
         return { content: [{ type: "text", text: `Use \`issue_close\` to close issues — it requires validation evidence.` }] };
+      }
+
+      // Gate: gated research — require research notes or justification to advance past researched
+      if (next === "ready" && getConfigValue<boolean>(r, "research.gated")) {
+        if (!issue.research.length) {
+          if (params.justification) {
+            // Allow bypass — record justification as research comment
+            issue.research.push({ type: "comment", content: `[research-bypass] ${params.justification}`, createdAt: now() });
+          } else {
+            return { content: [{ type: "text", text: `🔬 **Gated research mode is on.** This issue has no research notes.\n\nAdd research (web search, codebase references, asset links) via \`issue_research\`, or provide a \`justification\` param to bypass.` }] };
+          }
+        }
       }
 
       // Gate: unanswered required questions block advancement to in-progress

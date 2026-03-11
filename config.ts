@@ -132,6 +132,15 @@ export const CONFIG_REGISTRY: ConfigEntry[] = [
     default: false,
   },
 
+  // Research gating
+  {
+    type: "bool",
+    key: "research.gated",
+    label: "Gated research",
+    description: "Require research notes or explicit justification before advancing issues past researched (enforces verified sources over pre-trained knowledge)",
+    default: false,
+  },
+
   // Dependencies
   {
     type: "bool",
