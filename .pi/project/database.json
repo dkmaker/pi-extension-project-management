@@ -1302,12 +1302,18 @@
       "type": "feature",
       "title": "/project-reset command — validate state and compact context safely",
       "description": "A slash command that triggers the agent to validate project state before resetting context. Checks: no issue in-progress with unsaved work, no uncommitted todos, no open questions. Summarizes current state and confirms it's safe to compact. Prevents accidentally losing mid-work context.\\n\\n**Changes:** `commands.ts` — register `/project-reset`, visible echo + steering prompt that instructs agent to validate and then trigger compact.",
-      "status": "draft",
+      "status": "in-progress",
       "linkedIssueIds": [],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "**Implementation plan**: Register `/project-reset` in `commands.ts`. The handler should:\n1. Load store, check for in-progress issues, unanswered required questions, incomplete epic todos\n2. Show a visible summary via `ctx.ui.notify()` listing any blockers\n3. Send a hidden steering prompt instructing the agent to either warn about blockers or confirm it's safe to compact context\n4. If safe, the steering should tell agent to use `/compact` (pi built-in)\n\nKey references: existing `/continue` handler pattern (lines 61-147 in commands.ts), `load()` from store, issue/epic types.",
+          "addedAt": "2026-03-11T14:44:39.049Z"
+        }
+      ],
       "createdAt": "2026-03-11T14:39:42.638Z",
-      "updatedAt": "2026-03-11T14:42:37.774Z",
+      "updatedAt": "2026-03-11T14:44:45.271Z",
       "epicId": "4gm0kng1"
     },
     {
@@ -1315,7 +1321,7 @@
       "type": "feature",
       "title": "/continue visible feedback — show current context before agent resumes",
       "description": "When using `/continue`, nothing visible appears — the agent just gets a hidden steering prompt. Add a visible echo showing the current epic/issue context so the user knows what the agent is working from. E.g. `▶️ **Continuing...**\\\\n> Epic: [id] title\\\\n> Current: [id] title (status)\\\\n\\\\n*Reviewing next step...*`\\n\\n**Changes:** `commands.ts` — add visible echo sendMessage before hidden steering in `/continue` handler, pull current epic/issue from store for summary.",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -1326,8 +1332,19 @@
         }
       ],
       "createdAt": "2026-03-11T14:39:42.642Z",
-      "updatedAt": "2026-03-11T14:43:48.742Z",
-      "epicId": "4gm0kng1"
+      "updatedAt": "2026-03-11T14:44:28.235Z",
+      "epicId": "4gm0kng1",
+      "closeMessage": "Implemented visible feedback in /continue command. Users now see current epic, active issue/todo focus, and any direction hint before the agent resumes.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "When using `/continue`, nothing visible appears — the agent just gets a hidden steering prompt. Add a visible echo showing the current epic/issue context so the user knows what the agent is working from. E.g. `▶️ **Continuing...**\\\\n> Epic: [id] title\\\\n> Current: [id] title (status)\\\\n\\\\n*Reviewing next step...*`\\n\\n**Changes:** `commands.ts` — add visible echo sendMessage before hidden steering in `/continue` handler, pull current epic/issue from store for summary.",
+          "evidence": "Added visible `ctx.ui.notify()` in `/continue` handler (commands.ts ~lines 134-152) that shows: ▶️ Continuing... with epic name/status, current issue or next todo, user direction hint, and \"Reviewing next step...\" — matching the exact format specified in the requirement.",
+          "met": true
+        }
+      ],
+      "closeCommit": "a1707da",
+      "closedAt": "2026-03-11T14:44:28.235Z"
     }
   ],
   "categories": [

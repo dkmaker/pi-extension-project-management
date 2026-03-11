@@ -161,6 +161,68 @@ export function registerCommands(pi: ExtensionAPI) {
     },
   });
 
+  pi.registerCommand("project-reset", {
+    description: "Validate project state and safely compact context",
+    handler: async (args, ctx) => {
+      const r = load();
+      const blockers: string[] = [];
+      const status: string[] = [];
+
+      // Check in-progress issues
+      const inProgress = r.issues.filter(i => i.status === "in-progress");
+      if (inProgress.length) {
+        for (const i of inProgress) {
+          blockers.push(`⚠️ Issue in-progress: [${i.id}] ${i.title}`);
+        }
+      }
+
+      // Check unanswered required questions
+      for (const i of r.issues.filter(i => i.status !== "closed")) {
+        const unanswered = (i.questions || []).filter((q: any) => !q.answer && q.required !== false);
+        if (unanswered.length) {
+          blockers.push(`❓ ${unanswered.length} unanswered question(s) on [${i.id}] ${i.title}`);
+        }
+      }
+
+      // Summary stats
+      const openIssues = r.issues.filter(i => i.status !== "closed").length;
+      const openEpics = r.epics.filter(e => e.status !== "closed").length;
+      status.push(`Open: ${openEpics} epics, ${openIssues} issues`);
+
+      // Visible feedback
+      const visibleLines = ["🔄 **Project Reset Check**", ""];
+      if (blockers.length) {
+        visibleLines.push("**Blockers found:**");
+        for (const b of blockers) visibleLines.push(b);
+        visibleLines.push("", `*Resolve blockers before compacting.*`);
+      } else {
+        visibleLines.push("✅ No blockers — safe to compact.");
+      }
+      visibleLines.push("", status.join(" · "));
+      ctx.ui.notify(visibleLines.join("\n"), blockers.length ? "warn" : "info");
+
+      // Steering prompt
+      const steerLines = [
+        "## Project Reset Validation\n",
+        blockers.length ? `### ⚠️ ${blockers.length} Blocker(s)\n${blockers.join("\n")}\n` : "### ✅ No blockers\n",
+        `Status: ${status.join(" · ")}`,
+        "",
+        blockers.length
+          ? "**Your task:** Warn the user about the blockers above. Suggest resolving them (close/pause in-progress issues, answer questions) before compacting. Do NOT compact yet."
+          : "**Your task:** Confirm to the user that project state is clean and it is safe to compact. Then use `/compact` to reset the context.",
+      ];
+
+      pi.sendMessage(
+        {
+          customType: "project-reset-prompt",
+          content: steerLines.join("\n"),
+          display: false,
+        },
+        { triggerTurn: true, deliverAs: "steer" },
+      );
+    },
+  });
+
   pi.registerCommand("idea", {
     description: "Capture a quick idea — AI fleshes it out and creates an issue",
     handler: async (args, ctx) => {
