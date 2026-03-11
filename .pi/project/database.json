@@ -631,7 +631,7 @@
       "type": "bug",
       "title": "run_pi_dev_mode.sh doesn't forward extra CLI arguments to pi",
       "description": "The script ignores any arguments passed to it (e.g. `-c`). Need to append `\"$@\"` to the final `exec pi` call.",
-      "status": "ready",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -639,13 +639,57 @@
           "type": "comment",
           "content": "One-line fix: append `\"$@\"` to the `exec pi` line so all CLI args are forwarded.",
           "addedAt": "2026-03-11T10:37:36.362Z"
+        },
+        {
+          "type": "reference",
+          "content": "[auto] ./run_pi_dev_mode.sh",
+          "addedAt": "2026-03-11T10:37:57.773Z"
+        },
+        {
+          "type": "comment",
+          "content": "[change-note] ./run_pi_dev_mode.sh — Appended `\"$@\"` to `exec pi` to forward CLI args.",
+          "addedAt": "2026-03-11T10:38:18.745Z"
         }
       ],
       "createdAt": "2026-03-11T10:37:31.679Z",
-      "updatedAt": "2026-03-11T10:37:37.772Z",
+      "updatedAt": "2026-03-11T10:38:22.319Z",
       "autoValidation": {
         "type": "agent",
         "strategy": "Read the script and confirm \"$@\" is passed through"
+      },
+      "startCommit": "03c8fd6b53c38216aa0b1615b07655b5885769a7",
+      "closeMessage": "Added \"$@\" to forward all CLI arguments to pi.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "The script ignores any arguments passed to it (e.g. `-c`). Need to append `\"$@\"` to the final `exec pi` call.",
+          "evidence": "Confirmed `exec pi \"${ARGS[@]}\" \"$@\"` is now on the last line of run_pi_dev_mode.sh",
+          "met": true
+        }
+      ],
+      "closeCommit": "420691c",
+      "closedAt": "2026-03-11T10:38:22.319Z"
+    },
+    {
+      "id": "7oobhy4i",
+      "type": "chore",
+      "title": "Always copy auth.json from source PI folder on dev mode startup",
+      "description": "Currently auth.json is only copied if it doesn't exist in the dev home. It should be copied on every startup to stay in sync.",
+      "status": "ready",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "comment",
+          "content": "Remove the `[ ! -f ... ]` guard on auth.json copy so it always syncs from `$HOME/.pi/agent/auth.json`.",
+          "addedAt": "2026-03-11T10:38:30.862Z"
+        }
+      ],
+      "createdAt": "2026-03-11T10:38:27.389Z",
+      "updatedAt": "2026-03-11T10:38:34.966Z",
+      "autoValidation": {
+        "type": "agent",
+        "strategy": "Read run_pi_dev_mode.sh and confirm auth.json copy has no conditional check"
       }
     }
   ],
