@@ -161,6 +161,21 @@ Add questions, answer them by index, or list all questions. Unanswered **require
 
 **Icons:** ❓ = unanswered, ✅ = answered, *(optional)* = non-blocking`,
 
+  issue_todo: `## issue_todo — Toggle or add issue todos
+Implementation checklist for issues. Mirrors epic_todo.
+
+**Actions (mutually exclusive):**
+- **Add:** provide \`add\` (todo text)
+- **Toggle:** provide \`todo_index\` (0-based) to toggle done/undone
+- **List:** call with just \`id\` to see all todos
+
+**Parameters:**
+- \`id\` (required): Issue ID
+- \`add\`: Text of new todo
+- \`todo_index\`: 0-based index to toggle
+
+Uncompleted todos are shown in per-turn steering when issue is in-progress, and flagged when closing.`,
+
   issue_close: `## issue_close — Close an issue (two-step)
 **Step 1:** Call with just \`id\` (and optionally \`close_reason\`) — returns checklist with requirement, research, and validation instructions.
 **Step 2:** Call with \`id\`, \`evidence\`, \`met: true\`, and \`message\`.

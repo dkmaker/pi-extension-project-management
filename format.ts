@@ -62,6 +62,13 @@ export function formatIssueVerbose(issue: Issue, epics: Epic[], assets: Asset[] 
       if (q.answer) out += `\n  **A:** ${q.answer}`;
     }
   }
+  if (issue.todos?.length) {
+    const done = issue.todos.filter(t => t.done).length;
+    out += `\n\n**Todos** (${done}/${issue.todos.length}):`;
+    for (const t of issue.todos) {
+      out += `\n- ${t.done ? "✅" : "☐"} ${t.text}`;
+    }
+  }
   out += formatResearch(issue.research);
   if (issue.closeMessage) {
     const reasonTag = issue.closeReason && issue.closeReason !== "done" ? ` (${issue.closeReason})` : "";

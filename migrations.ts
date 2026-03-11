@@ -91,6 +91,15 @@ const migrations: Record<number, Migration> = {
     data.version = 10;
     return data;
   },
+
+  // v10 → v11: add todos to issues
+  10: (data) => {
+    for (const issue of data.issues || []) {
+      if (!issue.todos) issue.todos = [];
+    }
+    data.version = 11;
+    return data;
+  },
 };
 
 /**

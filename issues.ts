@@ -77,6 +77,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
         linkedIssueIds: [],
         questions: [],
         research: [],
+        todos: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -338,6 +339,12 @@ export function registerIssueTools(pi: ExtensionAPI) {
             out += `## 📋 Validation (AI discretion)\n`;
             out += `**Notes:** ${issue.autoValidation.strategy}\n\n`;
           }
+        }
+        const incompleteTodos = (issue.todos || []).filter(t => !t.done);
+        if (incompleteTodos.length) {
+          out += `## ⚠️ Incomplete Todos (${incompleteTodos.length})\n`;
+          for (const t of incompleteTodos) out += `- ☐ ${t.text}\n`;
+          out += `\nConsider completing these before closing, or note why they're no longer needed.\n\n`;
         }
         out += `---\nValidate the requirement, then call \`issue_close\` again with \`evidence\`, \`met\`, and \`message\`.`;
         return { content: [{ type: "text", text: out }] };
@@ -618,6 +625,49 @@ export function registerIssueTools(pi: ExtensionAPI) {
       if (unansweredRequired > 0) status = `⚠️ ${unansweredRequired} unanswered required — blocks advancement to in-progress`;
       if (unansweredOptional > 0) status += `${unansweredRequired > 0 ? "\n" : "\n"}ℹ️ ${unansweredOptional} optional unanswered`;
       return { content: [{ type: "text", text: `## Questions on ${icon} [${issue.id}] ${issue.title}\n\n${list}\n\n${status}` }] };
+    },
+  });
+
+  pi.registerTool({
+    name: "issue_todo",
+    label: "Issue: Todo",
+    description: "Toggle or add issue todos (implementation checklist). Mirrors epic_todo.",
+    parameters: Type.Object({
+      id: Type.String({ description: "Issue ID" }),
+      todo_index: Type.Optional(Type.Number({ description: "0-based index to toggle" })),
+      add: Type.Optional(Type.String({ description: "Text of new todo" })),
+    }),
+    async execute(_id, params) {
+      const r = load();
+      const issue = r.issues.find((i) => i.id === params.id);
+      if (!issue) return { content: [{ type: "text", text: `Issue '${params.id}' not found.` }] };
+      if (!issue.todos) issue.todos = [];
+
+      if (params.add) {
+        issue.todos.push({ text: params.add, done: false });
+        issue.updatedAt = now();
+        save(r);
+        return { content: [{ type: "text", text: `➕ Added todo to [${issue.id}]: ${params.add}` }] };
+      }
+
+      if (params.todo_index !== undefined) {
+        if (params.todo_index < 0 || params.todo_index >= issue.todos.length) {
+          return { content: [{ type: "text", text: `Invalid index. Issue has ${issue.todos.length} todos (0-${issue.todos.length - 1}).` }] };
+        }
+        const t = issue.todos[params.todo_index];
+        t.done = !t.done;
+        issue.updatedAt = now();
+        save(r);
+        return { content: [{ type: "text", text: `${t.done ? "✅" : "⬜"} ${t.text}` }] };
+      }
+
+      // List todos
+      if (!issue.todos.length) {
+        return { content: [{ type: "text", text: `No todos on [${issue.id}]. Use \`add\` to create one.` }] };
+      }
+      const list = issue.todos.map((t, i) => `${i}. ${t.done ? "✅" : "☐"} ${t.text}`).join("\n");
+      const done = issue.todos.filter(t => t.done).length;
+      return { content: [{ type: "text", text: `## Todos on [${issue.id}] ${issue.title} (${done}/${issue.todos.length})\n\n${list}` }] };
     },
   });
 }

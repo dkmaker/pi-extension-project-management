@@ -1278,7 +1278,7 @@
       "type": "feature",
       "title": "Soft delete assets — trash, undelete, and list deleted",
       "description": "Currently deleting an asset is permanent. Soft delete moves assets to a \"trash\" state instead of removing them, allowing recovery. Adds `asset_delete` (soft), `asset_undelete`, and `asset_list` with `deleted_only` filter to browse trash.\\n\\n**Implementation:** Add `deletedAt?: string` to Asset type. `asset_delete` sets timestamp, `asset_undelete` clears it. All existing queries add `&& !a.deletedAt` guard. Files: `types.ts`, `assets.ts`, `format.ts`.",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -1289,20 +1289,37 @@
         }
       ],
       "createdAt": "2026-03-11T12:43:55.972Z",
-      "updatedAt": "2026-03-11T14:52:04.939Z",
-      "epicId": "76cb6gxh"
+      "updatedAt": "2026-03-11T14:53:36.462Z",
+      "epicId": "76cb6gxh",
+      "closeMessage": "Implemented soft delete for assets with trash/undelete/list-deleted functionality across all relevant surfaces.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Currently deleting an asset is permanent. Soft delete moves assets to a \"trash\" state instead of removing them, allowing recovery. Adds `asset_delete` (soft), `asset_undelete`, and `asset_list` with `deleted_only` filter to browse trash.\\n\\n**Implementation:** Add `deletedAt?: string` to Asset type. `asset_delete` sets timestamp, `asset_undelete` clears it. All existing queries add `&& !a.deletedAt` guard. Files: `types.ts`, `assets.ts`, `format.ts`.",
+          "evidence": "asset_delete sets deletedAt, asset_undelete clears it. asset_list filters deleted by default with include_deleted param. Context injection, brief format, and category counts all exclude deleted. Format shows 🗑️. Tool docs updated. All 7 plan items implemented.",
+          "met": true
+        }
+      ],
+      "closeCommit": "d00c0b4",
+      "closedAt": "2026-03-11T14:53:36.462Z"
     },
     {
       "id": "ul1sgekt",
       "type": "feature",
       "title": "Issue-level implementation checklist (todos) with per-turn steering",
       "description": "Add a `todos` field to issues (like epics already have), with an `issue_todo` tool to add/toggle items. When an issue is in-progress, the per-turn steering should show uncompleted todos so the agent doesn't skip implementation items. For example: `→ IN PROGRESS: [mz03veip] Debug mode (2/4 todos: ☐ Add config entries, ☐ Add UX indicator)`. The agent should also be warned when closing an issue with uncompleted todos.\\n\\n**Changes needed:**\\n- `types.ts` — Add `todos: { text: string; done: boolean }[]` to Issue interface\\n- `migrations.ts` — Add migration to initialize `todos: []` on existing issues\\n- `issues.ts` — Add `issue_todo` tool (add/toggle, mirrors `epic_todo`)\\n- `context-rules.ts` — Update `epic-steering` rule to include issue todos in the in-progress line\\n- `issues.ts` — Warn on close if uncompleted todos exist\\n- `tool-docs.ts` — Add docs for `issue_todo`",
-      "status": "draft",
+      "status": "in-progress",
       "linkedIssueIds": [],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "**Key references:**\n- `epic_todo` in `epics.ts` — mirror this pattern for `issue_todo`\n- `types.ts` Issue interface — add `todos: { text: string; done: boolean }[]`\n- `context-rules.ts` epic-steering rule — update to show issue todos\n- `issues.ts` close logic — warn on uncompleted todos\n- Current version: 10, need migration to v11",
+          "addedAt": "2026-03-11T14:53:46.121Z"
+        }
+      ],
       "createdAt": "2026-03-11T13:40:42.240Z",
-      "updatedAt": "2026-03-11T14:42:37.781Z",
+      "updatedAt": "2026-03-11T14:53:55.352Z",
       "autoValidation": {
         "type": "agent",
         "strategy": "Create an issue with todos, verify they appear in steering context, toggle them, verify close warning with uncompleted todos"

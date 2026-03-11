@@ -142,6 +142,13 @@ export function registerAllRules(): void {
           let hint = "";
           if (vtype === "agent") hint = ` — verify: ${cur.autoValidation!.strategy}`;
           else if (vtype === "human") hint = ` — ⛔ requires user validation`;
+          // Show issue todos if any
+          const todos = cur.todos || [];
+          if (todos.length) {
+            const done = todos.filter((t: any) => t.done).length;
+            const pending = todos.filter((t: any) => !t.done).map((t: any) => `☐ ${t.text}`);
+            hint += ` (${done}/${todos.length} todos${pending.length ? ": " + pending.join(", ") : ""})`;
+          }
           lines.push(`→ IN PROGRESS: [${cur.id}] ${cur.title}${hint}`);
           break;
         }

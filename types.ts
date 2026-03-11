@@ -33,6 +33,7 @@ export interface Issue {
   closeReason?: CloseReason;
   validations?: Validation[];
   research: ResearchNote[];
+  todos: { text: string; done: boolean }[];
   startCommit?: string;  // HEAD SHA when issue went in-progress
   closeCommit?: string;  // commit SHA attached on close
   createdAt: string;
@@ -90,7 +91,7 @@ export interface Asset {
   updatedAt: string;
 }
 
-export const CURRENT_VERSION = 10;
+export const CURRENT_VERSION = 11;
 
 export interface Validation {
   criterion: string;
