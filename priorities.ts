@@ -16,9 +16,9 @@ export function resolveEpicFocus(epic: Epic, issues: Issue[]): FocusResult | nul
 
   const open = issues.filter(i => i.epicId === epic.id && i.status !== "closed");
   const inProgress = open.filter(i => i.status === "in-progress");
-  const ready = open.filter(i => i.status === "ready");
-  const researched = open.filter(i => i.status === "researched");
-  const draft = open.filter(i => i.status === "draft");
+  const ready = open.filter(i => i.status === "ready" && !i.needsReview);
+  const researched = open.filter(i => i.status === "researched" && !i.needsReview);
+  const draft = open.filter(i => i.status === "draft" && !i.needsReview);
   const unfinishedTodos = epic.todos.filter(t => !t.done);
 
   if (inProgress.length) return { type: "in-progress", epic, issue: inProgress[0] };

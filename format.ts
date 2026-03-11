@@ -25,14 +25,16 @@ export function formatIssue(issue: Issue): string {
   const displayStatus = issue.status === "closed" && issue.closeReason === "deferred" ? "deferred" : issue.status;
   const st = statusLabel(displayStatus, ISSUE_STATUS_ICON);
   const link = issue.epicId ? ` → epic:${issue.epicId}` : "";
-  return `${icon} [${issue.id}] ${issue.title} (${issue.type}, ${st})${link}`;
+  const review = issue.needsReview ? " 📌" : "";
+  return `${icon} [${issue.id}] ${issue.title} (${issue.type}, ${st})${review}${link}`;
 }
 
 export function formatIssueVerbose(issue: Issue, epics: Epic[], assets: Asset[] = [], allIssues: Issue[] = []): string {
   const icon = ISSUE_TYPE_ICON[issue.type] || "•";
   const displayStatus = issue.status === "closed" && issue.closeReason === "deferred" ? "deferred" : issue.status;
   const st = statusLabel(displayStatus, ISSUE_STATUS_ICON);
-  let out = `### ${icon} [${issue.id}] ${issue.title}  (${issue.type}, ${st})`;
+  const review = issue.needsReview ? " 📌 needs review" : "";
+  let out = `### ${icon} [${issue.id}] ${issue.title}  (${issue.type}, ${st})${review}`;
   out += `\n${issue.description}`;
   if (issue.epicId) {
     const epic = epics.find((e) => e.id === issue.epicId);

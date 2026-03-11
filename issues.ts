@@ -165,6 +165,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
       description: Type.Optional(Type.String()),
       type: Type.Optional(IssueTypeSchema),
       epic_id: Type.Optional(Type.String({ description: "Epic ID to link to (empty string to unlink)" })),
+      needsReview: Type.Optional(Type.Boolean({ description: "Flag issue as needing review before work can start" })),
     }),
     async execute(_id, params) {
       const r = load();
@@ -174,6 +175,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
       if (params.title !== undefined) issue.title = params.title;
       if (params.description !== undefined) issue.description = params.description;
       if (params.type !== undefined) issue.type = params.type;
+      if (params.needsReview !== undefined) issue.needsReview = params.needsReview || undefined;
       if (params.epic_id !== undefined) {
         if (params.epic_id === "") {
           issue.epicId = undefined;
@@ -232,6 +234,11 @@ export function registerIssueTools(pi: ExtensionAPI) {
           const list = blockers.map(b => `  - [${b.issue!.id}] ${b.issue!.title} (${b.issue!.status})`).join("\n");
           return { content: [{ type: "text", text: `🚧 Cannot start — blocked by ${blockers.length} open issue(s):\n\n${list}\n\nClose them first or disable \`workflow.enforce_dependencies\`.` }] };
         }
+      }
+
+      // Gate: needs_review blocks in-progress
+      if (next === "in-progress" && issue.needsReview) {
+        return { content: [{ type: "text", text: `📌 This issue is flagged for review — expand the description and remove the flag with \`issue_update\` (set \`needsReview: false\`) before starting work.` }] };
       }
 
       // Gate: only one issue can be in-progress at a time

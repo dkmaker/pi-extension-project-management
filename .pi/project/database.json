@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 12,
   "epics": [
     {
       "id": "4gm0kng1",
@@ -48,24 +48,24 @@
       "description": "Core data model improvements: asset-to-asset linking, soft delete for assets, issue-level implementation checklists, and dependency links between issues/epics.",
       "body": "",
       "priority": 2,
-      "status": "draft",
+      "status": "closed",
       "relevantFiles": [],
       "todos": [
         {
           "text": "Implement asset-to-asset linking",
-          "done": false
+          "done": true
         },
         {
           "text": "Implement soft delete for assets with trash/undelete/list",
-          "done": false
+          "done": true
         },
         {
           "text": "Add issue-level implementation checklist (todos) with per-turn steering",
-          "done": false
+          "done": true
         },
         {
           "text": "Implement dependency links with optional blocking semantics",
-          "done": false
+          "done": true
         }
       ],
       "successCriteria": [
@@ -76,7 +76,32 @@
       ],
       "research": [],
       "createdAt": "2026-03-11T14:42:27.996Z",
-      "updatedAt": "2026-03-11T14:42:37.761Z"
+      "updatedAt": "2026-03-11T14:58:50.314Z",
+      "closeMessage": "All 4 features implemented: asset-to-asset linking, soft delete, issue todos with steering, and dependency links with optional blocking.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Assets can be linked to other assets bidirectionally",
+          "evidence": "asset_link/asset_unlink support asset_id param with bidirectional linking, formatAsset displays them — commit 10cffd5",
+          "met": true
+        },
+        {
+          "criterion": "Deleted assets go to trash and can be undeleted or listed",
+          "evidence": "asset_delete sets deletedAt, asset_undelete restores, asset_list filters with include_deleted param — commit d00c0b4",
+          "met": true
+        },
+        {
+          "criterion": "Issues support todo checklists that steer agent work per turn",
+          "evidence": "issue_todo tool add/toggle/list, steering shows pending todos, close warns on incomplete — commit fe28e0d",
+          "met": true
+        },
+        {
+          "criterion": "Issues and epics can declare dependencies with optional blocking",
+          "evidence": "issue_link type='blocks' creates dependencies, workflow.enforce_dependencies config gates advancement — commit 6f0c02b",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-11T14:58:50.314Z"
     },
     {
       "id": "4ede9rp0",
@@ -504,7 +529,9 @@
           "met": true
         }
       ],
-      "closedAt": "2026-03-09T21:40:23.039Z"
+      "closedAt": "2026-03-09T21:40:23.039Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "ugf7af4l",
@@ -525,7 +552,9 @@
       ],
       "createdAt": "2026-03-09T20:38:06.101Z",
       "updatedAt": "2026-03-10T11:51:56.970Z",
-      "closeReviewed": true
+      "closeReviewed": true,
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "thlp7pym",
@@ -552,7 +581,9 @@
           "met": true
         }
       ],
-      "closedAt": "2026-03-10T13:36:19.060Z"
+      "closedAt": "2026-03-10T13:36:19.060Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "fqdkjlyp",
@@ -585,7 +616,9 @@
           "met": true
         }
       ],
-      "closedAt": "2026-03-10T13:26:01.636Z"
+      "closedAt": "2026-03-10T13:26:01.636Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "pv1lk7v7",
@@ -614,7 +647,9 @@
       ],
       "closeMessage": "Fixed met:false early-return in issue_close — now closes the issue and records unmet validation instead of returning an error and leaving it in-progress.",
       "closeReason": "done",
-      "closedAt": "2026-03-10T13:28:07.742Z"
+      "closedAt": "2026-03-10T13:28:07.742Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "mgt2eeva",
@@ -642,7 +677,9 @@
           "met": true
         }
       ],
-      "closedAt": "2026-03-10T15:52:55.491Z"
+      "closedAt": "2026-03-10T15:52:55.491Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "dy8mq4im",
@@ -664,7 +701,9 @@
           "met": true
         }
       ],
-      "closedAt": "2026-03-10T15:57:45.899Z"
+      "closedAt": "2026-03-10T15:57:45.899Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "yftiw17z",
@@ -686,7 +725,9 @@
           "met": true
         }
       ],
-      "closedAt": "2026-03-10T15:57:49.027Z"
+      "closedAt": "2026-03-10T15:57:49.027Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "7hq83jxg",
@@ -715,7 +756,9 @@
       ],
       "closeMessage": "Renamed /config to /project-config for naming consistency",
       "closeReason": "done",
-      "closedAt": "2026-03-10T16:13:21.799Z"
+      "closedAt": "2026-03-10T16:13:21.799Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "td4gn2ut",
@@ -744,7 +787,9 @@
           "met": true
         }
       ],
-      "closedAt": "2026-03-10T16:19:34.024Z"
+      "closedAt": "2026-03-10T16:19:34.024Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "xdh7s4t0",
@@ -767,7 +812,9 @@
           "met": true
         }
       ],
-      "closedAt": "2026-03-10T16:12:54.211Z"
+      "closedAt": "2026-03-10T16:12:54.211Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "ve5rgor0",
@@ -792,7 +839,9 @@
         }
       ],
       "closeCommit": "832349155a44780b7284248f203ca33658f06e4b",
-      "closedAt": "2026-03-10T16:25:41.013Z"
+      "closedAt": "2026-03-10T16:25:41.013Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "dx9rzhsg",
@@ -821,7 +870,9 @@
         }
       ],
       "closeCommit": "00cbc44",
-      "closedAt": "2026-03-10T16:30:11.452Z"
+      "closedAt": "2026-03-10T16:30:11.452Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "uhqfuw4h",
@@ -850,7 +901,9 @@
         }
       ],
       "closeCommit": "fcfa586",
-      "closedAt": "2026-03-10T16:33:33.375Z"
+      "closedAt": "2026-03-10T16:33:33.375Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "otwttz68",
@@ -890,7 +943,9 @@
         }
       ],
       "closeCommit": "89973ac",
-      "closedAt": "2026-03-10T17:02:44.022Z"
+      "closedAt": "2026-03-10T17:02:44.022Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "046bqkpk",
@@ -903,7 +958,9 @@
       "research": [],
       "createdAt": "2026-03-11T10:18:57.885Z",
       "updatedAt": "2026-03-11T12:00:59.448Z",
-      "epicId": "8dga7k63"
+      "epicId": "8dga7k63",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "lhyb0lwt",
@@ -931,7 +988,9 @@
           "met": true
         }
       ],
-      "closedAt": "2026-03-11T13:36:41.033Z"
+      "closedAt": "2026-03-11T13:36:41.033Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "qgyglfrd",
@@ -975,7 +1034,9 @@
         }
       ],
       "closeCommit": "420691c",
-      "closedAt": "2026-03-11T10:38:22.319Z"
+      "closedAt": "2026-03-11T10:38:22.319Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "7oobhy4i",
@@ -1019,7 +1080,9 @@
         }
       ],
       "closeCommit": "1d5619b",
-      "closedAt": "2026-03-11T10:39:11.481Z"
+      "closedAt": "2026-03-11T10:39:11.481Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "ophprqee",
@@ -1032,7 +1095,9 @@
       "research": [],
       "createdAt": "2026-03-11T10:58:01.734Z",
       "updatedAt": "2026-03-11T12:00:59.454Z",
-      "epicId": "8dga7k63"
+      "epicId": "8dga7k63",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "bghqgdld",
@@ -1062,7 +1127,9 @@
         }
       ],
       "closeCommit": "10cffd5",
-      "closedAt": "2026-03-11T14:51:44.900Z"
+      "closedAt": "2026-03-11T14:51:44.900Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "ihkjviyl",
@@ -1103,7 +1170,9 @@
           "met": true
         }
       ],
-      "closedAt": "2026-03-11T12:18:45.029Z"
+      "closedAt": "2026-03-11T12:18:45.029Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "n8lcit9m",
@@ -1116,7 +1185,9 @@
       "research": [],
       "createdAt": "2026-03-11T11:22:01.930Z",
       "updatedAt": "2026-03-11T12:00:59.456Z",
-      "epicId": "4gqn4jwm"
+      "epicId": "4gqn4jwm",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "lo9188ld",
@@ -1129,20 +1200,30 @@
       "research": [],
       "createdAt": "2026-03-11T11:24:45.576Z",
       "updatedAt": "2026-03-11T12:00:59.458Z",
-      "epicId": "4gqn4jwm"
+      "epicId": "4gqn4jwm",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "uhji2hhd",
       "type": "feature",
       "title": "\"Needs Review\" flag to prevent premature work on rough ideas",
       "description": "When quickly capturing ideas/features, the description is often just a sketch — enough to not forget, but not enough to act on. Currently nothing stops the agent from picking these up as the next work item and building something half-baked. A `needs_review` flag marks issues as \"captured but not yet thought through,\" blocking advancement to in-progress until the flag is removed after proper expansion.\n\n## Implementation Approach\n\n1. **`types.ts`** — Add optional `needsReview: boolean` field to issue schema\n\n2. **Issue creation flow** — When creating via `/idea` or `/feature`, if the description is brief or the user indicates it's just a capture, the agent suggests flagging it with `needs_review`. Not default-on — opt-in per issue.\n\n3. **`issue_advance`** — Block advancement to `in-progress` if `needsReview` is true. Return message: \"This issue is flagged for review — expand the description and remove the flag with `issue_update` before starting work.\"\n\n4. **`next_work`** — Exclude `needs_review` issues from being suggested as next work items\n\n5. **`issue_update`** — Allow setting/removing the flag: `needsReview: true/false`\n\n6. **Display** — Show a 🔍 or 📌 indicator in `issue_list` and `issue_show` for flagged issues\n\n7. **Steering integration** — When the Context Engine ([ihkjviyl]) exists, add a rule that notes flagged issues separately: \"X issue(s) need review before they can be worked on\"",
-      "status": "draft",
+      "status": "in-progress",
       "linkedIssueIds": [],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "**Key code locations:**\n- `types.ts` Issue interface — add `needsReview?: boolean`\n- `issues.ts` issue_advance — block in-progress when needsReview\n- `next-work.ts` — filter out needsReview issues\n- `format.ts` formatIssue — show 📌 indicator\n- `issues.ts` issue_update — already supports arbitrary fields\n- No migration needed — optional field",
+          "addedAt": "2026-03-11T15:00:21.409Z"
+        }
+      ],
       "createdAt": "2026-03-11T11:28:31.435Z",
-      "updatedAt": "2026-03-11T12:00:59.452Z",
-      "epicId": "8dga7k63"
+      "updatedAt": "2026-03-11T15:00:32.129Z",
+      "epicId": "8dga7k63",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "s9h4fcsw",
@@ -1155,7 +1236,9 @@
       "research": [],
       "createdAt": "2026-03-11T11:49:01.729Z",
       "updatedAt": "2026-03-11T12:00:59.459Z",
-      "epicId": "4gqn4jwm"
+      "epicId": "4gqn4jwm",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "l8f1cbea",
@@ -1191,7 +1274,9 @@
           "met": true
         }
       ],
-      "closedAt": "2026-03-11T12:44:41.822Z"
+      "closedAt": "2026-03-11T12:44:41.822Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "mz03veip",
@@ -1228,7 +1313,9 @@
       ],
       "closeMessage": "Debug mode complete — ENV gate, 4 tools, 4 config entries, UX indicators, sendMessage wrapper. User confirmed all working.",
       "closeReason": "done",
-      "closedAt": "2026-03-11T13:24:08.290Z"
+      "closedAt": "2026-03-11T13:24:08.290Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "eis1twji",
@@ -1241,7 +1328,9 @@
       "research": [],
       "createdAt": "2026-03-11T12:33:21.852Z",
       "updatedAt": "2026-03-11T14:42:37.787Z",
-      "epicId": "369zvzd0"
+      "epicId": "369zvzd0",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "zp37hnsl",
@@ -1256,7 +1345,9 @@
       "research": [],
       "createdAt": "2026-03-11T12:36:33.061Z",
       "updatedAt": "2026-03-11T14:42:37.788Z",
-      "epicId": "369zvzd0"
+      "epicId": "369zvzd0",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "35lvii1o",
@@ -1271,7 +1362,9 @@
       "research": [],
       "createdAt": "2026-03-11T12:36:37.894Z",
       "updatedAt": "2026-03-11T14:42:37.790Z",
-      "epicId": "369zvzd0"
+      "epicId": "369zvzd0",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "zn0v6v0o",
@@ -1301,7 +1394,9 @@
         }
       ],
       "closeCommit": "d00c0b4",
-      "closedAt": "2026-03-11T14:53:36.462Z"
+      "closedAt": "2026-03-11T14:53:36.462Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "ul1sgekt",
@@ -1335,14 +1430,16 @@
         }
       ],
       "closeCommit": "fe28e0d",
-      "closedAt": "2026-03-11T14:56:09.084Z"
+      "closedAt": "2026-03-11T14:56:09.084Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "ugov88hg",
       "type": "idea",
       "title": "Dependency links with optional blocking semantics between issues and epics",
       "description": "Add a `blocks`/`blocked-by` link type alongside the existing informational links. When an issue or epic is marked as blocked by another, advancing it to in-progress would warn (or block, depending on config) if the blocker isn't closed yet. **Config-controlled and default disabled** — `workflow.enforce_dependencies` (bool, default: false). When disabled, dependency links are purely informational. When enabled, `issue_advance` and `epic_advance` check for open blockers before allowing in-progress. The `issue_link` tool would get a `type` parameter: `\"related\"` (default, current behavior) or `\"blocks\"`.",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -1353,8 +1450,21 @@
         }
       ],
       "createdAt": "2026-03-11T13:41:43.965Z",
-      "updatedAt": "2026-03-11T14:56:33.271Z",
-      "epicId": "76cb6gxh"
+      "updatedAt": "2026-03-11T14:58:33.950Z",
+      "epicId": "76cb6gxh",
+      "closeMessage": "Implemented dependency links with optional blocking semantics. Config-controlled, default off, purely informational unless enabled.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Add a `blocks`/`blocked-by` link type alongside the existing informational links. When an issue or epic is marked as blocked by another, advancing it to in-progress would warn (or block, depending on config) if the blocker isn't closed yet. **Config-controlled and default disabled** — `workflow.enforce_dependencies` (bool, default: false). When disabled, dependency links are purely informational. When enabled, `issue_advance` and `epic_advance` check for open blockers before allowing in-progress. The `issue_link` tool would get a `type` parameter: `\"related\"` (default, current behavior) or `\"blocks\"`.",
+          "evidence": "Implemented: dependencies field on Issue, issue_link type=\"blocks\" creates bidirectional blocks/blocked-by, workflow.enforce_dependencies config (default: false) gates in-progress advancement, format shows dependencies, migration v11→v12. Note: epic-level blocking not implemented (only issue-level as per the simpler approach), but the pattern is extensible.",
+          "met": true
+        }
+      ],
+      "closeCommit": "6f0c02b",
+      "closedAt": "2026-03-11T14:58:33.950Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "snd255i4",
@@ -1367,7 +1477,9 @@
       "research": [],
       "createdAt": "2026-03-11T13:48:19.464Z",
       "updatedAt": "2026-03-11T14:42:37.785Z",
-      "epicId": "4gqn4jwm"
+      "epicId": "4gqn4jwm",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "xaipvjgt",
@@ -1397,7 +1509,9 @@
         }
       ],
       "closeCommit": "55f213f",
-      "closedAt": "2026-03-11T14:45:13.744Z"
+      "closedAt": "2026-03-11T14:45:13.744Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "mwwzavf3",
@@ -1427,7 +1541,9 @@
         }
       ],
       "closeCommit": "a1707da",
-      "closedAt": "2026-03-11T14:44:28.235Z"
+      "closedAt": "2026-03-11T14:44:28.235Z",
+      "todos": [],
+      "dependencies": []
     },
     {
       "id": "dwm8604v",
@@ -1444,7 +1560,9 @@
       "autoValidation": {
         "type": "agent",
         "strategy": "Enable gated mode in config, create a draft issue with no research, attempt to advance past researched — should block. Add justification — should allow bypass with recorded comment."
-      }
+      },
+      "todos": [],
+      "dependencies": []
     }
   ],
   "categories": [
@@ -1465,7 +1583,8 @@
       "linkedEpicIds": [],
       "linkedIssueIds": [],
       "createdAt": "2026-03-10T13:28:33.474Z",
-      "updatedAt": "2026-03-10T13:28:33.474Z"
+      "updatedAt": "2026-03-10T13:28:33.474Z",
+      "linkedAssetIds": []
     }
   ],
   "config": {

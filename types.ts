@@ -29,6 +29,7 @@ export interface Issue {
   dependencies: { issueId: string; type: "blocks" | "blocked-by" }[];
   questions: { text: string; answer?: string; required?: boolean }[];
   autoValidation?: AutoValidation;
+  needsReview?: boolean;
   closeReviewed?: boolean;
   closeMessage?: string;
   closeReason?: CloseReason;
