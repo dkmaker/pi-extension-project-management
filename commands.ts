@@ -161,7 +161,7 @@ export function registerCommands(pi: ExtensionAPI) {
     },
   });
 
-  pi.registerCommand("project-reset", {
+  pi.registerCommand("project-clean-context", {
     description: "Validate project state and safely compact context",
     handler: async (args, ctx) => {
       const r = load();
@@ -189,27 +189,52 @@ export function registerCommands(pi: ExtensionAPI) {
       const openEpics = r.epics.filter(e => e.status !== "closed").length;
       status.push(`Open: ${openEpics} epics, ${openIssues} issues`);
 
+      // Determine what's next
+      let nextUpText = "";
+      const active = activeEpics(r);
+      const epic = nextEpic(active);
+      if (epic) {
+        const focus = resolveEpicFocus(epic, r.issues);
+        nextUpText = `**Next up:** Epic [${epic.id}] ${epic.title}`;
+        if (focus?.issue) {
+          nextUpText += ` → [${focus.issue.id}] ${focus.issue.title} (${focus.type})`;
+        } else if (focus?.type === "todo") {
+          nextUpText += ` → todo: ${focus.todoText}`;
+        } else if (focus?.type === "close-epic") {
+          nextUpText += ` → ready to close`;
+        }
+      } else {
+        // Check for draft epics
+        const draftEpics = r.epics.filter(e => e.status === "draft");
+        if (draftEpics.length) {
+          nextUpText = `**Next up:** Prepare epic [${draftEpics[0].id}] ${draftEpics[0].title} (draft)`;
+        } else {
+          nextUpText = `**Next up:** No epics or issues queued`;
+        }
+      }
+
       // Visible feedback
-      const visibleLines = ["🔄 **Project Reset Check**", ""];
+      const visibleLines = ["🔄 **Context Reset Check**", ""];
       if (blockers.length) {
         visibleLines.push("**Blockers found:**");
         for (const b of blockers) visibleLines.push(b);
-        visibleLines.push("", `*Resolve blockers before compacting.*`);
+        visibleLines.push("", `*Resolve blockers before resetting.*`);
       } else {
-        visibleLines.push("✅ No blockers — safe to compact.");
+        visibleLines.push("✅ No blockers — safe to reset.");
       }
-      visibleLines.push("", status.join(" · "));
+      visibleLines.push("", status.join(" · "), "", nextUpText);
       ctx.ui.notify(visibleLines.join("\n"), blockers.length ? "warn" : "info");
 
       // Steering prompt
       const steerLines = [
-        "## Project Reset Validation\n",
+        "## Context Reset Validation\n",
         blockers.length ? `### ⚠️ ${blockers.length} Blocker(s)\n${blockers.join("\n")}\n` : "### ✅ No blockers\n",
         `Status: ${status.join(" · ")}`,
+        `\n${nextUpText}`,
         "",
         blockers.length
-          ? "**Your task:** Warn the user about the blockers above. Suggest resolving them (close/pause in-progress issues, answer questions) before compacting. Do NOT compact yet."
-          : "**Your task:** Confirm to the user that project state is clean and it is safe to compact. Then use `/compact` to reset the context.",
+          ? "**Your task:** Warn the user about the blockers above. Suggest resolving them (close/pause in-progress issues, answer questions) before resetting. Do NOT reset yet."
+          : "**Your task:** Confirm to the user that project state is clean and it is safe to reset. Show them what's next up (above). Tell them to run `/new` to start a fresh context, then `/continue` in the new session to resume work.",
       ];
 
       pi.sendMessage(

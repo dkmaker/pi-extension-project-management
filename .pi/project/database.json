@@ -1578,7 +1578,7 @@
       "type": "feature",
       "title": "Gated research mode — require verified sources before advancing issues",
       "description": "When enabled (`research.gated: true`, default: **off**), issues cannot advance past `researched` without linked research notes, asset references, or explicit justification. Enforces a \"don't trust pre-trained content\" policy — the agent must ground work in web searches, codebase exploration, or internal references. Bypass allowed with written justification recorded as a research comment.\n\n**Changes:**\n- `config.ts` — Add `research.gated` boolean config (default: `false`)\n- `issues.ts` — Block `researched → ready` advancement when gated and no research/assets linked, unless justification provided\n- `context-rules.ts` — Inject steering rule when gated: \"Do not rely on pre-trained knowledge. Verify via web search, codebase, assets, or docs. Cite sources as research notes.\"\n- `tool-docs.ts` — Update `issue_advance` docs to mention justification bypass",
-      "status": "in-progress",
+      "status": "closed",
       "epicId": "8dga7k63",
       "linkedIssueIds": [],
       "questions": [],
@@ -1590,13 +1590,48 @@
         }
       ],
       "createdAt": "2026-03-11T14:49:01.613Z",
-      "updatedAt": "2026-03-11T15:03:00.460Z",
+      "updatedAt": "2026-03-11T15:04:15.393Z",
       "autoValidation": {
         "type": "agent",
         "strategy": "Enable gated mode in config, create a draft issue with no research, attempt to advance past researched — should block. Add justification — should allow bypass with recorded comment."
       },
       "todos": [],
-      "dependencies": []
+      "dependencies": [],
+      "closeMessage": "Implemented gated research mode with config toggle, advancement gate, justification bypass, and per-turn steering.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "When enabled (`research.gated: true`, default: **off**), issues cannot advance past `researched` without linked research notes, asset references, or explicit justification. Enforces a \"don't trust pre-trained content\" policy — the agent must ground work in web searches, codebase exploration, or internal references. Bypass allowed with written justification recorded as a research comment.\n\n**Changes:**\n- `config.ts` — Add `research.gated` boolean config (default: `false`)\n- `issues.ts` — Block `researched → ready` advancement when gated and no research/assets linked, unless justification provided\n- `context-rules.ts` — Inject steering rule when gated: \"Do not rely on pre-trained knowledge. Verify via web search, codebase, assets, or docs. Cite sources as research notes.\"\n- `tool-docs.ts` — Update `issue_advance` docs to mention justification bypass",
+          "evidence": "All 4 changes implemented: 1) research.gated config in CONFIG_REGISTRY (default: false), 2) issues.ts blocks researched→ready when no research and gated mode on, justification param records bypass as research comment, 3) context-rules.ts injects GATED RESEARCH steering, 4) tool-docs updated with gate docs. Runtime validation not possible but code review confirms all paths.",
+          "met": true
+        }
+      ],
+      "closeCommit": "770f926",
+      "closedAt": "2026-03-11T15:04:15.393Z"
+    },
+    {
+      "id": "2rppzkma",
+      "type": "bug",
+      "title": "/project-reset should be /reset-context and suggest /new + /continue instead of /compact",
+      "description": "Two bugs in the reset command:\\n1. Command name is `/project-reset` but should be `/reset-context`\\n2. Steering tells agent to use `/compact` but should instruct: run `/new` then `/continue` in the new clean context\\n\\n**Changes:** `commands.ts` — rename `project-reset` to `reset-context`, update steering prompt text.",
+      "status": "in-progress",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "commands.ts: `pi.registerCommand(\"project-reset\", ...)` — rename to `reset-context`. Steering text references `/compact` — change to `/new` then `/continue`.",
+          "addedAt": "2026-03-11T15:06:59.524Z"
+        }
+      ],
+      "todos": [],
+      "dependencies": [],
+      "createdAt": "2026-03-11T15:06:55.612Z",
+      "updatedAt": "2026-03-11T15:07:09.492Z",
+      "autoValidation": {
+        "type": "agent",
+        "strategy": "Verify commands.ts registers 'reset-context' (not 'project-reset') and steering mentions /new + /continue (not /compact)"
+      }
     }
   ],
   "categories": [
