@@ -25,7 +25,7 @@ if [ -f "$REPO_ROOT/.pi/settings.json" ]; then
 fi
 
 # Copy auth and settings on first create (so dev profile can diverge)
-if [ -f "$HOME/.pi/agent/auth.json" ] && [ ! -f "$PI_CODING_AGENT_DIR/auth.json" ]; then
+if [ -f "$HOME/.pi/agent/auth.json" ]; then
   cp "$HOME/.pi/agent/auth.json" "$PI_CODING_AGENT_DIR/auth.json"
 fi
 if [ -f "$HOME/.pi/agent/settings.json" ] && [ ! -f "$PI_CODING_AGENT_DIR/settings.json" ]; then
