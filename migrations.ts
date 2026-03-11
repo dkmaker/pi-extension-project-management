@@ -82,6 +82,15 @@ const migrations: Record<number, Migration> = {
     data.version = 9;
     return data;
   },
+
+  // v9 → v10: add linkedAssetIds to assets
+  9: (data) => {
+    for (const asset of data.assets || []) {
+      if (!asset.linkedAssetIds) asset.linkedAssetIds = [];
+    }
+    data.version = 10;
+    return data;
+  },
 };
 
 /**

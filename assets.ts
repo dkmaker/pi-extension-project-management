@@ -44,6 +44,7 @@ export function registerAssetTools(pi: ExtensionAPI) {
         sources: [],
         linkedEpicIds: [],
         linkedIssueIds: [],
+        linkedAssetIds: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -66,7 +67,7 @@ export function registerAssetTools(pi: ExtensionAPI) {
       const r = load();
       const asset = r.assets.find((a) => a.id === params.id);
       if (!asset) return { content: [{ type: "text", text: `Asset '${params.id}' not found.` }] };
-      return { content: [{ type: "text", text: formatAsset(asset, true, r.epics, r.issues) }] };
+      return { content: [{ type: "text", text: formatAsset(asset, true, r.epics, r.issues, r.assets) }] };
     },
   });
 
@@ -146,11 +147,12 @@ export function registerAssetTools(pi: ExtensionAPI) {
   pi.registerTool({
     name: "asset_link",
     label: "Asset: Link",
-    description: "Link asset to epic/issue. Use project_tool_docs('asset_link') for usage.",
+    description: "Link asset to epic/issue/asset. Use project_tool_docs('asset_link') for usage.",
     parameters: Type.Object({
       id: Type.String({ description: "Asset ID" }),
       epic_id: Type.Optional(Type.String({ description: "Epic ID to link to" })),
       issue_id: Type.Optional(Type.String({ description: "Issue ID to link to" })),
+      asset_id: Type.Optional(Type.String({ description: "Asset ID to link to (bidirectional)" })),
     }),
     async execute(_id, params) {
       const r = load();
@@ -177,7 +179,23 @@ export function registerAssetTools(pi: ExtensionAPI) {
         }
       }
 
-      if (!linked.length) return { content: [{ type: "text", text: "Provide epic_id or issue_id to link." }] };
+      if (params.asset_id) {
+        if (params.asset_id === params.id) return { content: [{ type: "text", text: "Cannot link an asset to itself." }] };
+        const target = r.assets.find((a) => a.id === params.asset_id);
+        if (!target) return { content: [{ type: "text", text: `Asset '${params.asset_id}' not found.` }] };
+        if (!asset.linkedAssetIds) asset.linkedAssetIds = [];
+        if (!target.linkedAssetIds) target.linkedAssetIds = [];
+        if (!asset.linkedAssetIds.includes(params.asset_id)) {
+          asset.linkedAssetIds.push(params.asset_id);
+        }
+        if (!target.linkedAssetIds.includes(params.id)) {
+          target.linkedAssetIds.push(params.id);
+          target.updatedAt = now();
+        }
+        linked.push(`asset [${params.asset_id}] ${target.title}`);
+      }
+
+      if (!linked.length) return { content: [{ type: "text", text: "Provide epic_id, issue_id, or asset_id to link." }] };
 
       asset.updatedAt = now();
       save(r);
@@ -188,11 +206,12 @@ export function registerAssetTools(pi: ExtensionAPI) {
   pi.registerTool({
     name: "asset_unlink",
     label: "Asset: Unlink",
-    description: "Unlink asset from epic/issue. Use project_tool_docs('asset_unlink') for usage.",
+    description: "Unlink asset from epic/issue/asset. Use project_tool_docs('asset_unlink') for usage.",
     parameters: Type.Object({
       id: Type.String({ description: "Asset ID" }),
       epic_id: Type.Optional(Type.String({ description: "Epic ID to unlink" })),
       issue_id: Type.Optional(Type.String({ description: "Issue ID to unlink" })),
+      asset_id: Type.Optional(Type.String({ description: "Asset ID to unlink (bidirectional)" })),
     }),
     async execute(_id, params) {
       const r = load();
@@ -209,6 +228,19 @@ export function registerAssetTools(pi: ExtensionAPI) {
       if (params.issue_id) {
         const idx = asset.linkedIssueIds.indexOf(params.issue_id);
         if (idx >= 0) { asset.linkedIssueIds.splice(idx, 1); unlinked.push(`issue ${params.issue_id}`); }
+      }
+
+      if (params.asset_id) {
+        if (!asset.linkedAssetIds) asset.linkedAssetIds = [];
+        const idx = asset.linkedAssetIds.indexOf(params.asset_id);
+        if (idx >= 0) { asset.linkedAssetIds.splice(idx, 1); }
+        const target = r.assets.find((a) => a.id === params.asset_id);
+        if (target) {
+          if (!target.linkedAssetIds) target.linkedAssetIds = [];
+          const tIdx = target.linkedAssetIds.indexOf(params.id);
+          if (tIdx >= 0) { target.linkedAssetIds.splice(tIdx, 1); target.updatedAt = now(); }
+        }
+        unlinked.push(`asset ${params.asset_id}`);
       }
 
       if (!unlinked.length) return { content: [{ type: "text", text: "Nothing to unlink." }] };

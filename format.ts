@@ -438,7 +438,7 @@ export function renderFocusLine(data: FocusWidgetData, theme: any, width: number
 
 // --- Assets ---
 
-export function formatAsset(asset: Asset, verbose = false, epics: Epic[] = [], issues: Issue[] = []): string {
+export function formatAsset(asset: Asset, verbose = false, epics: Epic[] = [], issues: Issue[] = [], assets: Asset[] = []): string {
   const flag = asset.project ? " 🌐" : "";
   const trigger = asset.trigger ? ` ⚡${asset.trigger.event}` : "";
   let out = `### 📎 [${asset.categorySlug}/${asset.id}] ${asset.title}${flag}${trigger}`;
@@ -465,6 +465,13 @@ export function formatAsset(asset: Asset, verbose = false, epics: Epic[] = [], i
         const i = issues.find((is) => is.id === iid);
         const icon = i ? (ISSUE_TYPE_ICON[i.type] || "•") : "•";
         out += `\n- ${icon} [${iid}] ${i?.title || "unknown"}`;
+      }
+    }
+    if (asset.linkedAssetIds?.length) {
+      out += `\n\n**Linked assets:**`;
+      for (const aid of asset.linkedAssetIds) {
+        const a = assets.find((as) => as.id === aid);
+        out += `\n- 📎 [${aid}] ${a?.title || "unknown"}`;
       }
     }
   }

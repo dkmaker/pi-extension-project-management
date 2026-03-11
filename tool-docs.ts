@@ -242,17 +242,19 @@ Only provided fields are changed.
 - \`project\`: Toggle session-start injection
 - \`category_slug\`: Move to different category (auto-creates if new)`,
 
-  asset_link: `## asset_link — Link asset to epic or issue
+  asset_link: `## asset_link — Link asset to epic, issue, or another asset
 **Parameters:**
 - \`id\` (required): Asset ID
 - \`epic_id\`: Epic to link to
-- \`issue_id\`: Issue to link to`,
+- \`issue_id\`: Issue to link to
+- \`asset_id\`: Asset to link to (bidirectional — both assets get linked)`,
 
-  asset_unlink: `## asset_unlink — Unlink asset from epic or issue
+  asset_unlink: `## asset_unlink — Unlink asset from epic, issue, or another asset
 **Parameters:**
 - \`id\` (required): Asset ID
 - \`epic_id\`: Epic to unlink
-- \`issue_id\`: Issue to unlink`,
+- \`issue_id\`: Issue to unlink
+- \`asset_id\`: Asset to unlink (bidirectional — removes from both)`,
 
   asset_categories: `## asset_categories — List asset categories
 Returns all categories with asset counts. No parameters.`,

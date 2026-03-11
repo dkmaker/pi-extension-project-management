@@ -7,16 +7,16 @@
       "description": "Quick wins to improve daily agent UX: a `/project-reset` command for state validation and context compaction, and visible feedback when `/continue` is used.",
       "body": "",
       "priority": 1,
-      "status": "draft",
+      "status": "closed",
       "relevantFiles": [],
       "todos": [
         {
           "text": "Implement /project-reset command with state validation and context compaction",
-          "done": false
+          "done": true
         },
         {
           "text": "Implement /continue visible feedback showing current context before resume",
-          "done": false
+          "done": true
         }
       ],
       "successCriteria": [
@@ -25,7 +25,22 @@
       ],
       "research": [],
       "createdAt": "2026-03-11T14:42:27.992Z",
-      "updatedAt": "2026-03-11T14:42:37.756Z"
+      "updatedAt": "2026-03-11T14:45:30.190Z",
+      "closeMessage": "Both features implemented: /project-reset for safe state validation before compacting, and /continue visible feedback showing current context. Both committed and working.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "/project-reset validates state and compacts context safely",
+          "evidence": "/project-reset validates state (in-progress issues, unanswered questions) and steers agent to /compact when safe — commit 55f213f",
+          "met": true
+        },
+        {
+          "criterion": "/continue shows current context (active issue, epic, recent work) before agent resumes",
+          "evidence": "/continue now shows visible echo with epic/issue context via ctx.ui.notify before hidden steering — commit a1707da",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-11T14:45:30.190Z"
     },
     {
       "id": "76cb6gxh",
@@ -1024,12 +1039,18 @@
       "type": "feature",
       "title": "Asset-to-asset linking",
       "description": "Allow assets to link to other assets (bidirectional), enabling hierarchical knowledge structures — e.g. a slim overview asset linking to detailed sub-assets. Extend `asset_link`/`asset_unlink` with an `asset_id` param, add `linkedAssetIds` to the asset schema, and display linked assets in `asset_show`.",
-      "status": "draft",
+      "status": "in-progress",
       "linkedIssueIds": [],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "**Implementation plan:**\n1. `types.ts` — Add `linkedAssetIds: string[]` to `Asset` interface\n2. `assets.ts` line ~45 — Add `linkedAssetIds: []` to asset creation defaults\n3. `assets.ts` `asset_link` (~line 147) — Add `asset_id` param, link bidirectionally (both assets get each other's ID)\n4. `assets.ts` `asset_unlink` (~line 189) — Add `asset_id` param, unlink bidirectionally\n5. `assets.ts` `asset_show` — Display linked assets in output\n6. `migrations.ts` — Add migration to add `linkedAssetIds: []` to existing assets\n7. `tool-docs.ts` — Update asset_link/asset_unlink docs to mention asset_id param",
+          "addedAt": "2026-03-11T14:49:37.430Z"
+        }
+      ],
       "createdAt": "2026-03-11T11:10:46.274Z",
-      "updatedAt": "2026-03-11T14:42:37.778Z",
+      "updatedAt": "2026-03-11T14:49:45.100Z",
       "epicId": "76cb6gxh"
     },
     {
@@ -1302,7 +1323,7 @@
       "type": "feature",
       "title": "/project-reset command — validate state and compact context safely",
       "description": "A slash command that triggers the agent to validate project state before resetting context. Checks: no issue in-progress with unsaved work, no uncommitted todos, no open questions. Summarizes current state and confirms it's safe to compact. Prevents accidentally losing mid-work context.\\n\\n**Changes:** `commands.ts` — register `/project-reset`, visible echo + steering prompt that instructs agent to validate and then trigger compact.",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -1313,8 +1334,19 @@
         }
       ],
       "createdAt": "2026-03-11T14:39:42.638Z",
-      "updatedAt": "2026-03-11T14:44:45.271Z",
-      "epicId": "4gm0kng1"
+      "updatedAt": "2026-03-11T14:45:13.744Z",
+      "epicId": "4gm0kng1",
+      "closeMessage": "Implemented /project-reset command with state validation, visible feedback, and steering for safe compaction.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "A slash command that triggers the agent to validate project state before resetting context. Checks: no issue in-progress with unsaved work, no uncommitted todos, no open questions. Summarizes current state and confirms it's safe to compact. Prevents accidentally losing mid-work context.\\n\\n**Changes:** `commands.ts` — register `/project-reset`, visible echo + steering prompt that instructs agent to validate and then trigger compact.",
+          "evidence": "Registered `/project-reset` command in commands.ts. It checks for in-progress issues and unanswered required questions, shows a visible notify with blockers or all-clear, then sends a steering prompt instructing the agent to either warn or proceed with `/compact`.",
+          "met": true
+        }
+      ],
+      "closeCommit": "55f213f",
+      "closedAt": "2026-03-11T14:45:13.744Z"
     },
     {
       "id": "mwwzavf3",
@@ -1345,6 +1377,23 @@
       ],
       "closeCommit": "a1707da",
       "closedAt": "2026-03-11T14:44:28.235Z"
+    },
+    {
+      "id": "dwm8604v",
+      "type": "feature",
+      "title": "Gated research mode — require verified sources before advancing issues",
+      "description": "When enabled (`research.gated: true`, default: **off**), issues cannot advance past `researched` without linked research notes, asset references, or explicit justification. Enforces a \"don't trust pre-trained content\" policy — the agent must ground work in web searches, codebase exploration, or internal references. Bypass allowed with written justification recorded as a research comment.\n\n**Changes:**\n- `config.ts` — Add `research.gated` boolean config (default: `false`)\n- `issues.ts` — Block `researched → ready` advancement when gated and no research/assets linked, unless justification provided\n- `context-rules.ts` — Inject steering rule when gated: \"Do not rely on pre-trained knowledge. Verify via web search, codebase, assets, or docs. Cite sources as research notes.\"\n- `tool-docs.ts` — Update `issue_advance` docs to mention justification bypass",
+      "status": "draft",
+      "epicId": "8dga7k63",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "createdAt": "2026-03-11T14:49:01.613Z",
+      "updatedAt": "2026-03-11T14:49:01.613Z",
+      "autoValidation": {
+        "type": "agent",
+        "strategy": "Enable gated mode in config, create a draft issue with no research, attempt to advance past researched — should block. Add justification — should allow bypass with recorded comment."
+      }
     }
   ],
   "categories": [

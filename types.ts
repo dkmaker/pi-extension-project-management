@@ -84,11 +84,12 @@ export interface Asset {
   sources: AssetSource[];
   linkedEpicIds: string[];
   linkedIssueIds: string[];
+  linkedAssetIds: string[];
   createdAt: string;
   updatedAt: string;
 }
 
-export const CURRENT_VERSION = 9;
+export const CURRENT_VERSION = 10;
 
 export interface Validation {
   criterion: string;
