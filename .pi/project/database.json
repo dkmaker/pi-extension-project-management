@@ -1614,7 +1614,7 @@
       "type": "bug",
       "title": "/project-reset should be /reset-context and suggest /new + /continue instead of /compact",
       "description": "Two bugs in the reset command:\\n1. Command name is `/project-reset` but should be `/reset-context`\\n2. Steering tells agent to use `/compact` but should instruct: run `/new` then `/continue` in the new clean context\\n\\n**Changes:** `commands.ts` — rename `project-reset` to `reset-context`, update steering prompt text.",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -1627,10 +1627,45 @@
       "todos": [],
       "dependencies": [],
       "createdAt": "2026-03-11T15:06:55.612Z",
-      "updatedAt": "2026-03-11T15:07:09.492Z",
+      "updatedAt": "2026-03-11T15:08:11.143Z",
       "autoValidation": {
         "type": "agent",
         "strategy": "Verify commands.ts registers 'reset-context' (not 'project-reset') and steering mentions /new + /continue (not /compact)"
+      },
+      "closeMessage": "Renamed to /project-clean-context, replaced /compact with /new + /continue, added next-up preview.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Two bugs in the reset command:\\n1. Command name is `/project-reset` but should be `/reset-context`\\n2. Steering tells agent to use `/compact` but should instruct: run `/new` then `/continue` in the new clean context\\n\\n**Changes:** `commands.ts` — rename `project-reset` to `reset-context`, update steering prompt text.",
+          "evidence": "grep confirms: command registered as `project-clean-context` (per user's final naming choice), no references to `/compact`, `project-reset`, or `reset-context`. Steering says \"run `/new` to start a fresh context, then `/continue`\". Also added next-up info showing upcoming epic/issue.",
+          "met": true
+        }
+      ],
+      "closeCommit": "ff452c7",
+      "closedAt": "2026-03-11T15:08:11.143Z"
+    },
+    {
+      "id": "bqu9gl3f",
+      "type": "bug",
+      "title": "/project-clean-context needs a visible banner showing current context and reset readiness",
+      "description": "When running `/project-clean-context`, the `ctx.ui.notify()` output is too subtle — there's no clear visual evidence on screen that the command ran. Need a persistent, prominent banner (like DEVMODE uses) that shows current context state: open epics/issues, blockers, what's next up, and reset readiness. The user should immediately see this without reading agent output.\n\n**Changes:** `commands.ts` — replace or supplement `ctx.ui.notify()` with a visible `pi.sendMessage()` with `display: true` showing a formatted banner with context summary.",
+      "status": "in-progress",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "The `/continue` command uses a visible `sendMessage` with `display: true` — same pattern needed here. Replace `ctx.ui.notify()` with `pi.sendMessage({ content: bannerText, display: true }, { triggerTurn: false })` before the hidden steering message. The banner should show blockers/all-clear, stats, and next-up info prominently.",
+          "addedAt": "2026-03-11T15:11:48.158Z"
+        }
+      ],
+      "todos": [],
+      "dependencies": [],
+      "createdAt": "2026-03-11T15:11:41.878Z",
+      "updatedAt": "2026-03-11T15:11:56.620Z",
+      "autoValidation": {
+        "type": "agent",
+        "strategy": "Verify commands.ts sends a display:true message with context summary in /project-clean-context handler"
       }
     }
   ],

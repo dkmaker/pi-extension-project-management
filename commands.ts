@@ -213,17 +213,28 @@ export function registerCommands(pi: ExtensionAPI) {
         }
       }
 
-      // Visible feedback
-      const visibleLines = ["🔄 **Context Reset Check**", ""];
+      // Visible banner — prominent on-screen evidence the command ran
+      const bannerLines = [
+        `# 🔄 Context Reset Check`,
+        ``,
+        `| | |`,
+        `|---|---|`,
+        `| **Epics** | ${openEpics} open |`,
+        `| **Issues** | ${openIssues} open |`,
+        `| **Status** | ${blockers.length ? `⚠️ ${blockers.length} blocker(s)` : "✅ Clean — ready to reset"} |`,
+        ``,
+      ];
       if (blockers.length) {
-        visibleLines.push("**Blockers found:**");
-        for (const b of blockers) visibleLines.push(b);
-        visibleLines.push("", `*Resolve blockers before resetting.*`);
-      } else {
-        visibleLines.push("✅ No blockers — safe to reset.");
+        bannerLines.push(`### ⚠️ Blockers`);
+        for (const b of blockers) bannerLines.push(`- ${b}`);
+        bannerLines.push(``, `*Resolve blockers before resetting.*`);
       }
-      visibleLines.push("", status.join(" · "), "", nextUpText);
-      ctx.ui.notify(visibleLines.join("\n"), blockers.length ? "warn" : "info");
+      bannerLines.push(``, nextUpText, ``, `---`, blockers.length ? `` : `*Run \`/new\` to start fresh, then \`/continue\` to resume.*`);
+
+      pi.sendMessage(
+        { customType: "context-reset-banner", content: bannerLines.join("\n"), display: true },
+        { triggerTurn: false },
+      );
 
       // Steering prompt
       const steerLines = [
