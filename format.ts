@@ -1,4 +1,4 @@
-import type { Epic, Issue, ResearchNote, ProjectFile, Asset, AssetCategory } from "./types.js";
+import type { Epic, Issue, ResearchNote, ProjectFile, Asset, AssetCategory, Category } from "./types.js";
 import { EPIC_STATUS_LABEL as EPIC_STATUS_ICON, ISSUE_STATUS_LABEL as ISSUE_STATUS_ICON, ISSUE_TYPE_ICON } from "./constants.js";
 import { visibleWidth, truncateToWidth } from "@mariozechner/pi-tui";
 
@@ -25,8 +25,9 @@ export function formatIssue(issue: Issue): string {
   const displayStatus = issue.status === "closed" && issue.closeReason === "deferred" ? "deferred" : issue.status;
   const st = statusLabel(displayStatus, ISSUE_STATUS_ICON);
   const link = issue.epicId ? ` → epic:${issue.epicId}` : "";
+  const cat = issue.categorySlug ? ` [${issue.categorySlug}]` : "";
   const review = issue.needsReview ? " 📌" : "";
-  return `${icon} [${issue.id}] ${issue.title} (${issue.type}, ${st})${review}${link}`;
+  return `${icon} [${issue.id}] ${issue.title} (${issue.type}, ${st})${cat}${review}${link}`;
 }
 
 export function formatIssueVerbose(issue: Issue, epics: Epic[], assets: Asset[] = [], allIssues: Issue[] = []): string {
@@ -36,6 +37,9 @@ export function formatIssueVerbose(issue: Issue, epics: Epic[], assets: Asset[] 
   const review = issue.needsReview ? " 📌 needs review" : "";
   let out = `### ${icon} [${issue.id}] ${issue.title}  (${issue.type}, ${st})${review}`;
   out += `\n${issue.description}`;
+  if (issue.categorySlug) {
+    out += `\n\n**Category:** ${issue.categorySlug}`;
+  }
   if (issue.epicId) {
     const epic = epics.find((e) => e.id === issue.epicId);
     out += `\n\n**Linked to epic:** [${issue.epicId}] ${epic?.title || "unknown"}`;
@@ -91,7 +95,7 @@ export function formatIssueVerbose(issue: Issue, epics: Epic[], assets: Asset[] 
   }
   if ((issue as any).startCommit) out += `\n\n**Started at commit:** \`${(issue as any).startCommit}\``;
   if ((issue as any).closeCommit) out += `\n**Closed with commit:** \`${(issue as any).closeCommit}\``;
-  out += linkedAssets("issue", issue.id, assets);
+  out += linkedAssets("issue", issue.id, assets, issue.categorySlug);
   return out;
 }
 
@@ -494,6 +498,13 @@ export function formatAsset(asset: Asset, verbose = false, epics: Epic[] = [], i
         out += `\n- 📎 [${aid}] ${a?.title || "unknown"}`;
       }
     }
+    if (asset.linkedCategorySlugs?.length) {
+      out += `\n\n**Linked categories:**`;
+      for (const slug of asset.linkedCategorySlugs) {
+        const count = issues.filter(i => i.categorySlug === slug && i.status !== "closed").length;
+        out += `\n- 🏷️ ${slug} (${count} open issues)`;
+      }
+    }
   }
   return out;
 }
@@ -512,15 +523,38 @@ export function formatAssetsContext(assets: Asset[]): string {
   return out;
 }
 
-export function linkedAssets(entityType: "epic" | "issue", entityId: string, assets: Asset[]): string {
-  const linked = assets.filter((a) =>
-    entityType === "epic" ? a.linkedEpicIds.includes(entityId) : a.linkedIssueIds.includes(entityId)
+export function formatCategoryAssetsContext(assets: Asset[], categorySlug: string, categories: Category[]): string {
+  const cat = categories.find(c => c.slug === categorySlug);
+  if (cat && cat.contextEnabled === false) return "";
+
+  const matched = assets.filter(a => !a.deletedAt && (a.linkedCategorySlugs || []).includes(categorySlug) && !a.project);
+  if (!matched.length) return "";
+
+  let out = `# 🏷️ Category Assets [${categorySlug}]\n\n`;
+  out += `These assets apply to your current issue via category. Read with \`asset_show\` when relevant.\n`;
+  for (const a of matched) {
+    out += `\n- **[${a.id}] ${a.title}** (${a.categorySlug}): ${a.context}`;
+  }
+  return out;
+}
+
+export function linkedAssets(entityType: "epic" | "issue", entityId: string, assets: Asset[], issueCategorySlug?: string): string {
+  const directLinked = assets.filter((a) =>
+    !a.deletedAt && (entityType === "epic" ? a.linkedEpicIds.includes(entityId) : a.linkedIssueIds.includes(entityId))
   );
-  if (!linked.length) return "";
+  // For issues with a category, also include assets linked to that category
+  const categoryLinked = (entityType === "issue" && issueCategorySlug)
+    ? assets.filter((a) => !a.deletedAt && (a.linkedCategorySlugs || []).includes(issueCategorySlug) && !directLinked.includes(a))
+    : [];
+  if (!directLinked.length && !categoryLinked.length) return "";
   let out = "\n\n**Assets:**";
-  for (const a of linked) {
+  for (const a of directLinked) {
     const flag = a.project ? " 🌐" : "";
     out += `\n- 📎 [${a.categorySlug}/${a.id}] ${a.title}${flag} — *${a.context}*`;
+  }
+  for (const a of categoryLinked) {
+    const flag = a.project ? " 🌐" : "";
+    out += `\n- 📎 [${a.categorySlug}/${a.id}] ${a.title}${flag} — *${a.context}* (via category)`;
   }
   return out;
 }

@@ -109,6 +109,27 @@ const migrations: Record<number, Migration> = {
     data.version = 12;
     return data;
   },
+
+  // v12 → v13: add categorySlug to issues (optional field, no backfill needed)
+  12: (data) => {
+    data.version = 13;
+    return data;
+  },
+
+  // v13 → v14: add linkedCategorySlugs to assets
+  13: (data) => {
+    for (const asset of data.assets || []) {
+      if (!asset.linkedCategorySlugs) asset.linkedCategorySlugs = [];
+    }
+    data.version = 14;
+    return data;
+  },
+
+  // v14 → v15: add contextEnabled to categories (optional, defaults to true)
+  14: (data) => {
+    data.version = 15;
+    return data;
+  },
 };
 
 /**

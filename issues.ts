@@ -51,6 +51,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
       title: Type.String({ description: "Short title" }),
       description: Type.String({ description: "Markdown description" }),
       epic_id: Type.Optional(Type.String({ description: "Epic ID to link to" })),
+      category: Type.Optional(Type.String({ description: "Category slug to assign (requires categories.enabled config)" })),
       auto_validation_possible: Type.Optional(Type.Boolean({ description: "Can the agent self-verify? (legacy, prefer auto_validation_type)" })),
       auto_validation_strategy: Type.Optional(Type.String({ description: "How to verify (e.g. 'run the test suite', 'requires user confirmation')" })),
       auto_validation_type: Type.Optional(Type.Union([
@@ -67,6 +68,16 @@ export function registerIssueTools(pi: ExtensionAPI) {
         if (!epic) return { content: [{ type: "text", text: `Epic '${params.epic_id}' not found.` }] };
       }
 
+      // Handle category assignment
+      let categorySlug: string | undefined;
+      if (params.category && getConfigValue<boolean>(r, "categories.enabled")) {
+        categorySlug = params.category;
+        // Auto-create category if it doesn't exist
+        if (!r.categories.find((c) => c.slug === categorySlug)) {
+          r.categories.push({ slug: categorySlug!, description: categorySlug! });
+        }
+      }
+
       const issue: Issue = {
         id: genId(),
         type: params.type,
@@ -74,6 +85,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
         description: params.description,
         status: "draft",
         epicId: params.epic_id,
+        categorySlug,
         linkedIssueIds: [],
         questions: [],
         research: [],
@@ -101,11 +113,12 @@ export function registerIssueTools(pi: ExtensionAPI) {
 
       const icon = ISSUE_TYPE_ICON[params.type];
       const link = params.epic_id ? ` → epic:${params.epic_id}` : "";
+      const catLabel = issue.categorySlug ? ` [${issue.categorySlug}]` : "";
       const valLabels: Record<string, string> = { agent: "🤖 agent-validate", human: "👤 user-validate", other: "📋 other" };
       const validation = issue.autoValidation
         ? ` ${valLabels[issue.autoValidation.type] || "📋"}: ${issue.autoValidation.strategy}`
         : "";
-      return { content: [{ type: "text", text: `${icon} Added ${params.type} **${issue.id}**: ${issue.title} (📝 draft)${link}${validation}` }] };
+      return { content: [{ type: "text", text: `${icon} Added ${params.type} **${issue.id}**: ${issue.title} (📝 draft)${catLabel}${link}${validation}` }] };
     },
   });
 
@@ -133,6 +146,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
       type: Type.Optional(IssueTypeSchema),
       status: Type.Optional(Type.Union([Type.Literal("draft"), Type.Literal("researched"), Type.Literal("ready"), Type.Literal("in-progress"), Type.Literal("closed")], { description: "Filter by status" })),
       unassigned: Type.Optional(Type.Boolean({ description: "If true, show only issues NOT linked to any epic (the unassigned/parking-lot bucket)", default: false })),
+      category: Type.Optional(Type.String({ description: "Filter by category slug" })),
     }),
     async execute(_id, params) {
       const r = load();
@@ -147,6 +161,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
       if (params.epic_id) issues = issues.filter((i) => i.epicId === params.epic_id);
       if (params.type) issues = issues.filter((i) => i.type === params.type);
       if (params.status && !params.include_deferred) issues = issues.filter((i) => i.status === params.status);
+      if (params.category) issues = issues.filter((i) => i.categorySlug === params.category);
 
       if (!issues.length) return { content: [{ type: "text", text: "No issues found." }] };
 
@@ -165,6 +180,7 @@ export function registerIssueTools(pi: ExtensionAPI) {
       description: Type.Optional(Type.String()),
       type: Type.Optional(IssueTypeSchema),
       epic_id: Type.Optional(Type.String({ description: "Epic ID to link to (empty string to unlink)" })),
+      category: Type.Optional(Type.String({ description: "Category slug to assign (empty string to clear, requires categories.enabled config)" })),
       needsReview: Type.Optional(Type.Boolean({ description: "Flag issue as needing review before work can start" })),
     }),
     async execute(_id, params) {
@@ -176,6 +192,17 @@ export function registerIssueTools(pi: ExtensionAPI) {
       if (params.description !== undefined) issue.description = params.description;
       if (params.type !== undefined) issue.type = params.type;
       if (params.needsReview !== undefined) issue.needsReview = params.needsReview || undefined;
+      if (params.category !== undefined && getConfigValue<boolean>(r, "categories.enabled")) {
+        if (params.category === "") {
+          issue.categorySlug = undefined;
+        } else {
+          issue.categorySlug = params.category;
+          // Auto-create category if it doesn't exist
+          if (!r.categories.find((c) => c.slug === params.category)) {
+            r.categories.push({ slug: params.category!, description: params.category! });
+          }
+        }
+      }
       if (params.epic_id !== undefined) {
         if (params.epic_id === "") {
           issue.epicId = undefined;

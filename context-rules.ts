@@ -1,5 +1,5 @@
 import { registerRule, type ContextState } from "./context-engine.js";
-import { formatBrief, formatAssetsContext } from "./format.js";
+import { formatBrief, formatAssetsContext, formatCategoryAssetsContext } from "./format.js";
 import { activeEpics, nextEpic } from "./store.js";
 import { resolveEpicFocus } from "./priorities.js";
 import { getConfigValue } from "./config.js";
@@ -82,6 +82,23 @@ export function registerAllRules(): void {
     priority: 10,
     condition: (s) => s.event === "session_start",
     content: (s) => formatAssetsContext(s.store.assets) || undefined,
+  });
+
+  registerRule({
+    id: "category-assets",
+    label: "Category-scoped asset injection for in-progress issue",
+    channel: "agent_context",
+    priority: 12,
+    condition: (s) => {
+      if (s.event !== "before_agent_start") return false;
+      if (!getConfigValue<boolean>(s.store, "categories.enabled")) return false;
+      const ip = s.store.issues.find(i => i.status === "in-progress");
+      return !!(ip && ip.categorySlug);
+    },
+    content: (s) => {
+      const ip = s.store.issues.find(i => i.status === "in-progress")!;
+      return formatCategoryAssetsContext(s.store.assets, ip.categorySlug!, s.store.categories) || undefined;
+    },
   });
 
   registerRule({

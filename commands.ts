@@ -229,7 +229,9 @@ export function registerCommands(pi: ExtensionAPI) {
         for (const b of blockers) bannerLines.push(`- ${b}`);
         bannerLines.push(``, `*Resolve blockers before resetting.*`);
       }
-      bannerLines.push(``, nextUpText, ``, `---`, blockers.length ? `` : `*Run \`/new\` to start fresh, then \`/continue\` to resume.*`);
+      if (blockers.length) {
+        bannerLines.push(``);
+      };
 
       pi.sendMessage(
         { customType: "context-reset-requested", content: bannerLines.join("\n"), display: true },

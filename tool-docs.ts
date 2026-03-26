@@ -102,6 +102,7 @@ Creates an issue in 'draft' status. Types: bug, feature, chore, spike, idea.
 - \`title\` (required): Short title
 - \`description\` (required): Markdown description
 - \`epic_id\`: Link to an epic
+- \`category\`: Category slug to assign (requires \`categories.enabled\` config; auto-creates category if new)
 - \`auto_validation_type\`: "agent" (AI verifies) | "human" (user must confirm) | "other"
 - \`auto_validation_strategy\`: How to verify (e.g. "run the test suite")
 - \`auto_validation_possible\`: Legacy, prefer auto_validation_type
@@ -122,7 +123,8 @@ Lists issues with optional filters. Excludes closed by default.
 - \`include_deferred\`: Show only deferred issues — closed with reason=deferred (default: false)
 - \`epic_id\`: Filter by linked epic
 - \`type\`: Filter by type (bug/feature/chore/spike/idea)
-- \`status\`: Filter by status (draft/researched/ready/in-progress/closed)`,
+- \`status\`: Filter by status (draft/researched/ready/in-progress/closed)
+- \`category\`: Filter by category slug`,
 
   issue_update: `## issue_update — Update issue fields
 Only provided fields are changed.
@@ -131,7 +133,8 @@ Only provided fields are changed.
 - \`id\` (required): Issue ID
 - \`title\`, \`description\`: Text fields
 - \`type\`: Change issue type
-- \`epic_id\`: Link to epic (empty string to unlink)`,
+- \`epic_id\`: Link to epic (empty string to unlink)
+- \`category\`: Category slug to assign (empty string to clear; requires \`categories.enabled\` config)`,
 
   issue_advance: `## issue_advance — Advance issue status
 Moves issue to next status: draft→researched→ready→in-progress. Only one issue can be in-progress at a time. For closing, use \`issue_close\`.
@@ -268,14 +271,16 @@ Only provided fields are changed.
 - \`id\` (required): Asset ID
 - \`epic_id\`: Epic to link to
 - \`issue_id\`: Issue to link to
-- \`asset_id\`: Asset to link to (bidirectional — both assets get linked)`,
+- \`asset_id\`: Asset to link to (bidirectional — both assets get linked)
+- \`category_slug\`: Category slug to link to — asset automatically applies to all issues in this category`,
 
   asset_unlink: `## asset_unlink — Unlink asset from epic, issue, or another asset
 **Parameters:**
 - \`id\` (required): Asset ID
 - \`epic_id\`: Epic to unlink
 - \`issue_id\`: Issue to unlink
-- \`asset_id\`: Asset to unlink (bidirectional — removes from both)`,
+- \`asset_id\`: Asset to unlink (bidirectional — removes from both)
+- \`category_slug\`: Category slug to unlink`,
 
   asset_categories: `## asset_categories — List asset categories
 Returns all categories with asset counts. No parameters.`,

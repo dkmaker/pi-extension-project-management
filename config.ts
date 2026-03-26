@@ -141,6 +141,15 @@ export const CONFIG_REGISTRY: ConfigEntry[] = [
     default: false,
   },
 
+  // Issue categories
+  {
+    type: "bool",
+    key: "categories.enabled",
+    label: "Issue categories",
+    description: "Enable issue categories for grouping and automatic asset linking",
+    default: false,
+  },
+
   // Dependencies
   {
     type: "bool",

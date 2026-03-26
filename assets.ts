@@ -45,6 +45,7 @@ export function registerAssetTools(pi: ExtensionAPI) {
         linkedEpicIds: [],
         linkedIssueIds: [],
         linkedAssetIds: [],
+        linkedCategorySlugs: [],
         createdAt: now(),
         updatedAt: now(),
       };
@@ -155,6 +156,7 @@ export function registerAssetTools(pi: ExtensionAPI) {
       epic_id: Type.Optional(Type.String({ description: "Epic ID to link to" })),
       issue_id: Type.Optional(Type.String({ description: "Issue ID to link to" })),
       asset_id: Type.Optional(Type.String({ description: "Asset ID to link to (bidirectional)" })),
+      category_slug: Type.Optional(Type.String({ description: "Category slug to link to (asset applies to all issues in this category)" })),
     }),
     async execute(_id, params) {
       const r = load();
@@ -162,6 +164,17 @@ export function registerAssetTools(pi: ExtensionAPI) {
       if (!asset) return { content: [{ type: "text", text: `Asset '${params.id}' not found.` }] };
 
       const linked: string[] = [];
+
+      if (params.category_slug) {
+        const cat = r.categories.find((c) => c.slug === params.category_slug);
+        if (!cat) return { content: [{ type: "text", text: `Category '${params.category_slug}' not found. Create it first via asset_add or issue_add with a category.` }] };
+        if (!asset.linkedCategorySlugs) asset.linkedCategorySlugs = [];
+        if (!asset.linkedCategorySlugs.includes(params.category_slug)) {
+          asset.linkedCategorySlugs.push(params.category_slug);
+          const issueCount = r.issues.filter(i => i.categorySlug === params.category_slug && i.status !== "closed").length;
+          linked.push(`category [${params.category_slug}] (${issueCount} open issues)`);
+        }
+      }
 
       if (params.epic_id) {
         const epic = r.epics.find((e) => e.id === params.epic_id);
@@ -197,7 +210,7 @@ export function registerAssetTools(pi: ExtensionAPI) {
         linked.push(`asset [${params.asset_id}] ${target.title}`);
       }
 
-      if (!linked.length) return { content: [{ type: "text", text: "Provide epic_id, issue_id, or asset_id to link." }] };
+      if (!linked.length) return { content: [{ type: "text", text: "Provide epic_id, issue_id, asset_id, or category_slug to link." }] };
 
       asset.updatedAt = now();
       save(r);
@@ -214,6 +227,7 @@ export function registerAssetTools(pi: ExtensionAPI) {
       epic_id: Type.Optional(Type.String({ description: "Epic ID to unlink" })),
       issue_id: Type.Optional(Type.String({ description: "Issue ID to unlink" })),
       asset_id: Type.Optional(Type.String({ description: "Asset ID to unlink (bidirectional)" })),
+      category_slug: Type.Optional(Type.String({ description: "Category slug to unlink" })),
     }),
     async execute(_id, params) {
       const r = load();
@@ -221,6 +235,12 @@ export function registerAssetTools(pi: ExtensionAPI) {
       if (!asset) return { content: [{ type: "text", text: `Asset '${params.id}' not found.` }] };
 
       const unlinked: string[] = [];
+
+      if (params.category_slug) {
+        if (!asset.linkedCategorySlugs) asset.linkedCategorySlugs = [];
+        const idx = asset.linkedCategorySlugs.indexOf(params.category_slug);
+        if (idx >= 0) { asset.linkedCategorySlugs.splice(idx, 1); unlinked.push(`category ${params.category_slug}`); }
+      }
 
       if (params.epic_id) {
         const idx = asset.linkedEpicIds.indexOf(params.epic_id);

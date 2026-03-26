@@ -25,6 +25,7 @@ export interface Issue {
   description: string;
   status: IssueStatus;
   epicId?: string;
+  categorySlug?: string;
   linkedIssueIds: string[];
   dependencies: { issueId: string; type: "blocks" | "blocked-by" }[];
   questions: { text: string; answer?: string; required?: boolean }[];
@@ -69,10 +70,14 @@ export interface AssetSource {
   description: string;
 }
 
-export interface AssetCategory {
+export interface Category {
   slug: string;
   description: string;
+  contextEnabled?: boolean; // default: true — when false, category assets are tracked but not injected into context
 }
+
+/** @deprecated Use Category instead */
+export type AssetCategory = Category;
 
 export type PolicyEvent = "epic_create" | "epic_close" | "epic_advance" | "issue_create" | "issue_close" | "issue_advance";
 
@@ -88,12 +93,13 @@ export interface Asset {
   linkedEpicIds: string[];
   linkedIssueIds: string[];
   linkedAssetIds: string[];
+  linkedCategorySlugs: string[];
   deletedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export const CURRENT_VERSION = 12;
+export const CURRENT_VERSION = 15;
 
 export interface Validation {
   criterion: string;
@@ -105,7 +111,7 @@ export interface ProjectFile {
   version: number;
   epics: Epic[];
   issues: Issue[];
-  categories: AssetCategory[];
+  categories: Category[];
   assets: Asset[];
   config: Record<string, unknown>;
 }

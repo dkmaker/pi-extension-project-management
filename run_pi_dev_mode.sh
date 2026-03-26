@@ -14,6 +14,12 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
+# Optional first argument: "agent" or "manager" selects which extension to load.
+MODE="${1:-}"
+if [[ "$MODE" == "agent" || "$MODE" == "manager" ]]; then
+  shift
+fi
+
 export PI_CODING_AGENT_DIR="$REPO_ROOT/.pi-home"
 mkdir -p "$PI_CODING_AGENT_DIR"
 
@@ -36,7 +42,14 @@ export PI_DEVMODE_ENABLED=1
 
 CONFIG="$REPO_ROOT/dev_additional_extensions.json"
 
-ARGS=(--extension "$REPO_ROOT/index.ts" --extension "$REPO_ROOT/devmode.ts")
+# Build the extension list based on MODE
+if [[ "$MODE" == "agent" ]]; then
+  ARGS=(--extension "$REPO_ROOT/.pi/agents/agent/index.ts" --extension "$REPO_ROOT/devmode.ts")
+elif [[ "$MODE" == "manager" ]]; then
+  ARGS=(--extension "$REPO_ROOT/.pi/agents/manager/index.ts" --extension "$REPO_ROOT/devmode.ts")
+else
+  ARGS=(--extension "$REPO_ROOT/index.ts" --extension "$REPO_ROOT/devmode.ts")
+fi
 
 if [ -f "$CONFIG" ]; then
   while IFS= read -r ext; do
