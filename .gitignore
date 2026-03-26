@@ -4,3 +4,4 @@ node_modules/
 .pi/project/dashboard.lock
 .pi-home
 .pi-home-/
+.pi/settings.json
