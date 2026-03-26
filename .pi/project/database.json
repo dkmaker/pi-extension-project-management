@@ -1,5 +1,5 @@
 {
-  "version": 12,
+  "version": 15,
   "epics": [
     {
       "id": "4gm0kng1",
@@ -178,11 +178,29 @@
       "closedAt": "2026-03-10T13:41:45.140Z"
     },
     {
+      "id": "l60sa241",
+      "title": "Data Model v2 — Issue Categories & Dynamic Linking",
+      "description": "Second phase of data model improvements focused on scale: issue categories with dynamic asset linking and category-level context control for large projects.",
+      "body": "",
+      "priority": 4,
+      "status": "closed",
+      "relevantFiles": [],
+      "todos": [],
+      "successCriteria": [],
+      "research": [],
+      "createdAt": "2026-03-11T15:29:08.725Z",
+      "updatedAt": "2026-03-11T17:33:36.279Z",
+      "closeMessage": "Epic complete. Delivered issue categories with dynamic asset linking across data model v12→v15 (3 migrations). All 4 issues closed: category data model & CRUD (kex18gli), asset-to-category linking (3ylqqhw1), category-aware context injection (ug7kff7z), and the parent idea (9krnyu7w). Feature is gated behind categories.enabled config (default: false). All functionality tested end-to-end after reload.",
+      "closeReason": "done",
+      "validations": [],
+      "closedAt": "2026-03-11T17:33:36.279Z"
+    },
+    {
       "id": "bhsbhvli",
       "title": "Core Architecture — Context Engine, Hook Registry & Debug",
       "description": "Foundation layer: centralize all context injection, tool hooks, and message presentation into declarative registries with mode system, config toggles, and debug introspection.",
       "body": "This epic establishes the architectural foundation that all other features build on. Currently, context steering, tool hooks, and message formatting are scattered inline across `index.ts` with ad-hoc conditions. This epic centralizes them into three systems:\n\n1. **Context Engine** — Declarative rules for all agent steering/injection with mode system and conditional composition\n2. **Hook Registry** — Declarative tool lifecycle hooks with conditions, priorities, and mode filters\n3. **Message Templates** — Separation of data vs. presentation for all tool outputs\n4. **Debug Mode** — ENV-gated introspection tools to see exactly what the agent receives\n\n### Build Order\n1. Context Engine (establishes mode system, config patterns, debug infra)\n2. Hook Registry (reuses mode system from Context Engine)\n3. Debug Mode (introspects both systems)\n\n### Why First\nEvery planned feature (onboarding, source alerts, folder guard, etc.) would otherwise add more scattered inline code. Building this first means new features are simple rule registrations.",
-      "priority": 4,
+      "priority": 5,
       "status": "closed",
       "relevantFiles": [
         {
@@ -278,7 +296,7 @@
       "title": "Architecture Vision — Multi-project, Data Layer & Delegation",
       "description": "Long-term architectural ideas: multi-project management from a hub, file-per-entity data layer for mergeability, and agent delegation via git worktrees.",
       "body": "",
-      "priority": 5,
+      "priority": 6,
       "status": "draft",
       "relevantFiles": [],
       "todos": [
@@ -307,7 +325,7 @@
       "title": "Workflow Enhancements — Onboarding, Review Flags & Idea Capture",
       "description": "Improve the issue lifecycle with onboarding mode for brownfield import, a \"needs review\" flag to prevent premature work, and motivation prompts for better idea capture.",
       "body": "This epic adds workflow improvements that depend on the Core Architecture epic (Context Engine + Hook Registry):\n\n1. **Onboarding Mode** — Bulk import of brownfield project history with process gates bypassed but data quality enforced. Uses Context Engine modes to swap steering and Hook Registry to disable write gates.\n2. **\"Needs Review\" Flag** — Marks rough ideas as not ready for work, blocking advancement to in-progress until reviewed and expanded.\n3. **Motivation Prompt** — When creating ideas/features, prompt for the *why* so context isn't lost.\n\n### Dependencies\n- Core Architecture epic (Context Engine mode system, Hook Registry for conditional guards)\n\n### Build Order\n1. \"Needs Review\" flag (small, independent)\n2. Motivation prompt (small, independent)\n3. Onboarding Mode (large, needs Context Engine modes)",
-      "priority": 6,
+      "priority": 7,
       "status": "draft",
       "relevantFiles": [],
       "todos": [
@@ -351,7 +369,7 @@
       "title": "Data & Security — Attachments, Folder Guard & Source Alerts",
       "description": "Add file attachments with Git LFS, protect the `.pi/project/` folder from direct agent access, and auto-notify when edited files are linked as asset sources.",
       "body": "This epic adds data management and security features:\n\n1. **File Attachments** — Copy reference files into tracked `.pi/project/attachments/` with Git LFS for binaries. Applies to issues, epics, and assets.\n2. **Folder Guard** — Block direct agent access to `.pi/project/` via bash/read/write/edit tool hooks. Scrub path references from context.\n3. **Source File Alerts** — When a file linked as an asset source is edited, notify the agent to review the asset.\n\n### Dependencies\n- Hook Registry (folder guard and source alerts register as hooks)\n- Context Engine (folder path scrubbing in context rules)\n\n### Build Order\n1. Folder Guard (security, uses Hook Registry)\n2. Source File Alerts (uses Hook Registry)\n3. File Attachments (independent, larger scope)",
-      "priority": 7,
+      "priority": 8,
       "status": "draft",
       "relevantFiles": [],
       "todos": [
@@ -395,7 +413,7 @@
       "title": "Config & Git Workflow Integration",
       "description": "Adds a typed config system to the project manager and builds git workflow guards on top of it. Config enables runtime toggling of behaviour without code changes; git integration enforces branch discipline and commit hygiene throughout the issue/epic lifecycle.",
       "body": "",
-      "priority": 8,
+      "priority": 9,
       "status": "closed",
       "relevantFiles": [],
       "todos": [
@@ -422,7 +440,7 @@
       "title": "Issue Traceability & File Capture",
       "description": "Adds automatic file-change tracking to in-progress issues, giving each issue a living record of what was touched. Optionally gates closure behind per-file change notes for full traceability.",
       "body": "## Goal\\nAutomatically track which files are created/written/edited during an in-progress issue and surface them as references on that issue. Optionally require a one-sentence change note per file before the issue can be closed.\\n\\n## Approach\\n1. Two new config flags (`issues.capture_edited_files`, `issues.require_file_change_notes`), both default `false`\\n2. Hook pi write/edit tool events in `index.ts` — when capture is enabled and an issue is in-progress, add a `reference` research note with a distinguishable `[auto]` prefix and the file path (deduplicated)\\n3. Close gate in issue close logic — when `require_file_change_notes` is enabled, scan auto-captured references and block if any lack a follow-up change note\\n\\n## Files Affected\\n- `config.ts` — new config entries\\n- `index.ts` — tool event hooks for write/edit\\n- `issues.ts` — close gate logic\\n- `commands.ts` — potentially surface auto-refs in issue display",
-      "priority": 9,
+      "priority": 10,
       "status": "closed",
       "relevantFiles": [
         {
@@ -1370,12 +1388,23 @@
         "35lvii1o"
       ],
       "questions": [],
-      "research": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "## Current Data Layer Analysis\n\n### Architecture\n- **Single file**: `.pi/project/database.json` (~1047 lines for this project's 6 epics, 23 issues, 1 asset)\n- **Schema version**: 15, with 14 sequential migrations in `migrations.ts`\n- **Read/write pattern**: `load()` and `save()` in `store.ts` — called ~87 times across the codebase. Every tool call does `load()` → mutate → `save()` writing the entire file.\n- **No locking**: concurrent writes would silently overwrite each other.\n\n### ProjectFile structure (types.ts)\n```\n{ version, epics[], issues[], categories[], assets[], config{} }\n```\nAll entities in flat arrays within one JSON object.\n\n### Key observations\n1. **Merge conflicts are guaranteed** — any two branches touching different issues will conflict on the same file.\n2. **load/save is centralized** in `store.ts` — only 2 functions to change, but 87 call sites pass around the full `ProjectFile` object.\n3. **Migration system** is linear (v1→v15) and auto-saves on load if migrations applied — no backup before migration.\n4. **IDs are 8-char random base36** (`genId()`), already suitable as filenames.\n\n### User's idea: keep database.json for config/metadata only\nThis is sound. Proposed split:\n- `.pi/project/database.json` → config, version, categories (small, rarely conflicts)\n- `.pi/project/epics/{id}.json` → one file per epic\n- `.pi/project/issues/{id}.json` → one file per issue  \n- `.pi/project/assets/{id}.json` → one file per asset\n\n### Migration complexity\n- The `load()` function would need to scan directories and assemble the `ProjectFile` in memory.\n- `save()` could either save the whole structure (write all files) or do targeted saves (only write changed entities).\n- All 87 call sites currently get/pass `ProjectFile` — the in-memory interface can stay the same, only store.ts internals change.\n- A migration from v15 single-file → v16 multi-file needs to: read old file, write individual files, update database.json to just config/meta.",
+          "addedAt": "2026-03-11T17:54:04.484Z"
+        }
+      ],
       "createdAt": "2026-03-11T12:36:33.061Z",
-      "updatedAt": "2026-03-11T14:42:37.788Z",
+      "updatedAt": "2026-03-11T17:54:04.484Z",
       "epicId": "369zvzd0",
       "todos": [],
-      "dependencies": []
+      "dependencies": [
+        {
+          "issueId": "9hoybroc",
+          "type": "blocked-by"
+        }
+      ]
     },
     {
       "id": "35lvii1o",
@@ -1515,7 +1544,9 @@
       "title": "/project-reset command — validate state and compact context safely",
       "description": "A slash command that triggers the agent to validate project state before resetting context. Checks: no issue in-progress with unsaved work, no uncommitted todos, no open questions. Summarizes current state and confirms it's safe to compact. Prevents accidentally losing mid-work context.\\n\\n**Changes:** `commands.ts` — register `/project-reset`, visible echo + steering prompt that instructs agent to validate and then trigger compact.",
       "status": "closed",
-      "linkedIssueIds": [],
+      "linkedIssueIds": [
+        "4is29ern"
+      ],
       "questions": [],
       "research": [
         {
@@ -1525,7 +1556,7 @@
         }
       ],
       "createdAt": "2026-03-11T14:39:42.638Z",
-      "updatedAt": "2026-03-11T14:45:13.744Z",
+      "updatedAt": "2026-03-11T17:40:41.746Z",
       "epicId": "4gm0kng1",
       "closeMessage": "Implemented /project-reset command with state validation, visible feedback, and steering for safe compaction.",
       "closeReason": "done",
@@ -1684,7 +1715,7 @@
       "type": "bug",
       "title": "Rename internal customType identifiers to be user-facing and action-based",
       "description": "The `customType` strings in `sendMessage` calls should be user-facing and action-based, not internal dev names. E.g. `context-reset-banner` → `context-reset-requested`. Audit all customType values in commands.ts and make them consistently action-based.\\n\\n**Changes:** `commands.ts` — rename all `customType` values to action-based naming.",
-      "status": "in-progress",
+      "status": "closed",
       "linkedIssueIds": [],
       "questions": [],
       "research": [
@@ -1697,11 +1728,360 @@
       "todos": [],
       "dependencies": [],
       "createdAt": "2026-03-11T15:14:00.456Z",
-      "updatedAt": "2026-03-11T15:14:17.877Z",
+      "updatedAt": "2026-03-11T15:14:54.484Z",
       "autoValidation": {
         "type": "agent",
         "strategy": "grep customType in commands.ts — all should be action-based names (no -banner, -prompt suffixes)"
-      }
+      },
+      "closeMessage": "Renamed all customType identifiers to action-based naming convention.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "The `customType` strings in `sendMessage` calls should be user-facing and action-based, not internal dev names. E.g. `context-reset-banner` → `context-reset-requested`. Audit all customType values in commands.ts and make them consistently action-based.\\n\\n**Changes:** `commands.ts` — rename all `customType` values to action-based naming.",
+          "evidence": "grep output: `continue-requested`, `context-reset-requested` (x2, banner+steering), `idea`, `idea-proposed`, `feature`, `feature-proposed`, `bug`, `bug-reported`. No `-banner` or `-prompt` suffixes remain. All action-based.",
+          "met": true
+        }
+      ],
+      "closeCommit": "93cda1f",
+      "closedAt": "2026-03-11T15:14:54.484Z"
+    },
+    {
+      "id": "9krnyu7w",
+      "type": "idea",
+      "title": "Issue categories with dynamic asset linking and category-level context control",
+      "description": "At scale (hundreds of assets/issues), manually linking relevant assets to issues and finding related work becomes unmanageable. Issue categories act as tagged groups (e.g. `tui`, `data-model`, `security`) that automatically wire up: when an asset is assigned to a category, all open issues in that category dynamically see it. New assets added to a category retroactively apply to existing issues. Categories also enable discovery — find all issues with the same category to spot patterns and related work.\n\nAdditionally, categories support **context injection control** — assets in a category can be collectively enabled/disabled for context injection (still tracked in metadata showing \"N assets assigned\"), keeping the LLM context lean while preserving the knowledge structure.\n\nOptional feature, default disabled in config — designed for large projects with many issues.\n\n**Motivation:** When projects grow to 1000+ assets, manual asset-to-issue linking breaks down. You end up repeatedly linking the same assets (like TUI practices) to similar issues, or worse, forgetting to link them. Categories solve both discovery and automatic relevance.\n\n**Key concepts:**\n- `issue_category` entity type with name, linked asset IDs\n- Issues get an optional `categorySlug` field\n- Assets assigned to a category auto-link to all open issues in that category\n- Category-level toggle to enable/disable context injection of its assets\n- `issue_list` filterable by category\n- Config: `categories.enabled` (default: false)",
+      "status": "closed",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "comment",
+          "content": "## Codebase Analysis — Current State\n\n### Data Model (`types.ts`)\n- **`AssetCategory`**: Already exists with `{ slug, description }` — but only used for *asset* grouping, not issues.\n- **`Asset`**: Has `linkedEpicIds`, `linkedIssueIds`, `linkedAssetIds` — all manual, explicit links.\n- **`Issue`**: Has `epicId` (single epic link) but NO category field.\n- **`ProjectFile`**: Has `categories: AssetCategory[]` — currently only for assets.\n\n### Asset Linking (`assets.ts`)\n- `asset_link` / `asset_unlink` — manual per-issue/per-epic linking. At scale this is O(N) manual operations.\n\n### Context Injection (`context-rules.ts` + `format.ts`)\n- **Project-level assets** (`asset.project === true`): Injected at session start via `formatAssetsContext()` — lists title+context, agent reads full body on demand.\n- **Linked assets**: `linkedAssets()` renders assets linked to a specific epic/issue when shown.\n- **Policy triggers**: Assets with `trigger.event` fire on lifecycle events (e.g. `issue_advance`).\n- No mechanism today for \"all assets in category X apply to all issues in category Y.\"\n\n### Key Observations\n1. `AssetCategory` already exists but is asset-only. We'd need a parallel concept for issues OR repurpose/extend it.\n2. The linking is 1:1 (asset→issue). Categories would add a many-to-many indirect link: category→[assets], category→[issues].\n3. Context injection has 3 tiers: project-wide, policy-triggered, and per-entity linked. Categories would add a 4th tier: category-scoped.\n4. The `formatAssetsContext` function is the injection point — would need to also consider category-matched assets for the current in-progress issue.\n\n### Implementation Surface\n- `types.ts`: Add `IssueCategory` type, add `categorySlug?` to `Issue`\n- `store.ts`: No changes needed (categories already in ProjectFile, though would need issue categories vs asset categories)\n- `context-rules.ts`: New rule for category-based asset injection\n- `format.ts`: Update `linkedAssets` to include category-derived assets\n- `issues.ts`: Add category parameter to issue_add/issue_update, filter by category in issue_list\n- `config.ts`: Add `categories.enabled` toggle\n- `migrations.ts`: Version bump",
+          "addedAt": "2026-03-11T15:46:37.668Z"
+        },
+        {
+          "type": "comment",
+          "content": "## Proposed Breakdown — Minimal Shippable Slices\n\nThe idea should be split into 3-4 focused issues under the same epic:\n\n### 1. **Issue Category CRUD & Data Model** (feature)\nAdd `IssueCategory` type (or reuse `AssetCategory` with a scope field), `categorySlug?` on `Issue`, and tools: `issue_category_add`, `issue_category_list`. Add category param to `issue_add`/`issue_update` and `--category` filter to `issue_list`. Config gate: `categories.enabled`. Migration to new version.\n\n### 2. **Asset-to-Category Assignment** (feature)  \nAllow assets to be linked to a category (not just individual issues). New field on Asset or a join concept. `asset_link` gets a `category_slug` param. This is the \"automatic wiring\" — any asset assigned to a category is implicitly linked to all issues in that category.\n\n### 3. **Category-Aware Context Injection** (feature)\nUpdate `context-rules.ts` to inject category-matched assets for the current in-progress issue. Update `linkedAssets()` in `format.ts` to include category-derived assets. Add category-level toggle to enable/disable injection (keeping metadata but suppressing context).\n\n### 4. *(Optional)* **Category Discovery & Dashboard** (feature)\n`issue_list --category=tui` shows all issues in a category. Pattern detection: \"5 issues in `tui` category, 3 have the same linked asset.\" Dashboard integration.\n\n**Recommendation:** Start with #1 (pure data model, no behavior change), then #2+#3 together (they're tightly coupled and deliver the core value).",
+          "addedAt": "2026-03-11T15:46:51.225Z"
+        }
+      ],
+      "todos": [],
+      "dependencies": [],
+      "createdAt": "2026-03-11T15:28:35.257Z",
+      "updatedAt": "2026-03-11T17:33:26.890Z",
+      "autoValidation": {
+        "type": "agent",
+        "strategy": "Create a category, assign an asset and an issue to it, verify the asset shows as dynamically linked on the issue"
+      },
+      "epicId": "l60sa241",
+      "closeMessage": "All concepts from this idea were implemented across 3 child issues (kex18gli, 3ylqqhw1, ug7kff7z) and verified with functional testing.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "At scale (hundreds of assets/issues), manually linking relevant assets to issues and finding related work becomes unmanageable. Issue categories act as tagged groups (e.g. `tui`, `data-model`, `security`) that automatically wire up: when an asset is assigned to a category, all open issues in that category dynamically see it. New assets added to a category retroactively apply to existing issues. Categories also enable discovery — find all issues with the same category to spot patterns and related work.\n\nAdditionally, categories support **context injection control** — assets in a category can be collectively enabled/disabled for context injection (still tracked in metadata showing \"N assets assigned\"), keeping the LLM context lean while preserving the knowledge structure.\n\nOptional feature, default disabled in config — designed for large projects with many issues.\n\n**Motivation:** When projects grow to 1000+ assets, manual asset-to-issue linking breaks down. You end up repeatedly linking the same assets (like TUI practices) to similar issues, or worse, forgetting to link them. Categories solve both discovery and automatic relevance.\n\n**Key concepts:**\n- `issue_category` entity type with name, linked asset IDs\n- Issues get an optional `categorySlug` field\n- Assets assigned to a category auto-link to all open issues in that category\n- Category-level toggle to enable/disable context injection of its assets\n- `issue_list` filterable by category\n- Config: `categories.enabled` (default: false)",
+          "evidence": "Tested end-to-end after reload: (1) enabled categories.enabled config, (2) issue_add with category=test-cat created issue with [test-cat] badge, (3) asset_link with category_slug=test-cat linked asset to category showing \"1 open issues\", (4) issue_show on categorized issue showed asset \"(via category)\" without manual linking — automatic wiring confirmed, (5) issue_list category filter returned only matching issues, (6) asset_show displayed linked categories with 🏷️, (7) issue_update cleared category successfully, (8) asset_unlink removed category link. All key concepts delivered: categorySlug on Issue, linkedCategorySlugs on Asset, contextEnabled toggle on Category, category-assets context rule, categories.enabled config gate.",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-11T17:33:26.890Z"
+    },
+    {
+      "id": "gw0hdkbg",
+      "type": "bug",
+      "title": "Git race condition — database.json causes dirty worktree and stash conflicts",
+      "description": "**Race condition:** `.pi/project/database.json` is always dirty (updated on every issue/epic state change). This causes `git.issues.require_clean_worktree` to fail, and when git stash is used to work around it, the stash/pop cycle can overwrite database state (losing close messages, state transitions).\n\n**Fix proposal:**\n1. Exclude `.pi/project/database.json` from `isClean()` check — use `git status --porcelain -- ':!.pi/project/database.json'`\n2. Auto-commit database.json at key lifecycle points (issue close, issue create, epic close, epic create) as `chore: auto-commit project state`\n3. This keeps database tracked in git without causing race conditions\n\n**Files:** `git.ts` (isClean), `issues.ts` (close/create hooks), `epics.ts` (close/create hooks)",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "todos": [],
+      "dependencies": [],
+      "createdAt": "2026-03-11T15:36:13.184Z",
+      "updatedAt": "2026-03-11T15:36:32.416Z",
+      "autoValidation": {
+        "type": "agent",
+        "strategy": "Verify isClean excludes database.json, verify auto-commit happens on issue close"
+      },
+      "epicId": "8dga7k63"
+    },
+    {
+      "id": "um822rj3",
+      "type": "bug",
+      "title": "Agent rapid-fires draft→in-progress without doing actual research or review",
+      "description": "**Problem:** The agent sometimes calls `issue_advance` 3 times back-to-back (draft→researched→ready→in-progress) in a single turn without actually doing research, reviewing requirements, or planning. It skips straight to implementation.\n\n**Root cause analysis:** The advance success messages actively steer the agent to keep going — e.g. \"Has research — ready to advance to researched\" reads like an instruction to advance again. The gates are too permissive (research notes from creation count, epic linkage is trivially true) and the output messages encourage continued advancement.\n\n**Observed in:** Brand Content Provider Extension (34ntriak) — agent went draft→in-progress in one turn without reviewing the issue, doing research, or understanding the scope.\n\n**Proposed fixes (needs research):**\n1. **Stop steering in advance output** — success messages should say \"Now in X status\" and NOT suggest the next action. Let the agent decide.\n2. **Add friction between advances** — consider requiring at least one non-advance action between consecutive advances (e.g. a research note, a read, a question answered)\n3. **Stronger gates** — research added at creation time shouldn't count for the draft→researched gate; require research added AFTER draft status\n4. **Per-turn advance limit** — block more than one advance per agent turn\n\nThis doesn't happen every time but when it does it leads to half-baked implementations. Needs careful research into the right balance of friction vs. flow.\n\n**Files:** `issues.ts` (advance logic + output messages), `context-rules.ts` (steering)",
+      "status": "draft",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [],
+      "todos": [],
+      "dependencies": [],
+      "createdAt": "2026-03-11T15:36:27.608Z",
+      "updatedAt": "2026-03-11T15:36:32.418Z",
+      "autoValidation": {
+        "type": "human",
+        "strategy": "User confirms the agent no longer rapid-fires through advancement without doing actual work"
+      },
+      "epicId": "8dga7k63"
+    },
+    {
+      "id": "kex18gli",
+      "type": "feature",
+      "title": "Issue category data model & CRUD tools",
+      "description": "Add issue categories to the data model and basic CRUD tooling.\n\n**Changes:**\n- `types.ts`: Add `categorySlug?: string` to `Issue` interface. Reuse existing `AssetCategory` (rename to just `Category`) or add `issueCategories` array to `ProjectFile`.\n- `issues.ts`: Add optional `category` param to `issue_add` and `issue_update`. Add `category` filter to `issue_list`.\n- `config.ts`: Add `categories.enabled` (default: false) — when disabled, category params are silently ignored.\n- `migrations.ts`: Version bump, migration to add empty issueCategories if needed.\n- New tools: `issue_category_add`, `issue_category_list` (or extend `asset_categories` to show both).\n\n**Design decision:** Whether to reuse `AssetCategory` (shared namespace) or have separate issue categories. Shared is simpler and enables the asset↔category linking in the next issue.",
+      "status": "closed",
+      "epicId": "l60sa241",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "comment",
+          "content": "## Implementation Plan\n\n### Design Decision: Reuse `AssetCategory` as shared `Category`\nThe existing `categories: AssetCategory[]` in `ProjectFile` should be reused. Rename the type to `Category` (keeping `AssetCategory` as alias for compat). This gives a single namespace — when issue `3ylqqhw1` adds asset-to-category linking, assets and issues share the same category pool.\n\n### Changes by file:\n\n**`types.ts`**\n- Rename `AssetCategory` → `Category` (export alias `AssetCategory = Category`)\n- Add `categorySlug?: string` to `Issue` interface\n- Bump `CURRENT_VERSION` to 13\n\n**`migrations.ts`**\n- v12→v13: No-op (categorySlug is optional, categories array already exists)\n\n**`config.ts`**\n- Add `categories.enabled` (bool, default: false, description: \"Enable issue categories for grouping and automatic asset linking\")\n\n**`issues.ts`**\n- `issue_add`: Add optional `category` param. If `categories.enabled` and category provided, set `categorySlug`. Auto-create category if it doesn't exist (like asset_add does).\n- `issue_update`: Add optional `category` param (empty string to clear).\n- `issue_list`: Add optional `category` filter param.\n\n**`format.ts`**\n- Show category badge on issues when set: `[category:tui]`\n\n**No new tools needed** — reuse `asset_categories` for listing (it already lists all categories). Can rename tool label to just \"Categories\" later.\n\n### Config gating\nWhen `categories.enabled` is false:\n- `category` params on issue_add/issue_update are silently ignored\n- `issue_list` category filter still works (no harm)\n- No context injection (that's issue `ug7kff7z` anyway)",
+          "addedAt": "2026-03-11T15:48:15.249Z"
+        }
+      ],
+      "todos": [
+        {
+          "text": "types.ts: Rename AssetCategory → Category (keep alias), add categorySlug? to Issue, bump CURRENT_VERSION to 13",
+          "done": true
+        },
+        {
+          "text": "migrations.ts: Add v12→v13 migration (no-op, categorySlug is optional)",
+          "done": true
+        },
+        {
+          "text": "config.ts: Add categories.enabled config entry (bool, default: false)",
+          "done": true
+        },
+        {
+          "text": "issues.ts: Add category param to issue_add, issue_update, and category filter to issue_list",
+          "done": true
+        },
+        {
+          "text": "format.ts: Show category badge on issues when set",
+          "done": true
+        },
+        {
+          "text": "tool-docs.ts: Update docs for issue_add, issue_update, issue_list with category params",
+          "done": true
+        }
+      ],
+      "dependencies": [
+        {
+          "issueId": "3ylqqhw1",
+          "type": "blocks"
+        }
+      ],
+      "createdAt": "2026-03-11T15:47:12.495Z",
+      "updatedAt": "2026-03-11T16:01:23.398Z",
+      "closeMessage": "Implemented issue category data model and CRUD tooling across 6 files: types.ts (Category type, categorySlug on Issue, v13), migrations.ts (v12→v13), config.ts (categories.enabled), issues.ts (category param on add/update/list), format.ts (category badge), tool-docs.ts (updated docs).",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Add issue categories to the data model and basic CRUD tooling.\n\n**Changes:**\n- `types.ts`: Add `categorySlug?: string` to `Issue` interface. Reuse existing `AssetCategory` (rename to just `Category`) or add `issueCategories` array to `ProjectFile`.\n- `issues.ts`: Add optional `category` param to `issue_add` and `issue_update`. Add `category` filter to `issue_list`.\n- `config.ts`: Add `categories.enabled` (default: false) — when disabled, category params are silently ignored.\n- `migrations.ts`: Version bump, migration to add empty issueCategories if needed.\n- New tools: `issue_category_add`, `issue_category_list` (or extend `asset_categories` to show both).\n\n**Design decision:** Whether to reuse `AssetCategory` (shared namespace) or have separate issue categories. Shared is simpler and enables the asset↔category linking in the next issue.",
+          "evidence": "All 6 todos completed. types.ts: Category type exported with AssetCategory alias, categorySlug? added to Issue, CURRENT_VERSION=13. migrations.ts: v12→v13 no-op migration added. config.ts: categories.enabled bool default false. issues.ts: category param on issue_add (with auto-create), issue_update (with clear via empty string), issue_list (filter). format.ts: [categorySlug] badge in brief and verbose formats. tool-docs.ts: all three tools documented. Brace balance verified on all 6 files.",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-11T16:01:23.398Z"
+    },
+    {
+      "id": "3ylqqhw1",
+      "type": "feature",
+      "title": "Asset-to-category linking with automatic issue wiring",
+      "description": "Enable assets to be linked to categories, creating implicit links to all issues in that category.\n\n**Changes:**\n- `types.ts`: Add `linkedCategorySlugs: string[]` to `Asset` (or similar).\n- `assets.ts`: Extend `asset_link` with `category_slug` param. Extend `asset_unlink` similarly.\n- `format.ts`: Update `linkedAssets()` to also return assets linked via shared category (asset's linkedCategorySlugs ∩ issue's categorySlug).\n- No manual per-issue linking needed — adding an asset to a category retroactively applies to all existing and future issues in that category.\n\n**Depends on:** Issue category data model & CRUD tools.",
+      "status": "closed",
+      "epicId": "l60sa241",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "comment",
+          "content": "## Implementation Plan\n\n### Data Model\n- `types.ts`: Add `linkedCategorySlugs: string[]` to `Asset`. Bump `CURRENT_VERSION` to 14.\n- `migrations.ts`: v13→v14 — initialize `linkedCategorySlugs: []` on all assets.\n\n### Asset Tools\n- `assets.ts` `asset_link`: Add optional `category_slug` param. Validates category exists. Adds slug to `asset.linkedCategorySlugs`.\n- `assets.ts` `asset_unlink`: Add optional `category_slug` param. Removes slug from array.\n\n### Format (linkedAssets)\n- `format.ts` `linkedAssets()`: Currently takes `(entityType, entityId, assets)`. For issues, need to also match assets whose `linkedCategorySlugs` includes the issue's `categorySlug`. \n- Change signature to accept optional `issueCategorySlug?: string` parameter.\n- At call site in `formatIssueVerbose`, pass `issue.categorySlug`.\n\n### Tool Docs\n- `tool-docs.ts`: Update `asset_link` and `asset_unlink` docs with `category_slug` param.\n\n### Display\n- `formatAsset` (verbose): Show `linkedCategorySlugs` when non-empty.",
+          "addedAt": "2026-03-11T16:50:37.803Z"
+        }
+      ],
+      "todos": [
+        {
+          "text": "types.ts: Add linkedCategorySlugs: string[] to Asset, bump CURRENT_VERSION to 14",
+          "done": true
+        },
+        {
+          "text": "migrations.ts: v13→v14 — init linkedCategorySlugs: [] on all assets",
+          "done": true
+        },
+        {
+          "text": "assets.ts: Add category_slug param to asset_link and asset_unlink",
+          "done": true
+        },
+        {
+          "text": "format.ts: Update linkedAssets() to include category-matched assets for issues",
+          "done": true
+        },
+        {
+          "text": "format.ts: Show linkedCategorySlugs in formatAsset verbose output",
+          "done": true
+        },
+        {
+          "text": "tool-docs.ts: Update asset_link and asset_unlink docs",
+          "done": true
+        }
+      ],
+      "dependencies": [
+        {
+          "issueId": "kex18gli",
+          "type": "blocked-by"
+        },
+        {
+          "issueId": "ug7kff7z",
+          "type": "blocks"
+        }
+      ],
+      "createdAt": "2026-03-11T15:47:12.514Z",
+      "updatedAt": "2026-03-11T16:53:00.451Z",
+      "closeMessage": "Implemented asset-to-category linking across 5 files. Assets can now be linked to categories via `asset_link category_slug`, creating implicit connections to all issues in that category. The `linkedAssets()` function now resolves both direct and category-based asset links.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Enable assets to be linked to categories, creating implicit links to all issues in that category.\n\n**Changes:**\n- `types.ts`: Add `linkedCategorySlugs: string[]` to `Asset` (or similar).\n- `assets.ts`: Extend `asset_link` with `category_slug` param. Extend `asset_unlink` similarly.\n- `format.ts`: Update `linkedAssets()` to also return assets linked via shared category (asset's linkedCategorySlugs ∩ issue's categorySlug).\n- No manual per-issue linking needed — adding an asset to a category retroactively applies to all existing and future issues in that category.\n\n**Depends on:** Issue category data model & CRUD tools.",
+          "evidence": "All 6 todos completed. types.ts: linkedCategorySlugs added to Asset, CURRENT_VERSION=14. migrations.ts: v13→v14 initializes empty array. assets.ts: asset_link/asset_unlink support category_slug with validation. format.ts: linkedAssets() includes category-matched assets with \"(via category)\" label, formatAsset shows linked categories with open issue count. tool-docs.ts updated. Brace balance verified on all files.",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-11T16:53:00.451Z"
+    },
+    {
+      "id": "ug7kff7z",
+      "type": "feature",
+      "title": "Category-aware context injection with enable/disable toggle",
+      "description": "Inject category-matched assets into agent context for the current in-progress issue, with category-level toggle.\n\n**Changes:**\n- `context-rules.ts`: New rule (priority ~25) that checks the in-progress issue's `categorySlug`, finds assets linked to that category, and injects their titles/context hints (similar to project assets but scoped).\n- Add `contextEnabled: boolean` field to category (default: true) — when false, assets in that category are still tracked but not injected.\n- `format.ts`: `formatAssetsContext()` or new `formatCategoryAssets()` for the injection content.\n\n**Depends on:** Asset-to-category linking.",
+      "status": "closed",
+      "epicId": "l60sa241",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "comment",
+          "content": "## Implementation Plan\n\n### 1. Category `contextEnabled` field\n- `types.ts`: Add `contextEnabled?: boolean` to `Category` (default: true when undefined)\n- `migrations.ts`: v14→v15 no-op (field is optional, defaults to true)\n- `CURRENT_VERSION` → 15\n\n### 2. Context rule in `context-rules.ts`\nNew rule `category-assets` (priority 25, channel `agent_context`, event `before_agent_start`):\n- **Condition**: categories.enabled config is true AND there's an in-progress issue with a categorySlug\n- **Content**: Find all non-deleted assets with `linkedCategorySlugs` including the issue's category. Filter by category's `contextEnabled !== false`. Format as context hints (title + context description), similar to project assets.\n\n### 3. Format helper\n- `format.ts`: New `formatCategoryAssetsContext(assets: Asset[], categorySlug: string)` function that renders the asset hints for injection.\n\n### 4. Tool support for toggling context\n- No new tool needed — `asset_categories` already lists categories. Could add a toggle via config or a simple update mechanism. Simplest: check `Category.contextEnabled` field, allow setting it through a small addition to an existing tool or just document manual DB edit for now.\n- Better: Add a param to `asset_categories` or create a tiny helper. Actually, the simplest approach: just respect the field in the context rule, and for setting it, we can add it as an option when creating categories (via `asset_add` category_description flow or `issue_add` with category). For MVP, default true, document that it can be set.",
+          "addedAt": "2026-03-11T16:54:44.405Z"
+        }
+      ],
+      "todos": [
+        {
+          "text": "types.ts: Add contextEnabled?: boolean to Category, bump CURRENT_VERSION to 15",
+          "done": true
+        },
+        {
+          "text": "migrations.ts: v14→v15 no-op migration",
+          "done": true
+        },
+        {
+          "text": "format.ts: Add formatCategoryAssetsContext() helper",
+          "done": true
+        },
+        {
+          "text": "context-rules.ts: Add category-assets rule (priority 25, agent_context, before_agent_start)",
+          "done": true
+        }
+      ],
+      "dependencies": [
+        {
+          "issueId": "3ylqqhw1",
+          "type": "blocked-by"
+        }
+      ],
+      "createdAt": "2026-03-11T15:47:12.523Z",
+      "updatedAt": "2026-03-11T16:56:03.045Z",
+      "closeMessage": "Implemented category-aware context injection across 4 files. When an in-progress issue has a categorySlug and categories.enabled is true, assets linked to that category are injected as agent context. Category-level contextEnabled toggle controls whether injection is active.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "Inject category-matched assets into agent context for the current in-progress issue, with category-level toggle.\n\n**Changes:**\n- `context-rules.ts`: New rule (priority ~25) that checks the in-progress issue's `categorySlug`, finds assets linked to that category, and injects their titles/context hints (similar to project assets but scoped).\n- Add `contextEnabled: boolean` field to category (default: true) — when false, assets in that category are still tracked but not injected.\n- `format.ts`: `formatAssetsContext()` or new `formatCategoryAssets()` for the injection content.\n\n**Depends on:** Asset-to-category linking.",
+          "evidence": "All 4 todos completed. types.ts: contextEnabled? on Category, CURRENT_VERSION=15. migrations.ts: v14→v15 no-op. format.ts: formatCategoryAssetsContext() filters by deleted, contextEnabled, project (avoids double-injecting project assets), renders hints. context-rules.ts: category-assets rule at priority 12, gated on categories.enabled config + in-progress issue with categorySlug. Brace balance verified on all files.",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-11T16:56:03.045Z"
+    },
+    {
+      "id": "4is29ern",
+      "type": "bug",
+      "title": "/project-reset display banner duplicates next-up and /new /continue instructions shown by agent",
+      "description": "The `display: true` banner in `/project-reset` (commands.ts ~line 236) includes `nextUpText` and `*Run /new to start fresh, then /continue to resume.*`. The `display: false` steering prompt (~line 253) also includes `nextUpText` and tells the agent to repeat both. Result: user sees the same info twice.\n\n**Fix:** Remove `nextUpText` and the `/new` + `/continue` line from the `display: true` banner. Keep the banner as a clean status table only. Let the agent's response be the single source for next-up and reset instructions.",
+      "status": "closed",
+      "linkedIssueIds": [
+        "xaipvjgt"
+      ],
+      "questions": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "Fix location: `commands.ts` lines ~230-240. Remove `nextUpText` and the `/new /continue` line from the `bannerLines` array. Keep them only in the `steerLines` array (~line 248).",
+          "addedAt": "2026-03-11T17:44:40.090Z"
+        }
+      ],
+      "todos": [],
+      "dependencies": [],
+      "createdAt": "2026-03-11T17:40:32.945Z",
+      "updatedAt": "2026-03-11T17:47:35.791Z",
+      "autoValidation": {
+        "type": "agent",
+        "strategy": "Run /project-reset and verify the display banner only shows the status table, with next-up and /new /continue appearing only in the agent response."
+      },
+      "closeMessage": "Removed nextUpText and /new /continue instructions from the display:true banner in commands.ts. Banner now shows only the status table. Agent response is the single source for next-up and reset instructions.",
+      "closeReason": "done",
+      "validations": [
+        {
+          "criterion": "The `display: true` banner in `/project-reset` (commands.ts ~line 236) includes `nextUpText` and `*Run /new to start fresh, then /continue to resume.*`. The `display: false` steering prompt (~line 253) also includes `nextUpText` and tells the agent to repeat both. Result: user sees the same info twice.\n\n**Fix:** Remove `nextUpText` and the `/new` + `/continue` line from the `display: true` banner. Keep the banner as a clean status table only. Let the agent's response be the single source for next-up and reset instructions.",
+          "evidence": "User ran /project-reset after reload. Display banner showed only: status table (3 epics, 11 issues, 1 blocker) and blocker list. No \"Next up\" or \"/new /continue\" in the banner. Those appeared only in the steering prompt for the agent. Duplication eliminated.",
+          "met": true
+        }
+      ],
+      "closedAt": "2026-03-11T17:47:35.791Z"
+    },
+    {
+      "id": "9hoybroc",
+      "type": "feature",
+      "title": "Database backup/restore — snapshot before migrations",
+      "description": "Add a backup mechanism that snapshots the current `database.json` before any migration runs. This is critical for the file-per-entity migration ([zp37hnsl]) — if something goes wrong during migration, users need a way to restore their project data.\n\nShould support:\n- Automatic backup before any migration\n- Manual backup/restore commands\n- Clear naming with timestamps so users can identify snapshots",
+      "status": "draft",
+      "epicId": "369zvzd0",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "## Backup Requirements Analysis\n\n### Current state\n- No backup mechanism exists. Migrations auto-apply and overwrite `database.json` on load.\n- If a migration corrupts data, there's no recovery path.\n\n### What's needed\n1. **Pre-migration backup**: In `store.ts load()`, before `writeFileSync` after migration, copy the original file to `.pi/project/backups/database-v{N}-{timestamp}.json`\n2. **Pre-split backup**: Before the file-per-entity migration (v15→v16), snapshot the entire `database.json` since it'll be the last version in single-file format.\n3. **Manual backup command** (optional/future): let users trigger a snapshot on demand.\n\n### Implementation is small\n- Add ~10 lines to `store.ts` to backup before migration saves.\n- Create `.pi/project/backups/` directory.\n- This should be done BEFORE the file-per-entity migration lands.",
+          "addedAt": "2026-03-11T17:54:04.492Z"
+        }
+      ],
+      "todos": [],
+      "dependencies": [
+        {
+          "issueId": "zp37hnsl",
+          "type": "blocks"
+        }
+      ],
+      "createdAt": "2026-03-11T17:52:15.041Z",
+      "updatedAt": "2026-03-11T17:54:04.492Z"
+    },
+    {
+      "id": "pw88twv4",
+      "type": "feature",
+      "title": "Surgical diff-edit tool for large text fields",
+      "description": "Add a `pm_edit` tool that performs in-place find-and-replace on large text fields, avoiding full-content rewrites that waste tokens.\n\n**Problem:** When updating `issue.description`, `asset.body`, `epic.description`, or `epic.body`, the agent must pass the entire field content through the `_update` tool — even for a one-line change. This wastes tokens proportional to field size.\n\n**Solution:** A single `pm_edit` tool with parameters: `(entity_type, id, field, old_text, new_text)` that does surgical string replacement on the target field.\n\n**Key design decisions from research:**\n- Metadata (title, status, priority, type, etc.) stays on `_update` tools — already key-based JSON params, no waste\n- Only targets large text fields: `issue.description`, `asset.body`, `epic.description`, `epic.body` (4 fields across 3 entity types)\n- Same `load()`/`save()` store pattern — disk writes are unchanged, savings are purely on tool-call token cost\n- Should handle: match not found, multiple matches, empty old_text (append mode)",
+      "status": "draft",
+      "epicId": "369zvzd0",
+      "linkedIssueIds": [],
+      "questions": [],
+      "research": [
+        {
+          "type": "reference",
+          "content": "## Research: Current update tool analysis\n\n### Fields by entity — metadata vs large text\n\n| Entity | Metadata (key-based, fine as-is) | Large text (needs diff-edit) |\n|--------|----------------------------------|------------------------------|\n| **Issue** | `title`, `type`, `epic_id`, `category`, `needsReview` | `description` |\n| **Asset** | `title`, `context`, `project`, `category_slug`, `trigger_event` | `body` |\n| **Epic** | `title`, `priority`, `relevant_files`, `todos`, `success_criteria` | `description`, `body` |\n\n### Observed field sizes (current project)\n- Asset bodies: 320–3224 chars\n- Issue descriptions: 669–1382 chars\n- These grow over time with research notes and refinements\n\n### Proposed tool signature\n```\npm_edit(entity_type: \"issue\"|\"asset\"|\"epic\", id: string, field: string, old_text: string, new_text: string)\n```\n\n### Edge cases to handle\n- `old_text` not found → error with helpful message\n- Multiple matches → error, require more context in `old_text`\n- Empty `old_text` → append mode (add `new_text` to end)\n- Empty `new_text` → deletion (remove `old_text`)\n\n### Note on `asset.context`\nCurrently a short string (~1 sentence), but could grow. May want to include it as an eligible field in the future.",
+          "addedAt": "2026-03-20T10:13:09.400Z"
+        }
+      ],
+      "createdAt": "2026-03-20T10:12:56.984Z",
+      "updatedAt": "2026-03-20T10:13:09.400Z"
     }
   ],
   "categories": [
@@ -1722,8 +2102,33 @@
       "linkedEpicIds": [],
       "linkedIssueIds": [],
       "createdAt": "2026-03-10T13:28:33.474Z",
-      "updatedAt": "2026-03-10T13:28:33.474Z",
-      "linkedAssetIds": []
+      "updatedAt": "2026-03-11T17:24:23.301Z",
+      "linkedAssetIds": [],
+      "linkedCategorySlugs": []
+    },
+    {
+      "id": "mxvhdlfh",
+      "categorySlug": "policies",
+      "title": "TUI Component Development Practices",
+      "context": "When building, modifying, or reviewing any TUI component, custom UI, widget, overlay, or interactive element in pi extensions. Apply when touching any code that uses ctx.ui.custom(), ctx.ui.setWidget(), ctx.ui.setStatus(), sendMessage with display:true, Container, Text, Box, SelectList, or any @mariozechner/pi-tui imports.",
+      "body": "# TUI Component Development Practices\n\n## Naming Conventions\n- **customType identifiers** must be user-facing and action-based (e.g. `context-reset-requested`, `idea-proposed`). Never use internal suffixes like `-banner`, `-prompt`, `-internal`.\n- **Widget IDs** should be descriptive kebab-case: `epic-progress`, `issue-status`, not `widget1` or `myWidget`.\n- **Status keys** should be extension-scoped: `pm-mode`, `pm-sync`, not generic names.\n\n## Visible Feedback Rules\n- **Slash commands must produce visible evidence** they ran. Use `pi.sendMessage({ content, display: true }, { triggerTurn: false })` for prominent banners, not just `ctx.ui.notify()` which is too subtle.\n- **Steering prompts** (agent instructions) use `display: false` with `deliverAs: \"steer\"` — these are invisible to the user.\n- **Always pair**: visible banner (display:true, triggerTurn:false) THEN hidden steering (display:false, triggerTurn:true, deliverAs:steer).\n\n## Component Architecture\n- **Use built-in components first**: `SelectList`, `SettingsList`, `BorderedLoader`, `DynamicBorder` cover 90% of cases. Don't rebuild them.\n- **Always get theme from callbacks**: Use `theme` from `ctx.ui.custom((tui, theme, keybindings, done) => ...)`. Never import theme directly.\n- **Type DynamicBorder params**: `(s: string) => theme.fg(\"accent\", s)`, not `(s) => ...`.\n- **Call `tui.requestRender()`** after state changes in `handleInput`.\n- **Return the three-method object**: `{ render, invalidate, handleInput }` for custom components.\n\n## Render Rules\n- **Every line must not exceed `width`** — use `truncateToWidth(text, width)`.\n- **Use `visibleWidth(str)`** to measure display width (ignores ANSI codes).\n- **Styles don't carry across lines** — reapply per line or use `wrapTextWithAnsi()`.\n- **Cache rendered output** — implement `invalidate()` to clear cache, only recompute on width change or state change.\n\n## Theme & Invalidation\n- **Never pre-bake theme colors into stored strings** without rebuilding on `invalidate()`.\n- **Pattern**: Store raw data, apply theme in a `rebuild()` or `updateDisplay()` method, call it from both constructor and `invalidate()`.\n- **Override `invalidate()`**: call `super.invalidate()` first, then rebuild themed content.\n\n## Overlays\n- **Always create fresh instances** — overlay components are disposed on close, don't reuse references.\n- **Use overlayOptions** for positioning: `anchor`, `width`/`height` (supports percentages), `minWidth`, `maxHeight`.\n- **Make responsive**: use `visible: (w, h) => w >= minWidth` to hide on narrow terminals.\n\n## Widgets & Status\n- **Widgets** (`ctx.ui.setWidget`): persistent content above/below editor. Use for progress, todo lists, mode info.\n- **Status** (`ctx.ui.setStatus`): footer indicators. Use for mode/state display.\n- **Clean up**: set to `undefined` when no longer needed.\n\n## IME / Focusable\n- If your component contains an `Input` or `Editor`, implement `Focusable` and propagate `focused` to the child for correct IME cursor positioning.\n\n## Performance\n- Cache `render()` output keyed by `width`.\n- Only `invalidate()` when state actually changes.\n- Avoid rebuilding child trees on every render — rebuild in `invalidate()` or state-change methods.",
+      "project": true,
+      "sources": [
+        {
+          "type": "url",
+          "path": "/home/cp/.nvm/versions/node/v24.14.0/lib/node_modules/@mariozechner/pi-coding-agent/docs/tui.md",
+          "description": "Full pi TUI documentation — component API, patterns, theming, overlays, widgets"
+        }
+      ],
+      "linkedEpicIds": [],
+      "linkedIssueIds": [
+        "046bqkpk",
+        "eis1twji"
+      ],
+      "linkedAssetIds": [],
+      "createdAt": "2026-03-11T15:15:52.250Z",
+      "updatedAt": "2026-03-11T15:23:27.003Z",
+      "linkedCategorySlugs": []
     }
   ],
   "config": {
@@ -1741,6 +2146,7 @@
     "debug.show_agent_context": false,
     "debug.show_hook_activity": false,
     "debug.show_context_rules": false,
-    "debug.verbose_log": false
+    "debug.verbose_log": false,
+    "categories.enabled": true
   }
 }
